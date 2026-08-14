@@ -1,0 +1,17 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  bootstrap-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bootstrap placeholder
+        run: |
+          echo "RB-08 bootstrap stage: no product source or dependencies admitted yet."
+          echo "This workflow is scaffolding only; install/lint/typecheck/test steps will be added when dependencies are admitted and pinned."
