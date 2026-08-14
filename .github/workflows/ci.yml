@@ -10,7 +10,7 @@ jobs:
   bootstrap-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Bootstrap placeholder
         run: |
           echo "RB-08 bootstrap stage: no product source or dependencies admitted yet."
