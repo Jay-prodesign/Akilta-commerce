@@ -14,6 +14,10 @@ The current frozen Commercial Ready V1 (CR-V1) sellable wedge is:
 
 CR-V1 scope and the existing canonical architecture must not be expanded from repository work.
 
+## Project Boundary
+
+This repository belongs exclusively to the AI Commerce / AKILTA Commerce project. It is separate from the AKILTA core project and must not be used as a shared or merged engineering workspace.
+
 ## Current Repository State
 
 This repository is currently at the bootstrap stage.
