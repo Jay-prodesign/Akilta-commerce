@@ -1,0 +1,24 @@
+import fs from 'node:fs';
+const [crossFile, shopifyFile, ikasGapFile, tsoftInvFile, tsoftGapFile] = process.argv.slice(2);
+if(![crossFile,shopifyFile,ikasGapFile,tsoftInvFile,tsoftGapFile].every(Boolean)) throw new Error('five files required');
+const c=JSON.parse(fs.readFileSync(crossFile,'utf8'));
+const s=JSON.parse(fs.readFileSync(shopifyFile,'utf8'));
+const i=JSON.parse(fs.readFileSync(ikasGapFile,'utf8'));
+const ti=JSON.parse(fs.readFileSync(tsoftInvFile,'utf8'));
+const tg=JSON.parse(fs.readFileSync(tsoftGapFile,'utf8'));
+let passed=0;const checks=[];function check(l,x){if(!x)throw new Error(`FAIL:${l}`);passed++;checks.push(l)}
+check('three providers',c.providers.length===3&&['SHOPIFY','IKAS','TSOFT'].every(x=>c.providers.includes(x)));
+check('no support claim',c.support_claim_admitted===false);
+check('no core freeze claim',c.core_contract_freeze_admitted===false);
+check('shopify zero quantity edge',JSON.stringify(s).includes('availableForSale')&&JSON.stringify(s).includes('inventoryQuantity'));
+check('ikas sellability unresolved',i.mappings.find(m=>m.provider_field==='inventory.providerAvailability')?.classification==='UNRESOLVED');
+check('tsoft zero/negative policy evidence',JSON.stringify(ti).includes('ALLOW_SELLING_WITHOUT_POSITIVE_QUANTITY'));
+check('tsoft TL to TRY adapter rule',tg.mappings.find(m=>m.provider_field==='OrderTotalPrice+Currency')?.note.includes('TRY'));
+check('quantity invariant cross provider',c.cross_provider_findings.find(x=>x.invariant==='QUANTITY_IS_NOT_AVAILABILITY')?.state==='HOLDS_CROSS_PROVIDER');
+check('pii authority independent',c.cross_provider_findings.find(x=>x.invariant==='PROVIDER_READABILITY_IS_NOT_DISCLOSURE_AUTHORITY')?.state==='HOLDS_CROSS_PROVIDER');
+check('webhook provider verifier',c.cross_provider_findings.find(x=>x.invariant==='WEBHOOK_AUTH_BEFORE_ENQUEUE')?.state==='HOLDS_WITH_PROVIDER_SPECIFIC_VERIFIERS');
+check('raw order status preserved',c.cross_provider_findings.find(x=>x.invariant==='ORDER_PROVIDER_STATUS_PRESERVATION')?.state==='HOLDS_AT_E2');
+check('source timestamp watch explicit',c.cross_provider_findings.find(x=>x.invariant==='SOURCE_FRESHNESS_PROVENANCE')?.state==='WATCH_POTENTIAL_CORE_GAP');
+check('no premature core mutation',c.decision==='CORE_CONTRACT_HOLDS_AT_E2_WITH_SOURCE_TIMESTAMP_WATCH_E3_REQUIRED');
+check('E3 still required',c.next_evidence.includes('E3'));
+console.log(JSON.stringify({status:'PASS',passed,total:passed,checks}));
