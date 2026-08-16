@@ -1,0 +1,35 @@
+{
+  "status": "RESOURCE_BINDINGS_PENDING",
+  "authority": "D-045 + artifacts 28/32 + D-046 staging",
+  "active_wrangler_config_contains_real_resource_ids": false,
+  "bindings": [
+    {
+      "binding": "HYPERDRIVE",
+      "kind": "hyperdrive",
+      "purpose": "managed PostgreSQL connectivity",
+      "resource_id": "PENDING_REAL_RESOURCE",
+      "secret_values_allowed_in_drive": false
+    },
+    {
+      "binding": "EVENT_QUEUE",
+      "kind": "queue_producer_consumer",
+      "purpose": "async operational event/job transport",
+      "resource_id": "PENDING_REAL_RESOURCE",
+      "delivery_semantics": "AT_LEAST_ONCE_ASSUMED"
+    },
+    {
+      "binding": "EVENT_DLQ",
+      "kind": "dead_letter_queue",
+      "purpose": "bounded retry exhaustion evidence/recovery",
+      "resource_id": "PENDING_REAL_RESOURCE"
+    }
+  ],
+  "activation_requirements": [
+    "real authorized Cloudflare resource creation/access",
+    "Wrangler-generated binding types",
+    "no secret values in Drive/source/config",
+    "runtime Workers Vitest PASS",
+    "PostgreSQL/Hyperdrive connectivity and restore evidence",
+    "queue duplicate/retry/DLQ evidence"
+  ]
+}

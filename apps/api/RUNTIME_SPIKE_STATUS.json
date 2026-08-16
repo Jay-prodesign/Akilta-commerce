@@ -1,0 +1,39 @@
+{
+  "p0_task": "P0-024",
+  "status": "DRIVE_STAGED_RUNTIME_RESOURCE_PENDING",
+  "static_staging": {
+    "wrangler_jsonc_parse": "PASS",
+    "compatibility_date": "2026-08-07",
+    "nodejs_compat": true,
+    "observability_enabled": true,
+    "worker_entrypoint": "apps/api/src/worker.ts",
+    "worker_runtime_test": "tests/runtime/worker-health.spec.ts",
+    "workers_vitest_config": "vitest.worker.config.ts"
+  },
+  "not_executed": [
+    "pnpm install and lockfile generation",
+    "exact pinned TypeScript 6.0.3 typecheck",
+    "ESLint/Prettier execution with pinned dependencies",
+    "Workers Vitest execution inside workerd",
+    "Wrangler config-schema validation and generated binding types",
+    "Worker bundle/dry-run",
+    "real Cloudflare Queue duplicate/retry/DLQ test",
+    "real Hyperdrive to PostgreSQL connection test",
+    "PostgreSQL migration apply/restore test"
+  ],
+  "resource_policy": {
+    "fake_cloudflare_resource_ids_allowed": false,
+    "secret_values_allowed_in_drive": false,
+    "real_resource_bindings_added_only_after_authorized_resource_exists": true
+  },
+  "next_runtime_commands_when_registry_and_resources_are_available": [
+    "pnpm install",
+    "pnpm typecheck",
+    "pnpm test",
+    "pnpm test:worker",
+    "pnpm lint",
+    "pnpm format:check",
+    "pnpm exec wrangler types --config apps/api/wrangler.jsonc",
+    "pnpm exec wrangler deploy --dry-run --config apps/api/wrangler.jsonc"
+  ]
+}

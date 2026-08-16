@@ -1,0 +1,13 @@
+{
+  "architecture": "React SPA + TypeScript + Vite per artifact 30",
+  "current_stage": "FRAMEWORK_INDEPENDENT_CRITICAL_STATE_AND_UX_PRESENTATION_LOGIC_STAGED",
+  "react_vite_runtime": "PENDING_DEPENDENCY_ADMISSION_AND_INSTALL",
+  "server_authority_rule": "Frontend state, hidden controls and route params never authorize tenant/resource/action access.",
+  "privacy_rule": "No provider secrets/tokens and no sensitive Customer Context persistence in localStorage by default.",
+  "next_framework_stage": "Only after fresh compatible React/Vite/Cloudflare Vite plugin pin evidence and real dependency install, add SPA shell/screens while preserving server authority and the staged UX presentation contracts.",
+  "ux_acceptance_source": "apps/control-center/src/ux-presentation.ts",
+  "ux_acceptance_test": "tests/contract/control-center-ux-acceptance.spec.ts",
+  "ux_acceptance_targeted_result": "20/20 PASS — source-level presentation contract only; supersedes prior 15/15 for this exact suite",
+  "remaining_ux_evidence": "React/browser E2E, accessibility runtime checks, real auth/session integration, provider-authentic onboarding/context-change execution + post-read and pilot usability remain pending.",
+  "integration_context_presentation": "Server-resolved READY / OWNER_APPROVAL_REQUIRED / AUTHORIZATION_DENIED / SOURCE_PROJECT_NON_INTERFERENCE / TARGET_CONTEXT_MISMATCH / POST_READ_REQUIRED states are presented distinctly. Client state never grants context-change authority; READY requires server recheck and target verification."
+}
