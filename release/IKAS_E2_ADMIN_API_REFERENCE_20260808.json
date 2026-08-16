@@ -1,0 +1,123 @@
+{
+  "artifact_id": "IKAS_E2_ADMIN_API_REFERENCE_20260808",
+  "captured_at": "2026-08-08T11:58:00+03:00",
+  "provider": "IKAS",
+  "evidence_maturity": "E2_PROVIDER_REFERENCE",
+  "provider_authentic_test": false,
+  "connector_execution_admitted": false,
+  "support_claim_admitted": false,
+  "purpose": "Exact public-documentation pressure test for normalized commerce contracts; not an authenticated connector acceptance result.",
+  "authentication": {
+    "private_app_flow": "client_credentials",
+    "token_request_fields": [
+      "grant_type",
+      "client_id",
+      "client_secret"
+    ],
+    "token_type": "Bearer",
+    "documented_expires_in_seconds_example": 14400,
+    "production_auth_doc_token_url": "https://api.myikas.com/api/admin/oauth/token",
+    "production_auth_doc_graphql_url": "https://api.myikas.com/api/v2/admin/graphql",
+    "sample_pages_graphql_url": "https://api.myikas.dev/api/v2/admin/graphql",
+    "endpoint_evidence_state": "CONFLICT_OR_ENVIRONMENT_DISTINCTION_REQUIRES_E3_CONFIRMATION",
+    "secret_rule": "client_secret must not be logged or embedded"
+  },
+  "operations": {
+    "product": {
+      "read_surface": "listProduct",
+      "documented_variant_fields": [
+        "id",
+        "sku",
+        "variantValues.variantTypeName",
+        "variantValues.variantValueName"
+      ],
+      "documented_write_examples": [
+        "createProduct",
+        "updateProduct",
+        "addVariantToProduct",
+        "saveVariantStocks",
+        "updateVariantPrices"
+      ],
+      "stock_write_input_fields": [
+        "productId",
+        "variantId",
+        "stockLocationId",
+        "stockCount",
+        "deleted"
+      ],
+      "sales_channel_visibility_operation": "updateProductSalesChannelStatus"
+    },
+    "order": {
+      "read_operation": "listOrder",
+      "fields": [
+        "id",
+        "orderNumber",
+        "orderedAt",
+        "status",
+        "totalFinalPrice"
+      ],
+      "pagination_fields": [
+        "count",
+        "hasNext",
+        "limit",
+        "page"
+      ],
+      "pagination_input": [
+        "limit",
+        "page"
+      ],
+      "sort_example": "-orderedAt"
+    },
+    "customer": {
+      "read_operation": "listCustomer",
+      "fields": [
+        "id",
+        "fullName",
+        "email",
+        "phone"
+      ],
+      "pagination_fields": [
+        "count",
+        "limit",
+        "page"
+      ]
+    },
+    "webhook": {
+      "save_operation": "saveWebhooks",
+      "validation_required": true,
+      "https_required_or_recommended": true,
+      "retry_on_non_200_count": 3,
+      "documented_scopes": [
+        "store/order/created",
+        "store/order/updated",
+        "store/product/created",
+        "store/product/updated",
+        "store/customer/created",
+        "store/customer/updated",
+        "store/customer/statusUpdated",
+        "store/stock/created",
+        "store/stock/updated"
+      ],
+      "signature_exact_algorithm_admitted": false
+    }
+  },
+  "normalized_contract_implications": [
+    "Product and Variant identities are separately addressable.",
+    "Order read surface has explicit ID, order number, timestamp, status, total and page-based pagination.",
+    "Customer read surface exposes PII fields; CR-V1 CustomerIdentity/CV authorization must gate disclosure independently of provider availability.",
+    "Stock is location-aware through stockLocationId and variant-aware through variantId.",
+    "Webhook events cover order/product/customer/stock create/update domains and must be authenticated before enqueue.",
+    "Public write-operation examples prove capability surface only; they do not authorize AI Commerce writes."
+  ],
+  "open_gates": [
+    "Authenticated token issuance/read operation against an authorized test merchant",
+    "Production-vs-sample API hostname confirmation",
+    "Exact full GraphQL schema/introspection snapshot for claimed operations",
+    "Provider-authentic error/rate-limit behavior",
+    "Webhook signature algorithm and replay behavior in provider-authentic environment",
+    "Inventory sellability semantics beyond stockCount field",
+    "Order/customer access and freshness mapping against real authorized payloads",
+    "Post-read/reconciliation for any future write"
+  ],
+  "decision": "E2_SCHEMA_REFERENCE_ACCEPTED_E3_EXECUTION_BLOCKED"
+}
