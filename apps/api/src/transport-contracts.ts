@@ -68,8 +68,11 @@ export interface SafeHttpErrorInput {
   readonly retryable: boolean;
   readonly requiredAction: RequiredAction;
   readonly locale?: PublicErrorLocale;
-  /** Bounded symbolic validation codes only; no caller-supplied field names or error text. */
-  readonly fieldErrors?: readonly PublicFieldErrorCode[];
+  /**
+   * Untrusted pre-validation input: caller-supplied field names or error text must never reach the
+   * public envelope. Validated and narrowed to PublicFieldErrorCode by assertPublicFieldErrors before use.
+   */
+  readonly fieldErrors?: readonly string[];
 }
 
 export interface SafeHttpErrorEnvelope {
@@ -81,10 +84,10 @@ export interface SafeHttpErrorEnvelope {
   readonly fieldErrors?: readonly PublicFieldErrorCode[];
 }
 
-function assertPublicFieldErrors(value: readonly PublicFieldErrorCode[]): void {
+function assertPublicFieldErrors(value: readonly string[]): asserts value is readonly PublicFieldErrorCode[] {
   const allowed = new Set<string>(PUBLIC_FIELD_ERROR_CODES);
-  for (const code of value as readonly unknown[]) {
-    if (typeof code !== 'string' || !allowed.has(code)) {
+  for (const code of value) {
+    if (!allowed.has(code)) {
       throw new Error('Public field errors must use bounded symbolic codes');
     }
   }

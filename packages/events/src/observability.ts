@@ -5,7 +5,7 @@ import type {
   RunId,
   UtcTimestamp,
 } from '../../domain/src';
-import { ERROR_CODES, type ErrorCode, type ErrorDescriptor } from '../../domain/src/errors';
+import type { ErrorCode, ErrorDescriptor } from '../../domain/src/errors';
 
 export const LOG_SEVERITIES = ['DEBUG', 'INFO', 'WARN', 'ERROR'] as const;
 export type LogSeverity = (typeof LOG_SEVERITIES)[number];
@@ -130,9 +130,36 @@ function descriptorFor(code: ErrorCode): ErrorDescriptor {
   }
 }
 
-export const ERROR_DESCRIPTORS: Readonly<Record<ErrorCode, ErrorDescriptor>> = Object.freeze(
-  Object.fromEntries(ERROR_CODES.map((code) => [code, descriptorFor(code)])) as Record<ErrorCode, ErrorDescriptor>,
-);
+export const ERROR_DESCRIPTORS: Readonly<Record<ErrorCode, ErrorDescriptor>> = Object.freeze({
+  AUTH_TENANT_MISMATCH: descriptorFor('AUTH_TENANT_MISMATCH'),
+  AUTH_PERMISSION_DENIED: descriptorFor('AUTH_PERMISSION_DENIED'),
+  AUTH_APPROVAL_REQUIRED: descriptorFor('AUTH_APPROVAL_REQUIRED'),
+  AUTH_APPROVAL_INVALID: descriptorFor('AUTH_APPROVAL_INVALID'),
+  AUTH_APPROVAL_EXPIRED: descriptorFor('AUTH_APPROVAL_EXPIRED'),
+  IDENTITY_UNRESOLVED: descriptorFor('IDENTITY_UNRESOLVED'),
+  IDENTITY_AMBIGUOUS: descriptorFor('IDENTITY_AMBIGUOUS'),
+  CUSTOMER_VERIFICATION_INSUFFICIENT: descriptorFor('CUSTOMER_VERIFICATION_INSUFFICIENT'),
+  PROVIDER_ACCESS_BLOCKED: descriptorFor('PROVIDER_ACCESS_BLOCKED'),
+  PROVIDER_AUTH_REVOKED: descriptorFor('PROVIDER_AUTH_REVOKED'),
+  PROVIDER_RATE_LIMITED: descriptorFor('PROVIDER_RATE_LIMITED'),
+  PROVIDER_TIMEOUT: descriptorFor('PROVIDER_TIMEOUT'),
+  PROVIDER_SCHEMA_MISMATCH: descriptorFor('PROVIDER_SCHEMA_MISMATCH'),
+  PROVIDER_UNSUPPORTED: descriptorFor('PROVIDER_UNSUPPORTED'),
+  PROVIDER_STALE_DATA: descriptorFor('PROVIDER_STALE_DATA'),
+  TRUTH_MISSING: descriptorFor('TRUTH_MISSING'),
+  TRUTH_CONFLICT: descriptorFor('TRUTH_CONFLICT'),
+  RULE_CONFLICT: descriptorFor('RULE_CONFLICT'),
+  WEBHOOK_INVALID: descriptorFor('WEBHOOK_INVALID'),
+  EVENT_DUPLICATE: descriptorFor('EVENT_DUPLICATE'),
+  EVENT_OUT_OF_ORDER: descriptorFor('EVENT_OUT_OF_ORDER'),
+  ACTION_IDEMPOTENT_REPLAY: descriptorFor('ACTION_IDEMPOTENT_REPLAY'),
+  ACTION_POSTREAD_MISMATCH: descriptorFor('ACTION_POSTREAD_MISMATCH'),
+  HANDOFF_OWNERSHIP_CONFLICT: descriptorFor('HANDOFF_OWNERSHIP_CONFLICT'),
+  AI_OUTPUT_POLICY_FAIL: descriptorFor('AI_OUTPUT_POLICY_FAIL'),
+  AI_OUTPUT_GROUNDEDNESS_FAIL: descriptorFor('AI_OUTPUT_GROUNDEDNESS_FAIL'),
+  USAGE_COST_UNKNOWN: descriptorFor('USAGE_COST_UNKNOWN'),
+  INTERNAL_UNEXPECTED: descriptorFor('INTERNAL_UNEXPECTED'),
+} satisfies Record<ErrorCode, ErrorDescriptor>);
 
 export function errorDescriptor(code: ErrorCode): ErrorDescriptor {
   return ERROR_DESCRIPTORS[code];

@@ -1,6 +1,5 @@
 import type { MerchantWorkspaceId, RunId, LocaleTag } from '../../domain/src';
 import type { ApprovedFactSet } from '../../truth-policy/src';
-import type { Crv1AiToolName } from './tool-registry';
 
 export interface SafeConversationMessage {
   readonly role: 'customer' | 'assistant' | 'human';
@@ -13,7 +12,8 @@ export interface SafeConversationContext {
 }
 
 export interface AiToolPolicy {
-  readonly allowedTools: readonly Crv1AiToolName[];
+  /** Untrusted at runtime, same as AiGatewayCandidate.requestedTools[].toolName: remains string until registry validation via validateRegisteredToolSubset. */
+  readonly allowedTools: readonly string[];
   /** AI Gateway can request registered tools but never receives authorization authority. */
   readonly actionAuthority: 'NONE';
 }

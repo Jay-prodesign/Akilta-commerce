@@ -83,7 +83,7 @@ const cases: Array<[string, () => void]> = [
   }],
   ['IF-PUBLIC-FIELD-ERRORS-ARE-BOUNDED-CODES', () => {
     assert(PUBLIC_FIELD_ERROR_CODES.includes('INVALID'), 'bounded field code catalog missing');
-    expectThrow(() => safeHttpErrorEnvelope({ code: 'AUTH_PERMISSION_DENIED', requestId, retryable: false, requiredAction: 'NONE', fieldErrors: ['rawException=secret'] as any }), 'arbitrary field-error text accepted');
+    expectThrow(() => safeHttpErrorEnvelope({ code: 'AUTH_PERMISSION_DENIED', requestId, retryable: false, requiredAction: 'NONE', fieldErrors: ['rawException=secret'] }), 'arbitrary field-error text accepted');
   }],
   ['IF-OPAQUE-CURSOR-REJECTS-EMPTY', () => expectThrow(() => opaqueCursor('  '), 'empty cursor accepted')],
   ['IF-CURSOR-SCOPE-VALID-SAME-WORKSPACE-QUERY', () => {
