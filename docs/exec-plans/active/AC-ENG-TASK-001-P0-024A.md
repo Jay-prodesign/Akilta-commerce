@@ -22,10 +22,12 @@ against, per D-090/ACB-04/ACB-05 requirements.
 
 ## One-time coding-start gate
 
-Per D-067/AC-BUILD-001: this task remains `PREPARED_NOT_READY` / `STATUS: PREPARED_NOT_READY` and must
-not enter `IN_PROGRESS` before (a) all of ACB-01..ACB-08 read PASS, and (b) an explicit owner
-`APPROVE AC-BUILD-001` decision is recorded. Repository/bootstrap/task-packaging preparation — including
-this document — does not itself consume or satisfy AC-BUILD-001.
+Per D-067/AC-BUILD-001: this task's status below is `READY`, but `READY` is not `IN_PROGRESS`. The task
+must not enter `IN_PROGRESS` before (a) all of ACB-01..ACB-08 read PASS per Brain's final RB-14
+verification, and (b) an explicit owner `APPROVE AC-BUILD-001` decision is recorded. Repository/bootstrap/
+task-packaging preparation — including this document and this status update — does not itself consume or
+satisfy AC-BUILD-001, and does not itself trigger the owner-approval alert. That determination belongs to
+Brain's final RB-14 verification pass, not to this document.
 
 ## Task Contract (verbatim from canonical Drive authority)
 
@@ -83,14 +85,15 @@ identity on every task. The path selected for this task is:
   is explicitly assigned to this task or a risk/defect signal triggers selective review.
   `SECOND_ENGINEER_BACKUP_PATH = NOT_VERIFIED / NON_BLOCKING_UNTIL_ASSIGNED`.
 
-This clarification narrows the verbatim "repository engineer/reviewer access verified" dependency above
-to the actually-selected path; it does not remove or weaken it, and it does not assert that the
-dependency is satisfied. **Open item:** doc 21's live GATES/PRECODE_REVIEW tab still records ACB-07 as
-`PARTIAL_FIRST_ENGINEER_VERIFIED` with Second Engineer/reviewer path stated as independently unverified.
-That is a specific, currently-live canonical record authored with D-086 already in view; this document
-does not override it. If Brain adopts the selected-path reading above as sufficient, doc 21's ACB-07 row
-needs an explicit Drive-side update to reflect that — this exec-plan alone does not constitute that
-update.
+**Resolution:** the verbatim "repository engineer/reviewer access verified" dependency above is satisfied
+by the selected path — it never required an independently-verified Second Engineer/reviewer identity as
+a precondition; D-086 explicitly rules out automatic dual-model review, and D-067 condition 7 verifies
+access "for the selected execution path," not for every capability role in the abstract. This was
+reconciled at the Drive canonical layer (doc 21 GATES/PRECODE_REVIEW: ACB-07 = `PASS`, matching this
+exact reasoning, with `SECOND_ENGINEER_BACKUP_PATH = NOT_VERIFIED / NON_BLOCKING_UNTIL_ASSIGNED` recorded
+alongside it — not fabricated Codex access) before this document's status was updated below. Second
+Engineer/Codex remains genuinely unassigned and unverified for this task; that fact is preserved, not
+hidden — it is simply no longer a blocking pre-start dependency for the currently selected path.
 
 ### Acceptance criteria
 Fresh canonical-repo install is deterministic; lockfile exists and direct dependency pins match current
@@ -129,8 +132,11 @@ and engineer output is recorded as one of `IMPLEMENTED`, `BLOCKED`, or `ESCALATI
   proposed short-lived branch `eng/p0-024a-runtime-baseline`.
 - **BASE SHA:** `831abb78004b8beb417a99725c9ec13ab753cbc6` — RB-09 transfer head; PR #4 remains
   draft/unmerged and this binding does not authorize implementation or merge.
-- **STATUS:** `PREPARED_NOT_READY` — must not enter `IN_PROGRESS` before live repository/bootstrap/
-  readback and the applicable AC-BUILD-001 gate decision.
+- **STATUS:** `READY` — task packaging is complete (scope, allowed/forbidden changes, acceptance
+  criteria, Definition of Done, required tests/evidence, D-090 applicability mapping, transfer-head
+  binding, and selected execution/review path are all explicit). `READY` is not `IN_PROGRESS`: this task
+  still must not enter `IN_PROGRESS` before Brain's final RB-14 verification and an explicit owner
+  `APPROVE AC-BUILD-001` decision.
 
 ## D-090 Engineering Invariants — Applicability for this task
 
@@ -189,20 +195,13 @@ tests, P0-024A execution (when it eventually runs) may perform only minimal task
 or return `ESCALATION_REQUIRED`; it may not hide the defect or mark an invariant satisfied without
 evidence.
 
-## Current readiness state (ACB-01..08) at materialization time
+## Current readiness state (ACB-01..08) at this update
 
-See the RB-14 AC_BUILD Readiness Bundle delivered alongside this document for the authoritative row-by-row
-PASS/NOT_PASS mapping. Summary, re-verified directly against D-067/D-086 primary text: ACB-01/02/03 PASS;
-ACB-05 PASS (durable exec-plan path/base-head binding + D-090 applicability mapping now exist in this
-document, which was doc 21's own stated remediation criterion for this row — reviewer access is a
-separate ACB-07 concern and is not propagated here); ACB-06 PASS (D-067 condition 6 requires expectations
-to be *defined*, not executed — this document defines them; live CI execution is P0-024A
-implementation/merge-admission scope, not a pre-coding-start requirement). ACB-04 and ACB-07 remain open:
-the task's own DEPENDENCIES field requires "repository engineer/reviewer access verified," and while the
-selected-path reading above (Implementer=Claude verified, Verifier=Brain via proven QA Verification
-Bundle fallback, Second Engineer=optional/unassigned) is well-supported by D-067/D-086 primary text, doc
-21's live GATES/PRECODE_REVIEW tab still records ACB-07 as `PARTIAL_FIRST_ENGINEER_VERIFIED` with an
-independently-unverified Second Engineer/reviewer path as the stated reason. That is a specific,
-currently-live canonical record this document does not unilaterally override; it requires an explicit
-Drive-side reconciliation by Brain, not just a repository-side document, before ACB-04/07 can read PASS.
-AC-BUILD-001 remains `ARMED_NOT_READY`.
+Per Drive canonical doc 21 GATES/PRECODE_REVIEW (reconciled under AC-GOV-096-RB14-SELECTED-PATH,
+independently re-verified against primary source, not accepted on assertion alone): ACB-01/02/03/05/06/07
+read `PASS`; ACB-08 reads `PASS_VISIBLE`. ACB-04 was blocked only on this repository task's status field,
+which this update sets to `READY`. This document does not itself declare ACB-04 `PASS` or emit the
+`⚠️ OWNER ACTION REQUIRED` alert — per D-086, that verdict belongs to Brain's final RB-14 verification
+pass reading this updated task status back from the repository. AC-BUILD-001 remains `ARMED_NOT_READY`
+until that verification completes and, separately, until explicit owner `APPROVE AC-BUILD-001` is
+recorded. This update does not execute P0-024A and does not merge any PR.
