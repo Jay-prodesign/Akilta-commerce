@@ -1,5 +1,6 @@
 import { buildDeadLetterRecord, evaluateAsyncFailure, validateAsyncRetryPolicy, type AsyncRetryPolicy } from '../../packages/events/src/retry-policy';
-import { validateAsyncEventTenantBinding, type AsyncEventEnvelope } from '../../packages/events/src/async-envelope';
+import { validateAsyncEventTenantBinding, type AsyncEventEnvelope, type ServerResolvedAsyncIntegrationBinding } from '../../packages/events/src/async-envelope';
+import { idempotencyKey, internalId, utcTimestamp } from '../../packages/domain/src';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -18,20 +19,20 @@ const policy: AsyncRetryPolicy = {
   ],
 };
 
-const envelope = {
+const envelope: AsyncEventEnvelope = {
   schemaVersion: '1',
   topic: 'ingress.events',
-  eventId: 'evt-1',
-  merchantWorkspaceId: 'ws-a',
-  integrationId: 'int-a',
+  eventId: internalId('evt-1', 'OperationalEvent'),
+  merchantWorkspaceId: internalId('ws-a', 'MerchantWorkspace'),
+  integrationId: internalId('int-a', 'Integration'),
   source: 'provider',
   sourceEventId: 'p-1',
-  observedAt: '2026-08-09T07:00:00Z',
-  correlationId: 'corr-1',
-  idempotencyKey: 'idem-1',
+  observedAt: utcTimestamp('2026-08-09T07:00:00Z'),
+  correlationId: internalId('corr-1', 'Correlation'),
+  idempotencyKey: idempotencyKey('idem-1'),
   payloadType: 'provider.event',
   safePayloadRef: 'safe-ref:evt-1',
-} as unknown as AsyncEventEnvelope;
+};
 
 const binding = { integrationId: envelope.integrationId!, merchantWorkspaceId: envelope.merchantWorkspaceId } as const;
 
@@ -67,16 +68,16 @@ const cases: Array<{ id: string; run: () => void }> = [
     assert(v.status === 'INVALID' && v.errors.some((e) => e.startsWith('RETRY_DELAY_EXCEEDS_POLICY')), 'delay over policy must fail');
   }},
   { id: 'AR-09-DLQ-PRESERVES-TENANT-EVENT-REFS', run: () => {
-    const d = buildDeadLetterRecord({ envelope, serverResolvedIntegration: binding, failureClass: 'SCHEMA_MISMATCH', failedAttempt: 1, quarantinedAt: '2026-08-09T07:01:00Z' as any, policyRef: policy.policyRef });
+    const d = buildDeadLetterRecord({ envelope, serverResolvedIntegration: binding, failureClass: 'SCHEMA_MISMATCH', failedAttempt: 1, quarantinedAt: utcTimestamp('2026-08-09T07:01:00Z'), policyRef: policy.policyRef });
     assert(d?.merchantWorkspaceId === envelope.merchantWorkspaceId && d.originalEventId === envelope.eventId && d.originalTopic === envelope.topic, 'DLQ must preserve tenant/event refs');
   }},
   { id: 'AR-10-DLQ-USES-SAFE-REF-ONLY', run: () => {
-    const d = buildDeadLetterRecord({ envelope, serverResolvedIntegration: binding, failureClass: 'SCHEMA_MISMATCH', failedAttempt: 1, quarantinedAt: '2026-08-09T07:01:00Z' as any, policyRef: policy.policyRef });
+    const d = buildDeadLetterRecord({ envelope, serverResolvedIntegration: binding, failureClass: 'SCHEMA_MISMATCH', failedAttempt: 1, quarantinedAt: utcTimestamp('2026-08-09T07:01:00Z'), policyRef: policy.policyRef });
     const encoded = JSON.stringify(d);
     assert(encoded.includes('safe-ref:evt-1') && !/rawPayload|accessToken|secretValue|authorizationHeader/i.test(encoded), 'DLQ contract must expose safe references only');
   }},
   { id: 'AR-11-EMPTY-SAFE-REF-REFUSED', run: () => {
-    const d = buildDeadLetterRecord({ envelope: { ...envelope, safePayloadRef: '' }, serverResolvedIntegration: binding, failureClass: 'SCHEMA_MISMATCH', failedAttempt: 1, quarantinedAt: '2026-08-09T07:01:00Z' as any, policyRef: policy.policyRef });
+    const d = buildDeadLetterRecord({ envelope: { ...envelope, safePayloadRef: '' }, serverResolvedIntegration: binding, failureClass: 'SCHEMA_MISMATCH', failedAttempt: 1, quarantinedAt: utcTimestamp('2026-08-09T07:01:00Z'), policyRef: policy.policyRef });
     assert(d === null, 'empty safe payload ref must be refused');
   }},
   { id: 'AR-12-NONRETRY-RULE-CANNOT-CARRY-DELAY', run: () => {
@@ -86,25 +87,25 @@ const cases: Array<{ id: string; run: () => void }> = [
   }},
   { id: 'AR-13-INTEGRATION-BOUND-ENVELOPE-REQUIRES-CURRENT-BINDING', run: () => {
     const v = validateAsyncEventTenantBinding({ envelope });
-    const d = buildDeadLetterRecord({ envelope, failureClass: 'SCHEMA_MISMATCH', failedAttempt: 1, quarantinedAt: '2026-08-09T07:01:00Z' as any, policyRef: policy.policyRef });
+    const d = buildDeadLetterRecord({ envelope, failureClass: 'SCHEMA_MISMATCH', failedAttempt: 1, quarantinedAt: utcTimestamp('2026-08-09T07:01:00Z'), policyRef: policy.policyRef });
     assert(v.status === 'INVALID' && v.reason === 'INTEGRATION_BINDING_REQUIRED' && d === null, 'integration-bound event must not be quarantined under unverified tenant binding');
   }},
   { id: 'AR-14-CROSS-WORKSPACE-INTEGRATION-BINDING-REFUSED', run: () => {
-    const wrong = { integrationId: envelope.integrationId!, merchantWorkspaceId: 'ws-b' as any };
+    const wrong: ServerResolvedAsyncIntegrationBinding = { integrationId: envelope.integrationId!, merchantWorkspaceId: internalId('ws-b', 'MerchantWorkspace') };
     const v = validateAsyncEventTenantBinding({ envelope, serverResolvedIntegration: wrong });
-    const d = buildDeadLetterRecord({ envelope, serverResolvedIntegration: wrong, failureClass: 'SCHEMA_MISMATCH', failedAttempt: 1, quarantinedAt: '2026-08-09T07:01:00Z' as any, policyRef: policy.policyRef });
+    const d = buildDeadLetterRecord({ envelope, serverResolvedIntegration: wrong, failureClass: 'SCHEMA_MISMATCH', failedAttempt: 1, quarantinedAt: utcTimestamp('2026-08-09T07:01:00Z'), policyRef: policy.policyRef });
     assert(v.status === 'INVALID' && v.reason === 'INTEGRATION_WORKSPACE_MISMATCH' && d === null, 'cross-workspace binding must fail closed');
   }},
   { id: 'AR-15-INTEGRATION-ID-MISMATCH-REFUSED', run: () => {
-    const wrong = { integrationId: 'int-b' as any, merchantWorkspaceId: envelope.merchantWorkspaceId };
+    const wrong: ServerResolvedAsyncIntegrationBinding = { integrationId: internalId('int-b', 'Integration'), merchantWorkspaceId: envelope.merchantWorkspaceId };
     const v = validateAsyncEventTenantBinding({ envelope, serverResolvedIntegration: wrong });
-    const d = buildDeadLetterRecord({ envelope, serverResolvedIntegration: wrong, failureClass: 'SCHEMA_MISMATCH', failedAttempt: 1, quarantinedAt: '2026-08-09T07:01:00Z' as any, policyRef: policy.policyRef });
+    const d = buildDeadLetterRecord({ envelope, serverResolvedIntegration: wrong, failureClass: 'SCHEMA_MISMATCH', failedAttempt: 1, quarantinedAt: utcTimestamp('2026-08-09T07:01:00Z'), policyRef: policy.policyRef });
     assert(v.status === 'INVALID' && v.reason === 'INTEGRATION_ID_MISMATCH' && d === null, 'wrong Integration ID must fail closed');
   }},
   { id: 'AR-16-INTEGRATIONLESS-INTERNAL-EVENT-NEEDS-NO-BINDING', run: () => {
-    const internalEnvelope = { ...envelope, integrationId: undefined } as unknown as AsyncEventEnvelope;
+    const { integrationId: _droppedIntegrationId, ...internalEnvelope } = envelope;
     const v = validateAsyncEventTenantBinding({ envelope: internalEnvelope });
-    const d = buildDeadLetterRecord({ envelope: internalEnvelope, failureClass: 'SCHEMA_MISMATCH', failedAttempt: 1, quarantinedAt: '2026-08-09T07:01:00Z' as any, policyRef: policy.policyRef });
+    const d = buildDeadLetterRecord({ envelope: internalEnvelope, failureClass: 'SCHEMA_MISMATCH', failedAttempt: 1, quarantinedAt: utcTimestamp('2026-08-09T07:01:00Z'), policyRef: policy.policyRef });
     assert(v.status === 'VALID' && d !== null && d.integrationId === undefined, 'integrationless internal event should remain supported');
   }},
 ];

@@ -10,7 +10,7 @@ const RESERVED_AUTHORITY_PREFIXES = ['permission.', 'tenant.', 'action.authorize
 
 export function isToolAllowed(request: AiGatewayRequest, toolName: string): boolean {
   if (request.toolPolicy.actionAuthority !== 'NONE') return false;
-  const policy = validateRegisteredToolSubset(request.toolPolicy.allowedTools as readonly string[]);
+  const policy = validateRegisteredToolSubset(request.toolPolicy.allowedTools);
   if (policy.result === 'FAIL') return false;
   if (!isCrv1AiToolName(toolName)) return false;
   return policy.allowedTools.includes(toolName);
@@ -36,7 +36,7 @@ export function checkCandidateClaim(request: AiGatewayRequest, claim: CandidateC
 }
 
 export function checkAiCandidate(request: AiGatewayRequest, candidate: AiGatewayCandidate): AiCandidateCheck {
-  const policy = validateRegisteredToolSubset(request.toolPolicy.allowedTools as readonly string[]);
+  const policy = validateRegisteredToolSubset(request.toolPolicy.allowedTools);
   if (policy.result === 'FAIL') {
     return { result: 'FAIL', code: 'AI_OUTPUT_POLICY_FAIL', reason: `Invalid tool policy: ${policy.reason}:${policy.toolName}` };
   }

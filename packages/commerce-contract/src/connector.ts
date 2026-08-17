@@ -103,9 +103,9 @@ export class EvidenceGatedCommerceConnectorStub implements CommerceConnectorAdap
     return this.capabilities;
   }
 
-  public async execute<T>(operationId: ConnectorOperationId, _normalizedInput: unknown): Promise<ConnectorResult<T>> {
+  public execute<T>(operationId: ConnectorOperationId, _normalizedInput: unknown): Promise<ConnectorResult<T>> {
     const capability = this.capabilities.find((item) => item.operationId === operationId);
-    return {
+    return Promise.resolve({
       status: capability?.supportState === 'UNSUPPORTED' ? 'UNSUPPORTED' : 'BLOCKED_BY_ACCESS',
       evidenceRefs: capability?.evidenceRef ? [capability.evidenceRef] : [],
       warnings: [
@@ -115,6 +115,6 @@ export class EvidenceGatedCommerceConnectorStub implements CommerceConnectorAdap
       ],
       retryable: false,
       retrievedAt: this.now(),
-    };
+    });
   }
 }

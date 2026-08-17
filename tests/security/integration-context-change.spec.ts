@@ -47,7 +47,7 @@ const target: ServerResolvedResourceContext = {
   owningOrganizationId: organization,
   merchantWorkspaceId: workspace,
   resourceType: 'merchant_workspace',
-  resourceId: workspace as string,
+  resourceId: workspace,
 };
 
 function basePlan(

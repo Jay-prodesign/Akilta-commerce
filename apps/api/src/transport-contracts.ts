@@ -179,7 +179,7 @@ export function validateClientAuthorityPayload(value: unknown, path = '$'): Clie
     }
     return Object.freeze({ ok: true });
   }
-  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+  for (const [key, nested] of Object.entries(value)) {
     const nextPath = `${path}.${key}`;
     if (FORBIDDEN_CLIENT_AUTHORITY_KEYS.has(key)) return Object.freeze({ ok: false, rejectedPath: nextPath });
     const result = validateClientAuthorityPayload(nested, nextPath);

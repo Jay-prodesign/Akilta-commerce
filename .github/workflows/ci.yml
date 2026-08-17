@@ -2,16 +2,50 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
-    branches: [main]
 
 jobs:
-  bootstrap-check:
+  build-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Bootstrap placeholder
-        run: |
-          echo "RB-08 bootstrap stage: no product source or dependencies admitted yet."
-          echo "This workflow is scaffolding only; install/lint/typecheck/test steps will be added when dependencies are admitted and pinned."
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.0'
+
+      - name: Enable Corepack (pnpm)
+        run: corepack enable
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck (main)
+        run: pnpm run typecheck
+
+      - name: Typecheck (staging/plain-test project)
+        run: pnpm run typecheck:staging
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Dependency-free contract/security suite
+        if: always()
+        run: pnpm run test
+
+      - name: Vitest suite
+        if: always()
+        run: pnpm run test:vitest
+
+      - name: Cloudflare Workers runtime smoke
+        if: always()
+        run: pnpm run test:worker
+
+      - name: Dependency audit
+        if: always()
+        run: pnpm audit
+
+      - name: License scan
+        if: always()
+        run: pnpm licenses list

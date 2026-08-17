@@ -73,12 +73,12 @@ const grant = allowed.grant;
 const scenarios = [
   {
     id: 'TM-14-ORDINARY-MERCHANT-CANNOT-ACTIVATE-BREAK-GLASS',
-    actual: evaluateBreakGlassActivation(activation({ executionContext: { ...base, actorOrganizationType: 'STANDALONE_MERCHANT' } as ExecutionContext })).decision,
+    actual: evaluateBreakGlassActivation(activation({ executionContext: { ...base, actorOrganizationType: 'STANDALONE_MERCHANT' } })).decision,
     expected: 'DENY',
   },
   {
     id: 'TM-14-WEAK-ASSURANCE-CANNOT-ACTIVATE-BREAK-GLASS',
-    actual: evaluateBreakGlassActivation(activation({ executionContext: { ...base, assuranceLevel: 'STEP_UP' } as ExecutionContext })).decision,
+    actual: evaluateBreakGlassActivation(activation({ executionContext: { ...base, assuranceLevel: 'STEP_UP' } })).decision,
     expected: 'DENY',
   },
   {

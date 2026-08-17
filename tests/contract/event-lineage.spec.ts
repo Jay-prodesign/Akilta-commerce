@@ -4,11 +4,8 @@ import {
   money,
   utcTimestamp,
   type CorrelationId,
-  type EvaluationEventId,
-  type EventId,
   type MerchantWorkspaceId,
   type RunId,
-  type UsageEventId,
 } from '../../packages/domain/src';
 import {
   NOT_CLASSIFIED,
@@ -33,7 +30,7 @@ const correlation = internalId('corr-events-1', 'Correlation') as CorrelationId;
 
 function event(id: string, sourceEventId: string, sourceTimestamp: string): OperationalEvent {
   return {
-    eventId: internalId(id, 'OperationalEvent') as EventId,
+    eventId: internalId(id, 'OperationalEvent'),
     merchantWorkspaceId: workspace,
     eventType: 'message.inbound',
     source: 'synthetic',
@@ -52,7 +49,7 @@ const duplicate = event('event-2', 'provider-event-1', '2026-08-07T18:00:00Z');
 const older = event('event-3', 'provider-event-older', '2026-08-07T17:59:00Z');
 
 const evalFirst: EvaluationEvent = {
-  evaluationEventId: internalId('eval-1', 'EvaluationEvent') as EvaluationEventId,
+  evaluationEventId: internalId('eval-1', 'EvaluationEvent'),
   merchantWorkspaceId: workspace,
   runId: run,
   stage: 'FIRST_OUTPUT',
@@ -64,14 +61,14 @@ const evalFirst: EvaluationEvent = {
 };
 const evalCorrection: EvaluationEvent = {
   ...evalFirst,
-  evaluationEventId: internalId('eval-2', 'EvaluationEvent') as EvaluationEventId,
+  evaluationEventId: internalId('eval-2', 'EvaluationEvent'),
   stage: 'CORRECTION',
   safePayload: { answer: 'corrected' },
   occurredAt: utcTimestamp('2026-08-07T18:02:00Z'),
 };
 
 const usage: UsageEvent = {
-  usageEventId: internalId('usage-1', 'UsageEvent') as UsageEventId,
+  usageEventId: internalId('usage-1', 'UsageEvent'),
   merchantWorkspaceId: workspace,
   module: 'agent-assist',
   runId: run,
@@ -99,7 +96,7 @@ let regressionRejected = false;
 try {
   assertEvaluationAppend([evalCorrection], {
     ...evalFirst,
-    evaluationEventId: internalId('eval-3', 'EvaluationEvent') as EvaluationEventId,
+    evaluationEventId: internalId('eval-3', 'EvaluationEvent'),
     stage: 'INPUT',
   });
 } catch {
@@ -134,7 +131,7 @@ export const EVENT_LINEAGE_SCENARIOS = [
   },
   {
     id: 'F-USAGE-01-RETRY-NO-LOGICAL-DOUBLE-COUNT',
-    actual: shouldCountLogicalUsage(new Set([logicalUsageKey(usage)]), { ...usage, usageEventId: internalId('usage-2', 'UsageEvent') as UsageEventId }),
+    actual: shouldCountLogicalUsage(new Set([logicalUsageKey(usage)]), { ...usage, usageEventId: internalId('usage-2', 'UsageEvent') }),
     expected: false,
   },
   {

@@ -5,7 +5,6 @@ import {
   type IntegrationId,
   type InventoryObservationId,
   type MerchantWorkspaceId,
-  type OrderId,
   type ProductId,
   type VariantId,
 } from '../../packages/domain/src';
@@ -50,7 +49,7 @@ const variant: Variant = {
 };
 
 const boundedOrder: Order = {
-  orderId: internalId('order-1', 'Order') as OrderId,
+  orderId: internalId('order-1', 'Order'),
   merchantWorkspaceId: workspace,
   integrationId: integration,
   providerOrderId: 'provider-order-1',

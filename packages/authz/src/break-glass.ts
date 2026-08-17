@@ -96,7 +96,7 @@ function nonEmpty(value: string): boolean {
 }
 
 function timestampMs(value: UtcTimestamp): number {
-  return Date.parse(value as string);
+  return Date.parse(value);
 }
 
 function privilegedContextDenyReason(context: ExecutionContext): BreakGlassDenyReason | null {

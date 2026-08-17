@@ -67,8 +67,10 @@ const FORBIDDEN_GENERAL_PURPOSE_TOOL_NAMES = new Set([
   'unregistered_action',
 ]);
 
+const crv1AiToolNameSet: ReadonlySet<string> = new Set(CRV1_AI_TOOL_NAMES);
+
 export function isCrv1AiToolName(value: string): value is Crv1AiToolName {
-  return toolRegistry.has(value as Crv1AiToolName);
+  return crv1AiToolNameSet.has(value);
 }
 
 export function getAiToolDefinition(value: string): AiToolDefinition | null {

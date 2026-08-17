@@ -2,16 +2,9 @@ import {
   idempotencyKey,
   internalId,
   utcTimestamp,
-  type CorrelationId,
-  type EventId,
-  type FulfillmentId,
   type IntegrationId,
-  type InventoryObservationId,
   type MerchantWorkspaceId,
   type OrderId,
-  type ProductId,
-  type ShipmentId,
-  type VariantId,
 } from '../../packages/domain/src';
 import { productStatus, providerStatus, type Product, type Variant, type InventoryObservation, type Fulfillment, type Shipment } from '../../packages/commerce-contract/src';
 import { shouldAdvanceMonotonicProjection, type OperationalEvent } from '../../packages/events/src/operational';
@@ -22,7 +15,7 @@ const integration = internalId('int-source-time', 'Integration') as IntegrationI
 const observedAt = utcTimestamp('2026-08-08T08:00:00Z');
 
 const product: Product = {
-  productId: internalId('product-source-time', 'Product') as ProductId,
+  productId: internalId('product-source-time', 'Product'),
   merchantWorkspaceId: workspace,
   integrationId: integration,
   providerProductId: 'provider-product',
@@ -33,7 +26,7 @@ const product: Product = {
 };
 
 const variant: Variant = {
-  variantId: internalId('variant-source-time', 'Variant') as VariantId,
+  variantId: internalId('variant-source-time', 'Variant'),
   productId: product.productId,
   integrationId: integration,
   providerVariantId: 'provider-variant',
@@ -42,7 +35,7 @@ const variant: Variant = {
 };
 
 const inventory: InventoryObservation = {
-  inventoryObservationId: internalId('inventory-source-time', 'InventoryObservation') as InventoryObservationId,
+  inventoryObservationId: internalId('inventory-source-time', 'InventoryObservation'),
   variantId: variant.variantId,
   trackingState: 'UNKNOWN',
   providerAvailability: 'UNKNOWN',
@@ -55,25 +48,25 @@ const inventory: InventoryObservation = {
 
 const orderId = internalId('order-source-time', 'Order') as OrderId;
 const fulfillment: Fulfillment = {
-  fulfillmentId: internalId('fulfillment-source-time', 'Fulfillment') as FulfillmentId,
+  fulfillmentId: internalId('fulfillment-source-time', 'Fulfillment'),
   orderId,
   status: providerStatus('UNKNOWN'),
   observedAt,
 };
 const shipment: Shipment = {
-  shipmentId: internalId('shipment-source-time', 'Shipment') as ShipmentId,
+  shipmentId: internalId('shipment-source-time', 'Shipment'),
   orderId,
   status: providerStatus('UNKNOWN'),
   observedAt,
 };
 
 const event: OperationalEvent = {
-  eventId: internalId('event-source-time', 'OperationalEvent') as EventId,
+  eventId: internalId('event-source-time', 'OperationalEvent'),
   merchantWorkspaceId: workspace,
   eventType: 'provider.status',
   source: 'provider-without-origin-time',
   observedAt,
-  correlationId: internalId('corr-source-time', 'Correlation') as CorrelationId,
+  correlationId: internalId('corr-source-time', 'Correlation'),
   idempotencyKey: idempotencyKey('idem-source-time'),
   processingState: 'RECEIVED',
 };
