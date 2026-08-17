@@ -2,3 +2,9 @@ packages:
   - 'apps/*'
   - 'packages/*'
   - 'connectors/*'
+allowBuilds:
+  esbuild: true
+  workerd: true
+overrides:
+  undici: '>=7.29.0'
+  esbuild: '>=0.24.3'

@@ -13,7 +13,7 @@ import {
   type ShipmentId,
   type VariantId,
 } from '../../packages/domain/src';
-import { productStatus, providerStatus, type Product, type Variant, type InventoryObservation, type Fulfillment, type Shipment } from '../../packages/commerce-contract/src-shim';
+import { productStatus, providerStatus, type Product, type Variant, type InventoryObservation, type Fulfillment, type Shipment } from '../../packages/commerce-contract/src';
 import { shouldAdvanceMonotonicProjection, type OperationalEvent } from '../../packages/events/src/operational';
 import type { AsyncEventEnvelope } from '../../packages/events/src/async-envelope';
 

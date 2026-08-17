@@ -45,7 +45,7 @@ const variant: Variant = {
   providerVariantId: 'provider-variant-1',
   optionPairs: [exactOptionPair('Women’s Size', 'US 7 / EU 38')],
   priceMoney: money(1299n, 'USD'),
-  sourceTimestamp: product.sourceTimestamp,
+  sourceTimestamp: product.sourceTimestamp!,
   observedAt: product.observedAt,
 };
 

@@ -40,7 +40,7 @@ const request = {
   conversationContext: { messages: [] },
   responsePolicyRef: 'policy-1',
   toolPolicy: { allowedTools: ['get_product'], actionAuthority: 'NONE' },
-} as AiGatewayRequest;
+} as unknown as AiGatewayRequest;
 assert(isToolAllowed(request, 'get_product'), 'registered-allowed-tool-passes');
 assert(!isToolAllowed(request, 'get_order'), 'registered-but-unexposed-fails');
 assert(!isToolAllowed(request, 'made_up_tool'), 'unregistered-candidate-fails');

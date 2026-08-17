@@ -16,8 +16,13 @@ assert(invalid.decision === 'REJECT', 'IF-01 invalid authenticity must reject be
 const unresolvedTenant = decideWebhookIngress({ authenticity: 'VERIFIED', integrationId: integration });
 assert(unresolvedTenant.decision === 'REJECT' && unresolvedTenant.reason === 'TENANT_NOT_RESOLVED', 'tenant must be server resolved');
 
-const valid = decideWebhookIngress({ authenticity: 'VERIFIED', merchantWorkspaceId: workspace, integrationId: integration });
-assert(valid.decision === 'ALLOW_NORMALIZE_AND_ENQUEUE', 'verified + tenant/integration may proceed to normalized enqueue');
+const valid = decideWebhookIngress({
+  authenticity: 'VERIFIED',
+  merchantWorkspaceId: workspace,
+  integrationId: integration,
+  serverResolvedIntegration: { integrationId: integration, merchantWorkspaceId: workspace },
+});
+assert(valid.decision === 'ALLOW_NORMALIZE_AND_ENQUEUE', 'verified + tenant/integration + current binding may proceed to normalized enqueue');
 
 const error = safeHttpErrorEnvelope({
   code: 'AUTH_PERMISSION_DENIED',

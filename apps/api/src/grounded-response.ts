@@ -5,7 +5,7 @@ import type {
   ServerResolvedResourceContext,
 } from '../../../packages/authz/src';
 import type { Permission } from '../../../packages/authz/src/permissions';
-import { checkAiCandidate } from '../../../packages/ai-gateway/src';
+import { checkAiCandidate, validateRegisteredToolSubset } from '../../../packages/ai-gateway/src';
 import type {
   AiGateway,
   AiGatewayCandidate,
@@ -267,6 +267,16 @@ export async function orchestrateGroundedResponse(
     return { outcome: 'HANDOFF_REQUIRED', code: truthError, approvedFactSet: factSet };
   }
 
+  const toolSubset = validateRegisteredToolSubset(input.allowedAiTools);
+  if (toolSubset.result === 'FAIL') {
+    await appendEvaluation(deps, {
+      stage: 'CHECK',
+      safePayload: { result: toolSubset.reason, toolName: toolSubset.toolName },
+      errorCode: 'AI_OUTPUT_POLICY_FAIL',
+    });
+    return { outcome: 'HANDOFF_REQUIRED', code: 'AI_OUTPUT_POLICY_FAIL', approvedFactSet: factSet };
+  }
+
   const aiRequest = {
     merchantWorkspaceId: input.inboundEvent.merchantWorkspaceId,
     runId: input.executionContext.runId,
@@ -274,7 +284,7 @@ export async function orchestrateGroundedResponse(
     approvedFactSet: factSet,
     conversationContext: input.safeConversationContext,
     responsePolicyRef: input.responsePolicyRef,
-    toolPolicy: { allowedTools: input.allowedAiTools, actionAuthority: 'NONE' as const },
+    toolPolicy: { allowedTools: toolSubset.allowedTools, actionAuthority: 'NONE' as const },
   };
   const candidate = await deps.aiGateway.generateResponse(aiRequest);
   await appendEvaluation(deps, {
