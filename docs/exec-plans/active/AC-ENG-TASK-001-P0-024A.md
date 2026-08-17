@@ -67,6 +67,31 @@ this document — does not itself consume or satisfy AC-BUILD-001.
 - **RISK CLASS:** HIGH — runtime/toolchain evidence can expose dependency, CI and environment defects,
   but external production effects are forbidden.
 
+#### Selected execution / review path (D-067 condition 7 / D-086)
+
+Per D-086, canonical roles are capability roles and "no task receives automatic dual-model review";
+Second Engineer provides "selective independent review... when applicable," not a mandatory second
+identity on every task. The path selected for this task is:
+
+- **Implementer (First Engineer) = Claude.** Access verified: live branch/commit/push/PR evidence exists
+  across RB-08, RB-09 and this exec-plan (PR #5).
+- **Verifier = AI Commerce Brain**, via the D-086 QA Verification Bundle fallback transport when Brain
+  lacks direct private-repository access. This transport is not hypothetical — it is the same mechanism
+  already used and accepted for RB-09 verification.
+- **Second Engineer (Codex) = optional/selective backup reviewer, not currently assigned.** Its
+  independent GitHub read/review path is `NOT_VERIFIED`; per D-086 this is non-blocking unless/until it
+  is explicitly assigned to this task or a risk/defect signal triggers selective review.
+  `SECOND_ENGINEER_BACKUP_PATH = NOT_VERIFIED / NON_BLOCKING_UNTIL_ASSIGNED`.
+
+This clarification narrows the verbatim "repository engineer/reviewer access verified" dependency above
+to the actually-selected path; it does not remove or weaken it, and it does not assert that the
+dependency is satisfied. **Open item:** doc 21's live GATES/PRECODE_REVIEW tab still records ACB-07 as
+`PARTIAL_FIRST_ENGINEER_VERIFIED` with Second Engineer/reviewer path stated as independently unverified.
+That is a specific, currently-live canonical record authored with D-086 already in view; this document
+does not override it. If Brain adopts the selected-path reading above as sufficient, doc 21's ACB-07 row
+needs an explicit Drive-side update to reflect that — this exec-plan alone does not constitute that
+update.
+
 ### Acceptance criteria
 Fresh canonical-repo install is deterministic; lockfile exists and direct dependency pins match current
 authority; typecheck/lint/applicable existing unit/contract/security suites run with exact results; local
@@ -167,7 +192,17 @@ evidence.
 ## Current readiness state (ACB-01..08) at materialization time
 
 See the RB-14 AC_BUILD Readiness Bundle delivered alongside this document for the authoritative row-by-row
-PASS/NOT_PASS mapping. Summary: ACB-01/02/03 PASS; ACB-04/05 remain `PREPARED_NOT_READY` even after this
-materialization (durable binding now exists, but READY/PASS promotion requires a dependency review this
-document does not itself perform); ACB-06 `PASS_SPECIFIED` (live CI pending); ACB-07
-`PARTIAL_FIRST_ENGINEER_VERIFIED`; ACB-08 `PASS_VISIBLE`. AC-BUILD-001 remains `ARMED_NOT_READY`.
+PASS/NOT_PASS mapping. Summary, re-verified directly against D-067/D-086 primary text: ACB-01/02/03 PASS;
+ACB-05 PASS (durable exec-plan path/base-head binding + D-090 applicability mapping now exist in this
+document, which was doc 21's own stated remediation criterion for this row — reviewer access is a
+separate ACB-07 concern and is not propagated here); ACB-06 PASS (D-067 condition 6 requires expectations
+to be *defined*, not executed — this document defines them; live CI execution is P0-024A
+implementation/merge-admission scope, not a pre-coding-start requirement). ACB-04 and ACB-07 remain open:
+the task's own DEPENDENCIES field requires "repository engineer/reviewer access verified," and while the
+selected-path reading above (Implementer=Claude verified, Verifier=Brain via proven QA Verification
+Bundle fallback, Second Engineer=optional/unassigned) is well-supported by D-067/D-086 primary text, doc
+21's live GATES/PRECODE_REVIEW tab still records ACB-07 as `PARTIAL_FIRST_ENGINEER_VERIFIED` with an
+independently-unverified Second Engineer/reviewer path as the stated reason. That is a specific,
+currently-live canonical record this document does not unilaterally override; it requires an explicit
+Drive-side reconciliation by Brain, not just a repository-side document, before ACB-04/07 can read PASS.
+AC-BUILD-001 remains `ARMED_NOT_READY`.
