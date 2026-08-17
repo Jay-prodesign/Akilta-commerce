@@ -200,6 +200,31 @@ tests, P0-024A execution (when it eventually runs) may perform only minimal task
 or return `ESCALATION_REQUIRED`; it may not hide the defect or mark an invariant satisfied without
 evidence.
 
+## Implementation checkpoint (D-086 resume/takeover record)
+
+- **BRANCH:** `eng/p0-024a-runtime-baseline`
+- **BASE SHA:** `831abb78004b8beb417a99725c9ec13ab753cbc6` (RB-09 transfer head, confirmed identical to
+  `origin/eng/rb-09-staged-transfer` before branching)
+- **CHECKPOINT / IMPLEMENTATION SHA:** `b19021c9a8f2521a8a215ac3c16449375da72b42` (single commit)
+- **PR:** #6, draft, open, unmerged, `mergeable_state: clean`, base `eng/rb-09-staged-transfer`
+- **STATUS:** `IMPLEMENTED`
+- **COMPLETED WORK:** deterministic `pnpm install` + generated/frozen-lockfile-verified `pnpm-lock.yaml`;
+  strict typecheck (main + staging) at 0 errors after fixing real pre-existing defects (not silenced);
+  lint tooling config bug fixed (was crash-parsing 64 files) — lint now runs, reports 101 pre-existing
+  findings (recorded, not bulk-fixed); 39/39 dependency-free tests PASS (one real stale-assertion defect
+  found and fixed); 6/6 vitest PASS; 1/1 real Cloudflare Workers runtime smoke PASS; `pnpm audit` clean
+  (10 real vulnerabilities found and remediated — 1 direct version bump, 2 transitive pins); full-tree
+  license scan recorded in `THIRD_PARTY_NOTICES.md`.
+- **RESTRICTIONS / FORBIDDEN CHANGES:** all held — no production deployment, no provider-authentic calls,
+  no secrets, no Cloudflare account/Hyperdrive/Queue provisioning, no customer data, no AKILTA writes, no
+  CR-V1/architecture change, no merge of PR #4/#5/#6.
+- **TESTS / CHECKS:** see PR #6 description and the D-086 QA Verification Bundle delivered alongside this
+  update for the exact per-check results.
+- **BLOCKERS:** none blocking `IMPLEMENTED` status. Pre-existing lint (101 findings) and format (129
+  files) debt recorded as open, not blocking — out of this task's scope to bulk-resolve.
+- **NEXT EXACT ACTION:** Brain QA of PR #6 per D-086; this engineer's output ceiling is `IMPLEMENTED`, not
+  `VERIFIED`/`COMPLETED`.
+
 ## Current readiness state (ACB-01..08) at this update
 
 Per Drive canonical doc 21 GATES/PRECODE_REVIEW (reconciled under AC-GOV-096-RB14-SELECTED-PATH,
