@@ -20,14 +20,19 @@ This binding is a documentation reference only. `831abb78004b8beb417a99725c9ec13
 ancestor of this branch's history; it identifies the exact transfer state this task contract applies
 against, per D-090/ACB-04/ACB-05 requirements.
 
-## One-time coding-start gate
+## One-time coding-start gate — CONSUMED
 
-Per D-067/AC-BUILD-001: this task's status below is `READY`, but `READY` is not `IN_PROGRESS`. The task
-must not enter `IN_PROGRESS` before (a) all of ACB-01..ACB-08 read PASS per Brain's final RB-14
-verification, and (b) an explicit owner `APPROVE AC-BUILD-001` decision is recorded. Repository/bootstrap/
-task-packaging preparation — including this document and this status update — does not itself consume or
-satisfy AC-BUILD-001, and does not itself trigger the owner-approval alert. That determination belongs to
-Brain's final RB-14 verification pass, not to this document.
+Per D-067/AC-BUILD-001, canonical Drive record (00 ACTIVE EXECUTION SNAPSHOT, write-lock
+`AC-GOV-098-ACBUILD-CONSUME`): `AC_BUILD: CONSUMED / OWNER_APPROVED_2026-08-17T11:01+03:00`. Brain closed
+RB-14 (`AC-GOV-097-RB14-FINAL`, ACB-01..ACB-08 exact PASS against this document's `READY` state at head
+`b646ca6a40942b07ab16fdca1e8a14c5b86cd3c7`) and then recorded the owner's exact `APPROVE AC-BUILD-001`.
+This was independently verified against the live Drive write-lock and Command Center documents before
+this task transitioned below — not accepted on assertion alone. The Drive record itself states
+`IMPLEMENTATION_STARTED: NO until First Engineer returns live repo evidence of the READY -> IN_PROGRESS
+transition; owner approval authorizes dispatch but does not fabricate repo state.` This document, and the
+implementation branch/checkpoints described below, are that returned evidence.
+
+RB-08/RB-09/RB-14 are not reopened by this update, and AC-BUILD-001 approval is not requested again.
 
 ## Task Contract (verbatim from canonical Drive authority)
 
@@ -128,15 +133,15 @@ and engineer output is recorded as one of `IMPLEMENTED`, `BLOCKED`, or `ESCALATI
   risk/defect signals require it.
 - **CURRENT OPERATIONAL WORKER:** Claude (preferred First Engineer); Codex (preferred Second Engineer);
   mapping remains replaceable under D-086 — capability role is authoritative, not vendor name.
-- **BRANCH / WORKTREE:** to be created only after this task reaches READY and AC-BUILD-001 is approved;
-  proposed short-lived branch `eng/p0-024a-runtime-baseline`.
+- **BRANCH / WORKTREE:** `eng/p0-024a-runtime-baseline`, branched from RB-09 transfer head
+  `831abb78004b8beb417a99725c9ec13ab753cbc6` (not from `main`) so the staged source this task installs,
+  typechecks and tests is the actual RB-09-transferred code.
 - **BASE SHA:** `831abb78004b8beb417a99725c9ec13ab753cbc6` — RB-09 transfer head; PR #4 remains
-  draft/unmerged and this binding does not authorize implementation or merge.
-- **STATUS:** `READY` — task packaging is complete (scope, allowed/forbidden changes, acceptance
-  criteria, Definition of Done, required tests/evidence, D-090 applicability mapping, transfer-head
-  binding, and selected execution/review path are all explicit). `READY` is not `IN_PROGRESS`: this task
-  still must not enter `IN_PROGRESS` before Brain's final RB-14 verification and an explicit owner
-  `APPROVE AC-BUILD-001` decision.
+  draft/unmerged and this binding does not authorize merge.
+- **STATUS:** `IN_PROGRESS` — AC-BUILD-001 consumed (owner-approved 2026-08-17T11:01+03:00), work
+  dispatched onto `eng/p0-024a-runtime-baseline`. See the D-086 QA Verification Bundle delivered alongside
+  this update for exact checkpoint evidence. Engineer output ceiling remains `IMPLEMENTED` /
+  `BLOCKED` / `ESCALATION_REQUIRED` — never `VERIFIED`/`COMPLETED`.
 
 ## D-090 Engineering Invariants — Applicability for this task
 
