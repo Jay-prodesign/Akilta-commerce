@@ -1,0 +1,147 @@
+{
+  "schema_version": "1.0",
+  "authority": [
+    "19 — COMMERCIAL READY V1 SCOPE FREEZE & EXECUTION READINESS v1.0",
+    "24 — CR-V1 TEST, RELEASE, INCIDENT & EVIDENCE PLAN v0.1",
+    "31 — AUTHENTICATION PROVIDER STRATEGY & SELECTION GATE v0.1",
+    "packages/domain/src/evidence-maturity.ts",
+    "packages/domain/src/release-gate.ts"
+  ],
+  "purpose": "Fail-closed owned/internal dogfood evidence collection template for frozen CR-V1. This file cannot itself create E4 PASS.",
+  "overall_state": "NOT_RUN",
+  "target_maturity": "E4_OWNED_DOGFOOD_PASS",
+  "secrets_or_customer_pii_allowed": false,
+  "dogfood_identity": {
+    "dogfood_ref": null,
+    "merchant_workspace_safe_ref": null,
+    "frozen_core_version_ref": null,
+    "dogfood_plan_ref": null,
+    "bounded_period_or_volume_ref": null,
+    "threshold_policy": "FREEZE_WITH_DOGFOOD_PLAN_NOT_GUESSED"
+  },
+  "entry_gates": [
+    {
+      "id": "E4-ENTRY-01",
+      "criterion": "provider_authentic_e3_for_claimed_operation_set",
+      "state": "NOT_RUN",
+      "required_maturity": "E3_PROVIDER_AUTHENTIC_PASS",
+      "evidence_refs": []
+    },
+    {
+      "id": "E4-ENTRY-02",
+      "criterion": "critical_correctness_and_security_prerequisites_clear",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    },
+    {
+      "id": "E4-ENTRY-03",
+      "criterion": "runtime_reliability_and_recovery_execution_surface_available_for_dogfood",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    },
+    {
+      "id": "E4-ENTRY-04",
+      "criterion": "bounded_internal_authentication_perimeter_available",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    },
+    {
+      "id": "E4-ENTRY-05",
+      "criterion": "frozen_cr_v1_scope_and_known_limitations_baseline_recorded",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    }
+  ],
+  "exit_criteria": [
+    {
+      "id": "E4-EXIT-01",
+      "criterion": "required_core_flows_run_for_bounded_period_or_volume_sufficient_to_observe_retries_handoffs_corrections_and_cost",
+      "state": "NOT_RUN",
+      "evidence_refs": [],
+      "metric_refs": []
+    },
+    {
+      "id": "E4-EXIT-02",
+      "criterion": "no_unresolved_sev0_or_sev1",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    },
+    {
+      "id": "E4-EXIT-03",
+      "criterion": "critical_correctness_and_security_gates_pass",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    },
+    {
+      "id": "E4-EXIT-04",
+      "criterion": "provider_health_and_revocation_behavior_observed_or_tested",
+      "state": "NOT_RUN",
+      "evidence_refs": [],
+      "metric_refs": []
+    },
+    {
+      "id": "E4-EXIT-05",
+      "criterion": "merchant_operator_can_operate_onboarding_inbox_rules_without_continuous_developer_intervention",
+      "state": "NOT_RUN",
+      "evidence_refs": [],
+      "metric_refs": []
+    },
+    {
+      "id": "E4-EXIT-06",
+      "criterion": "known_limitations_documented",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    }
+  ],
+  "operational_evidence_to_capture": [
+    "realistic_end_to_end_flow_runs",
+    "retry_and_duplicate_behavior",
+    "handoff_and_human_takeover",
+    "merchant_correction_and_rule_evaluation",
+    "provider_health_and_revocation",
+    "incident_and_severity_history",
+    "runtime_reliability",
+    "recovery_and_reconciliation",
+    "usage_and_cost",
+    "operator_support_burden",
+    "known_limitations"
+  ],
+  "incident_policy": {
+    "open_sev0_or_sev1_blocks_promotion": true,
+    "stop_conditions_follow_artifact_24": true,
+    "incident_refs": []
+  },
+  "e4_evidence_record_projection": {
+    "testId": "CRV1-E4-OWNED-DOGFOOD",
+    "requirementIds": ["CRV1-OWNED-DOGFOOD"],
+    "capability": "CR-V1 WhatsApp Support & Sales",
+    "resultState": "NOT_RUN",
+    "maturity": "E4_OWNED_DOGFOOD_PASS",
+    "evidenceRefs": [],
+    "providerRef": null,
+    "exactOperationRef": null,
+    "authEvidenceRef": null,
+    "dogfoodRef": null
+  },
+  "promotion_rules": {
+    "e4_pass_requires_all_entry_gates_pass": true,
+    "e4_pass_requires_all_exit_criteria_pass": true,
+    "e4_pass_requires_typed_evidence_record_valid": true,
+    "e4_pass_requires_provider_auth_and_exact_operation_refs": true,
+    "e4_pass_requires_dogfood_ref": true,
+    "e4_pass_requires_nonempty_evidence_refs": true,
+    "e4_pass_forbidden_if_open_sev0_or_sev1": true,
+    "e4_pass_does_not_imply_e5_or_e6": true
+  },
+  "current_blockers": [
+    "PROVIDER_AUTHENTIC_E3_PENDING",
+    "RUNTIME_RELIABILITY_RECOVERY_PENDING",
+    "OWNED_DOGFOOD_NOT_YET_RUN"
+  ],
+  "notes": [
+    "Do not put credentials, provider secrets or customer PII in this template.",
+    "Dogfood may use a bounded secure internal authentication perimeter; external design-partner auth requirements remain a later gate.",
+    "Exact dogfood duration/volume thresholds freeze with the dogfood plan after executable baseline exists; they are not guessed here.",
+    "E4 PASS is operational evidence only and cannot imply external design-partner E5 or Commercial Ready E6."
+  ]
+}

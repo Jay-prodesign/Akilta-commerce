@@ -1,0 +1,134 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-08T12:53:00+03:00",
+  "governance": [
+    "D-037",
+    "D-042",
+    "D-046",
+    "D-050"
+  ],
+  "module": "Customer Intelligence",
+  "review_stage": "PREPARED_PHASE_ENTRY_RECHECK",
+  "status": "PROVISIONAL_CONTEXT_CORE_WITH_CRM_SEGMENTATION_UTILITY_DOWNGRADE",
+  "cr_v1_boundary": {
+    "keep_now": [
+      "inbound customer identity resolution",
+      "compact Customer Context card",
+      "authorized open/recent order context",
+      "verified product/variant/stock/size-guide/policy retrieval",
+      "AI suggested reply with agent-controlled send"
+    ],
+    "post_v1_only": [
+      "full Customer 360",
+      "advanced behavioral segmentation",
+      "predictive intelligence beyond evidence-backed bounded signals",
+      "cross-channel lifecycle scoring",
+      "CRM/CDP replacement"
+    ],
+    "rule": "This admission preparation must not expand frozen CR-V1 Customer Context + Agent Assist scope."
+  },
+  "not_a_claim": [
+    "not Phase 2C entry PASS",
+    "not a full CRM/CDP build authorization",
+    "not provider customer-data API support",
+    "not predictive-model accuracy evidence",
+    "not production-ready"
+  ],
+  "current_native_baseline": {
+    "shopify": {
+      "evidence_level": "E2_OFFICIAL_PUBLIC",
+      "capability": "Dynamic rule-based customer segments, broad customer filters, RFM analysis and predicted-spend tiers are native platform capabilities; customer profiles expose purchase-history context.",
+      "sources": [
+        "https://help.shopify.com/en/manual/customers/customer-segmentation",
+        "https://help.shopify.com/en/manual/customers/customer-segmentation/predicted-spend-tier",
+        "https://help.shopify.com/tr/manual/reports-and-analytics/shopify-reports/report-types/customers-reports"
+      ]
+    },
+    "ikas": {
+      "evidence_level": "E2_OFFICIAL_PUBLIC",
+      "capability": "Dynamic customer segments can be built from behavioral/property criteria and used for targeted marketing; customer groups and marketing-consent/account-state filters are available.",
+      "sources": [
+        "https://support.ikas.com/tr/musteri-segmenti-olusturma",
+        "https://support.ikas.com/tr/musteri-gruplari",
+        "https://support.ikas.com/tr/musteriler-sayfasi"
+      ]
+    },
+    "ticimax": {
+      "evidence_level": "E2_OFFICIAL_PUBLIC_HIGH_LEVEL",
+      "capability": "Ticimax markets customer segmentation and personalized campaign automation based on customer characteristics/behavior. Exact customer intelligence API/schema behavior is not admitted by this marketing-level evidence.",
+      "source": "https://www.ticimax.com/pazarlama-otomasyonlari/"
+    },
+    "ideasoft": {
+      "evidence_level": "E2_OFFICIAL_PUBLIC",
+      "capability": "Member/dealer groups support group-specific pricing, campaigns and discounts; IdeaSoft Email states customer/product CRM integration plus segmentation and dynamic content. This does not establish advanced predictive Customer 360 as first-party platform capability.",
+      "sources": [
+        "https://www.ideasoft.com.tr/yardim/uye-bayi-yonetimi-sekmesi/",
+        "https://www.ideasoft.com.tr/sayfa/ideasoft-e-posta/"
+      ]
+    },
+    "tsoft": {
+      "evidence_level": "E2_OFFICIAL_PUBLIC",
+      "capability": "T-Soft supports member segmentation with up to 100 segments and web-service creation/member association, plus member groups for differentiated pricing/content. Partner integrations also advertise unified profiles/real-time behavioral targeting; partner capability is not relabeled first-party core.",
+      "sources": [
+        "https://help.tsoft.com.tr/tr/article/detail/uye-segmentleri",
+        "https://help.tsoft.com.tr/destek/uye-gruplari"
+      ]
+    },
+    "woocommerce": {
+      "evidence_level": "E2_OFFICIAL_PUBLIC",
+      "capability": "WooCommerce Analytics Customers Report exposes registered/guest customer purchase context and filters such as order count, total spend, AOV, registration and last active; broader CRM/CDP behavior is extension-dependent and not assumed.",
+      "source": "https://woocommerce.com/document/woocommerce-analytics/customers-report/"
+    }
+  },
+  "commoditized_or_utility": [
+    "basic customer profile/history display",
+    "manual/static customer groups",
+    "rule-based customer segmentation",
+    "basic spend/order-count filters",
+    "standard campaign audience lists",
+    "generic CRM-like notes/tags if already supplied by platform/helpdesk"
+  ],
+  "candidate_durable_core": [
+    "provider-independent CustomerIdentity resolution with source/evidence lineage",
+    "verified customer-to-order access and deterministic disclosure authorization",
+    "cross-channel Customer Context assembled from capability-gated commerce/support sources",
+    "explicit freshness/conflict/UNKNOWN handling for customer facts",
+    "consent/suppression/channel eligibility as authority, not model inference",
+    "merchant-defined rules and purpose-scoped use of customer context",
+    "derived customer signals with feature/source/version/explanation and confidence boundaries",
+    "segment portability layer that can consume provider-native segments without making them universal truth",
+    "Agency Managed multi-client isolation and exception-oriented customer operations",
+    "evaluation/outcome lineage connecting recommendation/action to correction, handoff and business result"
+  ],
+  "predictive_intelligence_policy": {
+    "provider_native_predictions": "INTEGRATE_AS_EVIDENCE_BOUND_SIGNAL_WHERE_ALLOWED",
+    "own_prediction_models": "DO_NOT_BUILD_BY_DEFAULT",
+    "derived_signal_requirements": [
+      "documented source features",
+      "time/version lineage",
+      "clear explanation/limitations",
+      "tenant and consent policy",
+      "offline/holdout evaluation before customer-impacting use",
+      "no sensitive-attribute inference",
+      "no deterministic factual claim from a probabilistic score"
+    ]
+  },
+  "build_policy": {
+    "basic_profiles_and_segments": "DOWNGRADE_TO_UTILITY_OR_NATIVE_INTEGRATION",
+    "full_crm_or_cdp": "DO_NOT_REINVENT",
+    "cross_platform_customer_context": "KEEP_SHARED_CORE",
+    "identity_disclosure_consent_governance": "KEEP_CORE",
+    "predictive_scoring": "PROVISIONAL_INTEGRATE_FIRST_EVALUATION_GATED",
+    "provider_specific_customer_mapping": "E3_PROVIDER_AUTHENTIC_GATE_REQUIRED"
+  },
+  "open_evidence": [
+    "target-provider E3 customer/order identity and disclosure fields",
+    "exact consent/marketing-permission semantics and revocation behavior by provider/channel",
+    "cross-platform identity merge/collision behavior",
+    "real merchant need for cross-platform Customer Context beyond native profiles",
+    "predictive/derived signal accuracy, calibration, drift and business outcome evidence",
+    "privacy/retention/purpose-limitation review for advanced Customer Intelligence",
+    "willingness-to-pay and support burden versus platform-native segmentation/CRM tooling"
+  ],
+  "phase_entry_recommendation": "KEEP CR-V1 Customer Context + Agent Assist unchanged. For Post-V1 Phase 2C, do not build a full CRM/CDP or generic segmentation engine. Productize only the provider-independent identity/context/disclosure/consent/evidence/evaluation layer that remains valuable across platforms; integrate native segmentation/prediction primitives where adequate and evidence-addressable."
+}

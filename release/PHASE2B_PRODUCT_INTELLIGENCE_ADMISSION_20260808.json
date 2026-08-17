@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-08T12:51:00+03:00",
+  "governance": ["D-037", "D-041", "D-046", "D-050"],
+  "module": "Catalog / Product Intelligence",
+  "review_stage": "PREPARED_PHASE_ENTRY_RECHECK",
+  "status": "PROVISIONAL_CORE_CANDIDATE_WITH_NATIVE_UTILITY_DOWNGRADE",
+  "not_a_claim": [
+    "not Phase 2B entry PASS",
+    "not cross-project productization",
+    "not FVCKU validation",
+    "not target-provider connector support",
+    "not production-ready"
+  ],
+  "owned_reference_evidence": {
+    "source_project": "BPC",
+    "registry": "16/REFERENCE_LEARNING",
+    "current_reference_rows": [
+      "RL-BPC-001 Commerce Action Execution Contract / Write Integrity",
+      "RL-BPC-002 Evidence / Truth Resolver / Field Authority",
+      "RL-BPC-003 Media Evidence / Asset Identity & Rights",
+      "RL-BPC-004 AI Output Evaluation / customer-language and batch QA",
+      "RL-BPC-005 Evaluation Lineage Store",
+      "RL-BPC-007 Merchandising Integrity",
+      "RL-BPC-008 Inventory Truth / Availability Semantics"
+    ],
+    "current_generalization_limit": "BPC_REFERENCE_VALIDATED_ONLY; FVCKU/second-platform evidence and source-project completion re-review remain required before broad productization claims."
+  },
+  "current_native_baseline": {
+    "shopify": {
+      "evidence_level": "E2_OFFICIAL_PUBLIC",
+      "capability": "Shopify Magic generates product-description suggestions from merchant-provided details; Shopify explicitly warns generated content can include unsupported benefits/facts and requires merchant review for accuracy.",
+      "source": "https://help.shopify.com/en/manual/products/details/product-descriptions/shopify-magic"
+    },
+    "ticimax": {
+      "evidence_level": "E2_OFFICIAL_PUBLIC",
+      "capability": "Ticimax AI provides AI-generated product descriptions and SEO-oriented content generation.",
+      "source": "https://www.ticimax.com/ticimax-ai/"
+    },
+    "ideasoft": {
+      "evidence_level": "E2_OFFICIAL_PUBLIC",
+      "capability": "IdeaSoft offers an AI Product Content Generator for SEO/sales-oriented product descriptions with panel review/edit/publish flow.",
+      "source": "https://www.ideasoft.com.tr/sayfa/urun-icerik-olusturucu/"
+    },
+    "tsoft": {
+      "evidence_level": "E2_OFFICIAL_PUBLIC",
+      "capability": "T-Soft Nova AI generates product descriptions in the product-management flow and applies accepted content to product records.",
+      "source": "https://help.tsoft.com.tr/t-soft-nova-ai-yapay-zeka-destekli-urun-icerik-yonetimi"
+    },
+    "ikas": {
+      "evidence_level": "NOT_ESTABLISHED_IN_THIS_BOUNDED_RECHECK",
+      "capability": "No equivalent first-party product-description generator is asserted from this bounded evidence set; absence is not claimed."
+    }
+  },
+  "commoditized_or_utility": [
+    "generic product-description generation",
+    "generic SEO/category copy generation",
+    "basic tone rewriting",
+    "single-product AI text drafting without evidence authority or execution governance"
+  ],
+  "candidate_durable_core": [
+    "field-level evidence/authority resolution with explicit UNKNOWN handling",
+    "identity-bound current-state validation before writes",
+    "controlled bounded mutation with protected fields and exact rollback/compensation",
+    "semantic provider readback and deterministic rerun",
+    "media identity/rights/fingerprint evidence gates",
+    "inventory truth that separates quantity from tracking/policy/sellability semantics",
+    "collection/category/merchandising authority separated from marketing intent",
+    "candidate generation plus groundedness/customer-language/diversity/batch QA",
+    "append-only evaluation/action lineage",
+    "provider-independent Commerce Action Execution Contract consumed by platform adapters"
+  ],
+  "build_policy": {
+    "generic_ai_copy": "DOWNGRADE_TO_UTILITY_OR_NATIVE_INTEGRATION",
+    "provider_native_copy_available": "INTEGRATE_OR_ORCHESTRATE_WHERE_USEFUL",
+    "truth_evidence_write_integrity": "KEEP_CORE_CANDIDATE",
+    "safe_bulk_catalog_execution": "BUILD_SHARED_GOVERNED_CORE_IF_CROSS_PLATFORM_VALIDATED",
+    "provider_specific_write_mapping": "E3_PROVIDER_AUTHENTIC_GATE_REQUIRED",
+    "productization": "SECOND_PROJECT_PLUS_COMPLETION_REREVIEW_REQUIRED"
+  },
+  "open_evidence": [
+    "FVCKU read-only evidence capture and bounded second-platform validation under FVCKU authority",
+    "BPC completion/release re-review and final failure/rollback/operational-burden evidence",
+    "target-platform E3 read/write/mutation/readback contracts",
+    "merchant value versus native AI content tools",
+    "support burden and unit economics for bulk catalog operations",
+    "cross-platform media/category semantics without Shopify leakage"
+  ],
+  "phase_entry_recommendation": "KEEP Phase 2B on roadmap, but explicitly separate native/commodity content generation from the strategic Product Intelligence core. Productize the governed truth/evidence/execution/evaluation layer only after D-041 cross-project and completion evidence supports it."
+}

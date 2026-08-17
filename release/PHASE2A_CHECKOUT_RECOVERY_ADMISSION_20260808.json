@@ -1,0 +1,101 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-08T12:43:00+03:00",
+  "governance": ["D-037", "D-042", "D-046", "D-050"],
+  "module": "Checkout / Cart Recovery",
+  "review_stage": "PREPARED_PHASE_ENTRY_RECHECK",
+  "status": "PROVISIONAL_ORCHESTRATE_INTEGRATE_FIRST",
+  "not_a_claim": [
+    "not phase-entry PASS",
+    "not provider-authentic connector support",
+    "not production-ready",
+    "not pricing freeze",
+    "not willingness-to-pay proof"
+  ],
+  "evidence_summary": {
+    "ticimax": {
+      "evidence_level": "E2_OFFICIAL_PUBLIC",
+      "native_baseline": [
+        "abandoned-cart reminder center",
+        "automated reminder flows",
+        "WhatsApp, email and SMS channels",
+        "channel/recovery/conversion/revenue reporting",
+        "manual reminder and incentive/gift-certificate support"
+      ],
+      "source": "https://updates.ticimax.com/changelog/yenilenen-sepet-hatirlatma-merkezi-yayinda"
+    },
+    "ikas": {
+      "evidence_level": "E2_OFFICIAL_PUBLIC",
+      "native_baseline": [
+        "abandoned-cart records and recovered-cart/revenue reporting",
+        "multi-step abandoned-cart automations",
+        "email and current marketing surfaces describing WhatsApp/SMS reminder capability",
+        "consent-aware targeting options in automation settings"
+      ],
+      "sources": [
+        "https://support.ikas.com/tr/terkedilmis-sepet-otomasyonu",
+        "https://support.ikas.com/tr/terk-edilmis-sepetler",
+        "https://ikas.com/tr/otomasyon-ve-pazarlama"
+      ]
+    },
+    "ideasoft": {
+      "evidence_level": "E2_OFFICIAL_PUBLIC",
+      "native_baseline": [
+        "abandoned cart and abandoned order views",
+        "manual and automatic reminder email",
+        "timed automation configuration",
+        "separate existing E2 developer-reference evidence for abandoned-cart read-surface existence"
+      ],
+      "sources": [
+        "https://www.ideasoft.com.tr/yardim/sepet-hatirlatma/",
+        "canonical:10-API-CONNECTOR-FEASIBILITY/IDEASOFT-E2-ABANDONED-CART"
+      ]
+    },
+    "tsoft": {
+      "evidence_level": "E2_OFFICIAL_PUBLIC",
+      "native_baseline": [
+        "member-cart visibility",
+        "unfinished-order reminder workflow",
+        "email/SMS reminder capability",
+        "separate license/app ecosystem for some cart-related functions"
+      ],
+      "sources": [
+        "https://help.tsoft.com.tr/destek/uye-sepetleri",
+        "https://help.tsoft.com.tr/destek/tamamlanmayan-siparisi-odemeye-gonder",
+        "https://www.tsoft.com.tr/pazarlama-araclari"
+      ]
+    }
+  },
+  "commoditized_baseline": [
+    "detect/list an abandoned cart or incomplete order",
+    "send a fixed/timed reminder",
+    "basic email/SMS/WhatsApp reminder where the platform already supports it",
+    "basic recovered-cart/conversion/revenue reporting where native"
+  ],
+  "candidate_incremental_ai_commerce_value": [
+    "provider-independent recovery intent and normalized status semantics",
+    "capability-driven orchestration of native recovery primitives instead of rebuilding them",
+    "conversational WhatsApp recovery using verified cart/product/stock/policy context where authorized",
+    "Merchant Rules, consent/suppression, channel and approval governance",
+    "cross-platform fallback when a platform lacks a desired channel/capability",
+    "Agency Managed multi-client exception handling",
+    "unified audit/evaluation/outcome lineage across providers",
+    "measurable incremental value versus the merchant platform's own native recovery"
+  ],
+  "build_policy": {
+    "generic_native_parity": "DO_NOT_BUILD_AS_MOAT",
+    "native_capability_available": "INTEGRATE_OR_ORCHESTRATE",
+    "missing_cross_platform_control": "BUILD_MINIMAL_SHARED_CONTROL_LAYER_IF_VALIDATED",
+    "provider_specific_adapter": "E3_PROVIDER_AUTHENTIC_GATE_REQUIRED",
+    "customer_facing_release": "MODULE_ADMISSION_PLUS_WILLINGNESS_TO_PAY_AND_OUTCOME_EVIDENCE_REQUIRED"
+  },
+  "open_evidence": [
+    "exact provider-authentic cart/checkout API schemas and event freshness for each target platform",
+    "whether native recovery actions can be triggered/configured through supported APIs or must remain merchant-panel native",
+    "channel consent/suppression and template rules by provider/jurisdiction",
+    "incremental conversion lift from AI Commerce versus native platform automation",
+    "merchant willingness-to-pay and support burden",
+    "unit economics for WhatsApp/AI/provider pass-through"
+  ],
+  "phase_entry_recommendation": "KEEP_ON_ROADMAP_BUT_DOWNGRADE_GENERIC_BUILD; enter Phase 2A only as an orchestration/incremental-value module after current provider/native capability recheck and E3 access support the required surfaces."
+}

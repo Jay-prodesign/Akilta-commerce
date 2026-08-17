@@ -1,0 +1,70 @@
+{
+  "artifact_id":"NORMALIZED_CONTRACT_CROSS_PROVIDER_PRESSURE_TEST_20260808",
+  "captured_at":"2026-08-08T12:06:00+03:00",
+  "evidence_maturity":"E2_CROSS_PROVIDER_REFERENCE",
+  "providers":["SHOPIFY","IKAS","TSOFT"],
+  "provider_authentic_coverage":{"SHOPIFY":"OWNED_READ_ONLY_E2","IKAS":"PUBLIC_EXACT_DOC_E2","TSOFT":"PUBLIC_EXACT_DOC_AND_POLICY_E2"},
+  "support_claim_admitted":false,
+  "core_contract_freeze_admitted":false,
+  "inputs":[
+    "release/SHOPIFY_E2_INVENTORY_REFERENCE_20260808.json",
+    "release/IKAS_E2_ADMIN_API_REFERENCE_20260808.json",
+    "release/IKAS_NORMALIZED_MAPPING_GAP_20260808.json",
+    "release/TSOFT_E2_INVENTORY_REFERENCE_20260808.json",
+    "release/TSOFT_NORMALIZED_MAPPING_GAP_20260808.json"
+  ],
+  "cross_provider_findings":[
+    {
+      "invariant":"PROVIDER_SCOPED_IDENTITY",
+      "state":"HOLDS_AT_E2",
+      "evidence":"Shopify uses GIDs; ikas exposes product/variant IDs; T-Soft exposes numeric IDs plus mutable web-service codes. Internal IDs must remain separate from provider IDs/codes.",
+      "core_implication":"Current internal ProductId/VariantId + providerProductId/providerVariantId design remains valid; T-Soft mutable codes belong in connector lookup/evidence unless a reusable alternate-ref need is proven."
+    },
+    {
+      "invariant":"QUANTITY_IS_NOT_AVAILABILITY",
+      "state":"HOLDS_CROSS_PROVIDER",
+      "evidence":"Owned Shopify showed quantity 0/untracked with availableForSale=true. T-Soft policy explicitly allows zero/negative-stock selling and payment-timing-dependent stock changes. ikas public docs expose location stockCount but not enough sellability/policy semantics.",
+      "core_implication":"Current InventoryObservation separation of quantity, tracking, providerAvailability, inventoryPolicy, freshness and derivedAvailability is justified; ikas must remain UNKNOWN where semantics are absent."
+    },
+    {
+      "invariant":"MONEY_REQUIRES_CURRENCY_RULE",
+      "state":"HOLDS_WITH_ADAPTER_RULES",
+      "evidence":"T-Soft documents amount + Currency but uses TL/USD/EUR, requiring TL->TRY normalization. ikas bounded order capture exposes totalFinalPrice without admitted currency.",
+      "core_implication":"Current Money shape is valid; adapters must not construct Money without currency evidence and must use explicit provider currency normalization tables."
+    },
+    {
+      "invariant":"PROVIDER_READABILITY_IS_NOT_DISCLOSURE_AUTHORITY",
+      "state":"HOLDS_CROSS_PROVIDER",
+      "evidence":"ikas listCustomer exposes email/phone/fullName; T-Soft order API exposes customer name/email; owned Shopify evidence was intentionally PII-free.",
+      "core_implication":"CV0-CV3/customer-order authorization must remain independent of connector read permissions."
+    },
+    {
+      "invariant":"WEBHOOK_AUTH_BEFORE_ENQUEUE",
+      "state":"HOLDS_WITH_PROVIDER_SPECIFIC_VERIFIERS",
+      "evidence":"ikas requires webhook validation but bounded evidence does not admit exact signature algorithm; T-Soft documents Secret Key + X-Hub-Signature but not exact algorithm/canonicalization.",
+      "core_implication":"Current WebhookIngressContext authenticity gate is correct; each provider needs an evidence-backed verifier and unknown algorithms fail closed."
+    },
+    {
+      "invariant":"ORDER_PROVIDER_STATUS_PRESERVATION",
+      "state":"HOLDS_AT_E2",
+      "evidence":"ikas documents status; T-Soft documents OrderStatusId. Cross-provider generic meaning is not identical.",
+      "core_implication":"Current ProviderStatus preservation is safer than premature universal order-status normalization."
+    },
+    {
+      "invariant":"SOURCE_FRESHNESS_PROVENANCE",
+      "state":"WATCH_POTENTIAL_CORE_GAP",
+      "evidence":"Current Product/Variant/Inventory contracts require sourceTimestamp, but the bounded ikas/T-Soft public evidence does not consistently establish a provider-origin last-updated timestamp for every entity/stock observation.",
+      "core_implication":"Do not change core yet. E3/expanded exact-schema evidence must decide whether sourceTimestamp means provider-origin timestamp only, whether observedAt can serve as source capture timestamp, or whether sourceTimestamp must become optional/typed by provenance."
+    }
+  ],
+  "required_adapter_rules":[
+    "Provider IDs/codes are scoped to integration and never used as internal authorization IDs.",
+    "Currency normalization tables are explicit and versioned; unknown currency blocks Money construction.",
+    "Inventory availability is derived only from sufficient policy/tracking/sellability/freshness evidence.",
+    "Customer PII requires tenant/CV authorization regardless of connector read access.",
+    "Webhook authenticity uses provider-specific evidence-backed verification before tenant normalization/enqueue.",
+    "Provider statuses remain raw/provider-scoped until an evidence-backed semantic mapping exists."
+  ],
+  "decision":"CORE_CONTRACT_HOLDS_AT_E2_WITH_SOURCE_TIMESTAMP_WATCH_E3_REQUIRED",
+  "next_evidence":"Use exact public ikas/T-Soft schema plus future Ticimax/IdeaSoft E3 payloads to resolve source-timestamp semantics and adapter mapping gaps before core freeze."
+}

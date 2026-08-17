@@ -1,0 +1,102 @@
+{
+  "artifact_id": "MARKET_ICP_PLATFORM_BASE_EVIDENCE_20260808",
+  "captured_at": "2026-08-08T12:20:00+03:00",
+  "evidence_maturity": "E2_PROVIDER_REFERENCE",
+  "purpose": "Directional evidence for Türkiye-first addressable commerce-platform reach. Not an additive TAM, market-share, active-paid-merchant or unique-merchant estimate.",
+  "rules": [
+    "Do not add platform counts together: merchant/account overlap is unknown.",
+    "Preserve each provider's own metric label and definition.",
+    "A vendor marketing count is provider-reference evidence, not independently audited market share.",
+    "Do not convert 'users', 'active users', 'brands', 'customers', 'sites' or 'projects' into one common unit without evidence.",
+    "Use counts directionally for connector/commercial reach prioritization together with API feasibility, merchant fit, competition, support burden and evidence access."
+  ],
+  "platforms": [
+    {
+      "provider": "TICIMAX",
+      "official_claims": [
+        {
+          "metric_label": "brands/businesses using Ticimax",
+          "value_lower_bound": 30000,
+          "raw_claim": "30,000+ brands / more than 30,000 businesses; 30,000+ customers worldwide",
+          "current_reference": "official Ticimax homepage and 2025 team.blue acquisition announcement",
+          "interpretation": "Current vendor-reference scale is consistently 30,000+. Global/customer/brand wording varies; uniqueness and active-paid status are not independently verified."
+        }
+      ],
+      "directional_reach": "HIGH",
+      "count_quality": "QUANTIFIED_VENDOR_CLAIM_MULTIPLE_LABELS"
+    },
+    {
+      "provider": "IDEASOFT",
+      "official_claims": [
+        {
+          "metric_label": "businesses / e-commerce sites / customers (broad historical/current vendor base)",
+          "value_lower_bound": 50000,
+          "raw_claim": "50,000+ businesses / e-commerce sites / customers",
+          "current_reference": "official IdeaSoft references, homepage and about pages",
+          "interpretation": "Current broad vendor-base claim. It may include historical customers and is not equivalent to currently active app-store-addressable sites."
+        },
+        {
+          "metric_label": "active e-commerce sites (app-store distribution surface)",
+          "value_lower_bound": 18000,
+          "raw_claim": "18,000+ active e-commerce sites",
+          "current_reference": "official IdeaSoft Appstore partner/developer pages",
+          "interpretation": "More directly relevant to app distribution but appears on an older app-store surface. Preserve separately; do not overwrite with or add to the 50,000+ broad customer/site claim."
+        }
+      ],
+      "directional_reach": "HIGH",
+      "count_quality": "QUANTIFIED_VENDOR_CLAIMS_DIFFERENT_SCOPES"
+    },
+    {
+      "provider": "IKAS",
+      "official_claims": [
+        {
+          "metric_label": "active users",
+          "value_lower_bound": 20000,
+          "raw_claim": "20,000+ active users in 2026",
+          "current_reference": "official ikas About page",
+          "interpretation": "Current active-use vendor claim; closest ikas metric to installed active base."
+        },
+        {
+          "metric_label": "users / Start-package site creators",
+          "value_lower_bound": 100000,
+          "raw_claim": "100,000+ users; 100,000+ people created a Start-package e-commerce site in six months",
+          "current_reference": "official ikas packages page and 2026 ikas news article",
+          "interpretation": "Broader acquisition/account/site-creation metric, materially larger than active users. Do not treat as active merchants or sum with 20,000+ active users."
+        }
+      ],
+      "directional_reach": "HIGH",
+      "count_quality": "QUANTIFIED_VENDOR_CLAIMS_DIFFERENT_SCOPES"
+    },
+    {
+      "provider": "T_SOFT",
+      "official_claims": [
+        {
+          "metric_label": "total commerce customers/sites",
+          "value_lower_bound": null,
+          "raw_claim": "No exact current total customer/site count located on official public pages after bounded search.",
+          "current_reference": "official T-Soft ecommerce, systems, contact and partner pages",
+          "interpretation": "Total installed base remains UNKNOWN; do not infer a numeric total from reference logos, support language or qualitative scale wording."
+        },
+        {
+          "metric_label": "e-export service brands (non-comparable subset)",
+          "value_lower_bound": 397,
+          "raw_claim": "397+ brands receiving e-export service",
+          "current_reference": "official T-Soft e-export packages page",
+          "interpretation": "Known subset/service metric only. It is a lower-bound signal for one T-Soft service and cannot be used as total T-Soft merchant count."
+        }
+      ],
+      "directional_reach": "MATERIAL_BUT_TOTAL_UNKNOWN",
+      "count_quality": "PARTIAL_SUBSET_ONLY"
+    }
+  ],
+  "cross_platform_conclusion": {
+    "unique_addressable_merchants": "UNKNOWN",
+    "additive_platform_sum_authorized": false,
+    "market_share_authorized": false,
+    "tam_revenue_authorized": false,
+    "overlap_uncertainty": "HIGH",
+    "directional_result": "Current official claims show individually material Türkiye-first ecosystems: Ticimax 30,000+ brands/businesses, IdeaSoft 50,000+ broad businesses/sites/customers with a separately stated 18,000+ active Appstore-site surface, and ikas 20,000+ active users alongside a broader 100,000+ user/site-creation metric. T-Soft total public count remains unknown; 397+ e-export brands is only a non-comparable subset.",
+    "priority_implication": "Evidence supports Türkiye-first connector priority and a multi-platform value proposition, but does not authorize a summed TAM or unique-merchant estimate. Connector sequence must still combine reach with API feasibility, provider-authentic evidence, merchant fit, competitive substitution, implementation/support burden and commercial validation."
+  },
+  "source_refresh_note": "Refreshed against current official provider pages on 2026-08-08. Preserves non-comparable metric definitions and source conflicts instead of selecting a fabricated common unit."
+}

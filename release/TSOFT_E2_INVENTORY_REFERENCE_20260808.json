@@ -1,0 +1,70 @@
+{
+  "artifact_id": "TSOFT_E2_INVENTORY_REFERENCE_20260808",
+  "captured_at": "2026-08-08T11:40:00+03:00",
+  "provider": "T_SOFT",
+  "evidence_maturity": "E2_PROVIDER_REFERENCE",
+  "source_class": "OFFICIAL_PROVIDER_DOCUMENTATION",
+  "claim_scope": "inventory/sellability policy semantics only; no authenticated API payload or connector support claim",
+  "official_semantics": [
+    {
+      "setting": "Eksi Stok Uygulamasi",
+      "when_enabled": "Provider documentation states a product can continue to be sold after stock is exhausted and later orders are written as negative stock.",
+      "normalized_inventory_policy": "ALLOW_SELLING_WITHOUT_POSITIVE_QUANTITY"
+    },
+    {
+      "setting": "Eksi Stok Uygulamasi + Reel Stok behavior",
+      "when_negative_stock_disabled": "Provider documentation states sold-out information is shown for exhausted stock when the relevant stock behavior is enabled.",
+      "normalized_inventory_policy": "REQUIRE_POSITIVE_QUANTITY"
+    },
+    {
+      "setting": "Odeme Yapilinca Stoktan Dussun",
+      "behavior": "For some payment methods, stock decrement timing may occur only after payment status is updated; otherwise it may decrement on order completion.",
+      "normalized_implication": "quantity observation semantics depend on provider workflow/timing and cannot be interpreted without provider policy/context"
+    }
+  ],
+  "normalized_cases": [
+    {
+      "case_id": "TS-E2-INV-01",
+      "input": {
+        "trackingState": "TRACKED",
+        "rawQuantity": "0",
+        "sellableQuantity": "0",
+        "providerAvailability": "SELLABLE",
+        "inventoryPolicy": "ALLOW_SELLING_WITHOUT_POSITIVE_QUANTITY",
+        "freshnessState": "FRESH"
+      },
+      "expected": "AVAILABLE_TO_ORDER"
+    },
+    {
+      "case_id": "TS-E2-INV-02",
+      "input": {
+        "trackingState": "TRACKED",
+        "rawQuantity": "0",
+        "sellableQuantity": "0",
+        "providerAvailability": "NOT_SELLABLE",
+        "inventoryPolicy": "REQUIRE_POSITIVE_QUANTITY",
+        "freshnessState": "FRESH"
+      },
+      "expected": "OUT_OF_STOCK"
+    },
+    {
+      "case_id": "TS-E2-INV-03",
+      "input": {
+        "trackingState": "TRACKED",
+        "rawQuantity": "0",
+        "sellableQuantity": "0",
+        "providerAvailability": "UNKNOWN",
+        "inventoryPolicy": "UNKNOWN",
+        "freshnessState": "FRESH"
+      },
+      "expected": "UNKNOWN"
+    }
+  ],
+  "conclusion": "T-Soft official provider semantics independently disprove quantity-only availability inference. Availability requires policy/sellability/tracking/workflow semantics.",
+  "limitations": [
+    "No authenticated T-Soft API payload was used.",
+    "No exact API field mapping to these settings is admitted.",
+    "No write/execution support claim is created.",
+    "Provider-authentic E3 remains required for connector operation mapping."
+  ]
+}

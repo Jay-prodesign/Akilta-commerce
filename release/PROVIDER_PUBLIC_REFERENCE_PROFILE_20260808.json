@@ -1,0 +1,197 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-08T10:39:00+03:00",
+  "purpose": "Public/provider-reference evidence only. This file cannot grant connector execution support or replace E3 provider-authentic acceptance evidence.",
+  "global_execution_admitted": false,
+  "providers": [
+    {
+      "provider": "meta_whatsapp",
+      "commercial_scope": "CR-V1 channel candidate",
+      "capabilities": [
+        {
+          "capability_key": "cloud_api_messaging_platform",
+          "evidence_state": "CONFIRMED",
+          "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+          "evidence_refs": ["META_OFFICIAL_WHATSAPP_BUSINESS_PLATFORM_POSTMAN_2026-08-08"],
+          "last_verified_at": "2026-08-08T10:39:00+03:00",
+          "exact_schema_admitted": false,
+          "execution_admitted": false,
+          "limitations": ["Real app/send/webhook execution remains E3-gated."]
+        },
+        {
+          "capability_key": "embedded_signup",
+          "evidence_state": "CONFIRMED",
+          "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+          "evidence_refs": ["META_OFFICIAL_EMBEDDED_SIGNUP_POSTMAN_2026-08-08"],
+          "last_verified_at": "2026-08-08T10:39:00+03:00",
+          "exact_schema_admitted": false,
+          "execution_admitted": false,
+          "limitations": ["Production App Review/Advanced Access state must be read from the actual app before release."]
+        },
+        {
+          "capability_key": "waba_webhook_subscription",
+          "evidence_state": "CONFIRMED",
+          "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+          "evidence_refs": ["META_OFFICIAL_WABA_SUBSCRIPTION_POSTMAN_2026-08-08"],
+          "last_verified_at": "2026-08-08T10:39:00+03:00",
+          "exact_schema_admitted": false,
+          "execution_admitted": false,
+          "limitations": ["Provider-authentic subscription/readback is still required."]
+        },
+        {
+          "capability_key": "message_status_source_timestamp_ordering",
+          "evidence_state": "CONFIRMED",
+          "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+          "evidence_refs": ["META_OFFICIAL_MESSAGE_STATUS_WEBHOOK_2026-08-08"],
+          "last_verified_at": "2026-08-08T10:39:00+03:00",
+          "exact_schema_admitted": false,
+          "execution_admitted": false,
+          "limitations": ["Status callback arrival order cannot be treated as source-time order."]
+        },
+        {
+          "capability_key": "exact_webhook_authenticity_signature",
+          "evidence_state": "NOT_ASSUMED",
+          "evidence_maturity": "E0_SPECIFIED",
+          "evidence_refs": [],
+          "last_verified_at": "2026-08-08T10:39:00+03:00",
+          "exact_schema_admitted": false,
+          "execution_admitted": false,
+          "limitations": ["No exact current implementation is frozen until official exact evidence/test-app behavior is admitted."]
+        }
+      ]
+    },
+    {
+      "provider": "ticimax",
+      "commercial_scope": "Türkiye first-wave commerce connector candidate",
+      "capabilities": [
+        {
+          "capability_key": "product_read",
+          "evidence_state": "CONFIRMED",
+          "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+          "evidence_refs": ["TICIMAX_OFFICIAL_WEB_SERVICE_API_2026-08-08"],
+          "last_verified_at": "2026-08-08T10:39:00+03:00",
+          "exact_schema_admitted": false,
+          "execution_admitted": false,
+          "limitations": ["Exact authentication/request/response schema remains E3-gated."]
+        },
+        {
+          "capability_key": "variant_read",
+          "evidence_state": "CONFIRMED",
+          "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+          "evidence_refs": ["TICIMAX_OFFICIAL_WEB_SERVICE_API_VARIATION_2026-08-08"],
+          "last_verified_at": "2026-08-08T10:39:00+03:00",
+          "exact_schema_admitted": false,
+          "execution_admitted": false,
+          "limitations": ["Stable variant IDs/option mapping are not frozen from marketing-level documentation."]
+        },
+        {
+          "capability_key": "store_stock_read",
+          "evidence_state": "CONFIRMED",
+          "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+          "evidence_refs": ["TICIMAX_OFFICIAL_WEB_SERVICE_API_STORE_STOCK_2026-08-08"],
+          "last_verified_at": "2026-08-08T10:39:00+03:00",
+          "exact_schema_admitted": false,
+          "execution_admitted": false,
+          "limitations": ["Tracking/policy/sellability semantics require real payload evidence."]
+        },
+        {
+          "capability_key": "order_status_methods",
+          "evidence_state": "CONFIRMED",
+          "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+          "evidence_refs": ["TICIMAX_OFFICIAL_WEB_SERVICE_API_ORDER_STATUS_2026-08-08"],
+          "last_verified_at": "2026-08-08T10:39:00+03:00",
+          "exact_schema_admitted": false,
+          "execution_admitted": false,
+          "limitations": ["Order status is not automatically fulfillment or tracking evidence."]
+        },
+        {
+          "capability_key": "web_service_and_webhook_entitlement",
+          "evidence_state": "CONFIRMED_HIGH_LEVEL",
+          "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+          "evidence_refs": ["TICIMAX_OFFICIAL_2026_PACKAGE_MATRIX_2026-08-08"],
+          "last_verified_at": "2026-08-08T10:39:00+03:00",
+          "exact_schema_admitted": false,
+          "execution_admitted": false,
+          "limitations": ["Detailed Web Service/Webhook availability is package-dependent/optional on the current public matrix."]
+        },
+        {
+          "capability_key": "exact_auth_schema_webhook_security",
+          "evidence_state": "NOT_ASSUMED",
+          "evidence_maturity": "E0_SPECIFIED",
+          "evidence_refs": [],
+          "last_verified_at": "2026-08-08T10:39:00+03:00",
+          "exact_schema_admitted": false,
+          "execution_admitted": false,
+          "limitations": ["Requires developer documentation or API-enabled test merchant evidence."]
+        }
+      ]
+    },
+    {
+      "provider": "ideasoft",
+      "commercial_scope": "Türkiye first-wave commerce connector candidate",
+      "capabilities": [
+        {
+          "capability_key": "public_developer_portal",
+          "evidence_state": "CONFIRMED",
+          "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+          "evidence_refs": ["IDEASOFT_OFFICIAL_APIDOC_PORTAL_2026-08-08"],
+          "last_verified_at": "2026-08-08T10:39:00+03:00",
+          "exact_schema_admitted": false,
+          "execution_admitted": false,
+          "limitations": ["Stoplight JS indexing did not expose every endpoint page to this runtime; endpoint details are not guessed."]
+        },
+        {
+          "capability_key": "merchant_api_credentials_and_permissions",
+          "evidence_state": "CONFIRMED",
+          "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+          "evidence_refs": ["IDEASOFT_OFFICIAL_API_USAGE_HELP_2026-07-23"],
+          "last_verified_at": "2026-08-08T10:39:00+03:00",
+          "exact_schema_admitted": false,
+          "execution_admitted": false,
+          "limitations": ["Client ID/Secret and Read vs Read/Write setup is confirmed; live token/auth exchange is still E3-gated."]
+        },
+        {
+          "capability_key": "stock_price_order_integration",
+          "evidence_state": "CONFIRMED_HIGH_LEVEL",
+          "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+          "evidence_refs": ["IDEASOFT_OFFICIAL_API_USAGE_HELP_2026-07-23"],
+          "last_verified_at": "2026-08-08T10:39:00+03:00",
+          "exact_schema_admitted": false,
+          "execution_admitted": false,
+          "limitations": ["Exact product/variant/inventory/order schemas and completeness remain E3-gated."]
+        },
+        {
+          "capability_key": "webhook_access",
+          "evidence_state": "CONFIRMED_HIGH_LEVEL",
+          "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+          "evidence_refs": ["IDEASOFT_OFFICIAL_RESOURCE_TRAFFIC_HELP_2026-08-08", "IDEASOFT_OFFICIAL_PLUS_PACKAGE_MATRIX_2026-08-08"],
+          "last_verified_at": "2026-08-08T10:39:00+03:00",
+          "exact_schema_admitted": false,
+          "execution_admitted": false,
+          "limitations": ["Webhook catalog, authenticity, retry and payload schemas remain E3-gated."]
+        },
+        {
+          "capability_key": "abandoned_cart_read_surface",
+          "evidence_state": "CONFIRMED_HIGH_LEVEL",
+          "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+          "evidence_refs": ["IDEASOFT_OFFICIAL_APIDOC_ADMIN_API_ABANDONED_CARTS_EXAMPLE_2026-08-08"],
+          "last_verified_at": "2026-08-08T10:39:00+03:00",
+          "exact_schema_admitted": false,
+          "execution_admitted": false,
+          "limitations": ["Official portal shows GET /admin-api/abandoned_carts. Exact auth, response schema, pagination, freshness, consent/marketing eligibility and recovery-action semantics are not admitted."],
+          "scope_note": "Post-V1 Checkout Recovery evidence only; does not expand CR-V1."
+        },
+        {
+          "capability_key": "exact_provider_mapping_and_execution",
+          "evidence_state": "NOT_ASSUMED",
+          "evidence_maturity": "E0_SPECIFIED",
+          "evidence_refs": [],
+          "last_verified_at": "2026-08-08T10:39:00+03:00",
+          "exact_schema_admitted": false,
+          "execution_admitted": false,
+          "limitations": ["Requires API-enabled merchant/test credentials and provider-authentic payload/readback evidence."]
+        }
+      ]
+    }
+  ]
+}

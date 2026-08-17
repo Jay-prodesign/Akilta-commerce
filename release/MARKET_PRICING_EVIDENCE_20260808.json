@@ -1,0 +1,115 @@
+{
+  "artifact_id": "CRV1-MARKET-PRICING-EVIDENCE-20260808",
+  "captured_at": "2026-08-08T11:10:00+03:00",
+  "evidence_maturity": "E2_PROVIDER_PUBLIC_REFERENCE",
+  "purpose": "Conflict-aware public pricing and packaging evidence for CR-V1 commercial hypothesis; not a pricing freeze.",
+  "rules": {
+    "currency_conversion": "NOT_PERFORMED",
+    "cross_product_price_equivalence": "NOT_ASSUMED",
+    "marketplace_listing_presence": "SUPPLY_EVIDENCE_ONLY",
+    "adoption_from_listing": "NOT_INFERRED",
+    "conflicting_public_price_fields": "PRESERVE_CONFLICT"
+  },
+  "observations": [
+    {
+      "competitor": "Qpien",
+      "source_type": "official_pricing_page",
+      "source_url": "https://qpien.com/pricing",
+      "captured_state": {
+        "start_displayed_usd_per_user_month": 19,
+        "start_displayed_annual_total_usd": 288,
+        "grow_displayed_usd_per_user_month": 39,
+        "grow_displayed_annual_total_usd": 468,
+        "scale_displayed_usd_per_user_month": 69,
+        "scale_displayed_annual_total_usd": 828,
+        "grow_includes": ["WhatsApp", "Call Center", "Workflow Automations", "AI Agent"],
+        "scale_includes": ["E-commerce Integration", "Abandoned Cart Automation", "WhatsApp Broadcasting"],
+        "ai_agent_addon_usd_per_response": 0.05,
+        "ai_assistant_addon_usd_per_user_month": 29,
+        "ai_insights_addon_usd_per_user_month": 39,
+        "messages_conversations_contacts_displayed": "UNLIMITED"
+      },
+      "conflict_state": "CONFLICT",
+      "conflict_note": "Start card displays $19 per user/month but $288 billed yearly; those values are not mathematically equivalent. Pricing page also displays unlimited contacts while Jan-2026 help-center article describes plan contact limits. Current checkout truth was not tested."
+    },
+    {
+      "competitor": "Qpien",
+      "source_type": "official_help_center_plan_article",
+      "source_url": "https://qpien.com/help-center/qpien-plans-explained",
+      "published_at": "2026-01-27",
+      "captured_state": {
+        "start_monthly_usd": 24,
+        "start_annual_billing_usd_per_month": 19,
+        "start_contacts_per_month": 1000,
+        "grow_monthly_usd": 49,
+        "grow_annual_billing_usd_per_month": 39,
+        "grow_contacts_per_month": 2500,
+        "scale_monthly_usd": 84,
+        "scale_annual_billing_usd_per_month": 69,
+        "scale_contacts_per_month": 5000,
+        "grow_includes": ["Qpien AI Assistant & Agent", "Workflow Automations", "Direct WhatsApp Integration", "Call Center Capabilities", "E-commerce Marketplace Sync"],
+        "scale_includes": ["WhatsApp Broadcasting", "Abandoned Cart Automations", "CRM Integrations"]
+      },
+      "conflict_state": "STALE_OR_CONFLICTING_WITH_CURRENT_PRICING_PAGE"
+    },
+    {
+      "competitor": "LoopsAI on IdeaSoft Appstore",
+      "source_type": "official_platform_appstore_listing",
+      "source_url": "https://apps.ideasoft.com.tr/loops-ai",
+      "captured_state": {
+        "starter_try_monthly_tl": 1542,
+        "starter_annual_tl": 18500,
+        "basic_try_monthly_tl": 2958,
+        "basic_annual_tl": 35500,
+        "pro_try_monthly_tl": 11667,
+        "pro_annual_tl": 140000,
+        "visible_downloads": 0,
+        "capabilities": ["AI customer support", "AI sales representative", "product recommendations", "WhatsApp", "Instagram", "Facebook", "marketplace support"]
+      },
+      "conflict_state": "NONE_OBSERVED",
+      "adoption_interpretation": "Listing availability confirmed; zero visible downloads does not prove zero real customers outside the counter or weak demand."
+    },
+    {
+      "competitor": "UppyPro on ikas App Marketplace",
+      "source_type": "official_platform_appstore_listing",
+      "source_url": "https://apps.ikas.com/tr/uygulama/cabd7860-e992-40af-b285-919dbec29d6e",
+      "captured_state": {
+        "displayed_price_tl_per_year": 1200,
+        "free_trial": true,
+        "visible_install_band": "0-50 stores",
+        "capabilities": ["WhatsApp", "Instagram", "AI product discovery", "stock and price", "order status", "payment link", "CRM"]
+      },
+      "conflict_state": "NONE_OBSERVED",
+      "adoption_interpretation": "Low visible install band is not a demand conclusion."
+    },
+    {
+      "competitor": "MessageGate via Ticimax",
+      "source_type": "official_platform_partner_page",
+      "source_url": "https://www.ticimax.com/ticimax-ve-messagegate-is-birligi/",
+      "captured_state": {
+        "starter_tl_per_month": 2599,
+        "pro_tl_per_month": 4799,
+        "business_tl_per_month": 7999,
+        "capabilities": ["Instagram", "Messenger", "WhatsApp on Pro+", "chatbot flows", "integrated product list", "shipping status on Business"]
+      },
+      "conflict_state": "NONE_OBSERVED",
+      "classification": "PARTNER_INTEGRATION_NOT_FIRST_PARTY_AGENT"
+    }
+  ],
+  "packaging_patterns": [
+    "per-seat SaaS base plan",
+    "annual billing discount",
+    "feature-tier gating",
+    "AI usage add-on per response",
+    "AI productivity/insight add-ons per seat",
+    "commerce integration and abandoned-cart features in higher tier",
+    "platform marketplace fixed-fee app",
+    "partner integration packages priced independently from core commerce platform"
+  ],
+  "crv1_implications": {
+    "pricing_freeze": "NOT_ALLOWED_YET",
+    "supported_hypothesis": "Module subscription plus usage/provider pass-through and optional Agency Managed fee remains market-compatible, but exact price must be validated against target ICP willingness-to-pay, measured provider/model cost, support burden and competitor feature depth.",
+    "critical_warning": "Do not compete only on generic AI chat or connector logo count; low-priced single-platform apps can undercut commodity features.",
+    "commercial_test": "Price the measurable governed commerce outcome and agency operating leverage, not AI text generation alone."
+  }
+}
