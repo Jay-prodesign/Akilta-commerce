@@ -15,14 +15,27 @@ export type ChannelType = Brand<string, 'ChannelType'>;
 export type ConversationStatus = Brand<string, 'ConversationStatus'>;
 export type ProviderMessageStatus = Brand<string, 'ProviderMessageStatus'>;
 
+function assertIsChannelType(value: string): asserts value is ChannelType {
+  assertNonEmptyString(value, 'ChannelType');
+}
+function assertIsConversationStatus(value: string): asserts value is ConversationStatus {
+  assertNonEmptyString(value, 'ConversationStatus');
+}
+function assertIsProviderMessageStatus(value: string): asserts value is ProviderMessageStatus {
+  assertNonEmptyString(value, 'ProviderMessageStatus');
+}
+
 export function channelType(value: string): ChannelType {
-  return assertNonEmptyString(value, 'ChannelType') as ChannelType;
+  assertIsChannelType(value);
+  return value;
 }
 export function conversationStatus(value: string): ConversationStatus {
-  return assertNonEmptyString(value, 'ConversationStatus') as ConversationStatus;
+  assertIsConversationStatus(value);
+  return value;
 }
 export function providerMessageStatus(value: string): ProviderMessageStatus {
-  return assertNonEmptyString(value, 'ProviderMessageStatus') as ProviderMessageStatus;
+  assertIsProviderMessageStatus(value);
+  return value;
 }
 
 export const CONVERSATION_OWNERSHIP_STATES = [

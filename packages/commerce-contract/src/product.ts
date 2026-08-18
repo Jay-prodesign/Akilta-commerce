@@ -11,12 +11,22 @@ import type {
 export type ProductStatus = Brand<string, 'ProductStatus'>;
 export type ProviderSellabilityState = Brand<string, 'ProviderSellabilityState'>;
 
+function assertIsProductStatus(value: string): asserts value is ProductStatus {
+  assertNonEmptyString(value, 'ProductStatus');
+}
+
+function assertIsProviderSellabilityState(value: string): asserts value is ProviderSellabilityState {
+  assertNonEmptyString(value, 'ProviderSellabilityState');
+}
+
 export function productStatus(value: string): ProductStatus {
-  return assertNonEmptyString(value, 'ProductStatus') as ProductStatus;
+  assertIsProductStatus(value);
+  return value;
 }
 
 export function providerSellabilityState(value: string): ProviderSellabilityState {
-  return assertNonEmptyString(value, 'ProviderSellabilityState') as ProviderSellabilityState;
+  assertIsProviderSellabilityState(value);
+  return value;
 }
 
 export interface Product {

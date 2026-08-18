@@ -192,9 +192,14 @@ export function validateClientAuthorityPayload(value: unknown, path = '$'): Clie
 }
 
 export type OpaqueCursor = string & { readonly __opaqueCursor: 'TransportCursor' };
-export function opaqueCursor(value: string): OpaqueCursor {
+
+function assertIsOpaqueCursor(value: string): asserts value is OpaqueCursor {
   if (typeof value !== 'string' || value.trim().length === 0) throw new Error('Cursor must be non-empty');
-  return value as OpaqueCursor;
+}
+
+export function opaqueCursor(value: string): OpaqueCursor {
+  assertIsOpaqueCursor(value);
+  return value;
 }
 
 /**

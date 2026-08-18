@@ -15,8 +15,14 @@ import type {
 } from '../../domain/src';
 
 export type ProviderStatus = Brand<string, 'ProviderStatus'>;
+
+function assertIsProviderStatus(value: string): asserts value is ProviderStatus {
+  assertNonEmptyString(value, 'ProviderStatus');
+}
+
 export function providerStatus(value: string): ProviderStatus {
-  return assertNonEmptyString(value, 'ProviderStatus') as ProviderStatus;
+  assertIsProviderStatus(value);
+  return value;
 }
 
 export type CompletenessScope =
