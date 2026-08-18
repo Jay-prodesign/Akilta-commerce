@@ -62,9 +62,13 @@ export const PERMISSIONS = [
 export type Permission = (typeof PERMISSIONS)[number];
 const permissionSet: ReadonlySet<string> = new Set(PERMISSIONS);
 
+function isPermission(value: string): value is Permission {
+  return permissionSet.has(value);
+}
+
 export function permission(value: string): Permission {
-  if (!permissionSet.has(value)) {
+  if (!isPermission(value)) {
     throw new DomainPrimitiveError(`Unknown permission: ${value}`);
   }
-  return value as Permission;
+  return value;
 }

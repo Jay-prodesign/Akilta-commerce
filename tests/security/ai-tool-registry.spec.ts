@@ -8,6 +8,7 @@ import {
 } from '../../packages/ai-gateway/src/tool-registry';
 import { checkAiCandidate, isToolAllowed } from '../../packages/ai-gateway/src/guard';
 import type { AiGatewayRequest } from '../../packages/ai-gateway/src/contract';
+import { internalId, localeTag, utcTimestamp } from '../../packages/domain/src';
 
 let passed = 0;
 function assert(condition: unknown, name: string): void {
@@ -32,23 +33,33 @@ assert(validateRegisteredToolSubset(['get_product', 'get_product']).result === '
 assert(validateRegisteredToolSubset(['arbitrary_http']).result === 'FAIL', 'forbidden-subset-fails');
 assert(validateRegisteredToolSubset(['made_up_tool']).result === 'FAIL', 'unknown-subset-fails');
 
-const request = {
-  merchantWorkspaceId: 'mw-1',
-  runId: 'run-1',
-  locale: 'tr-TR',
-  approvedFactSet: { unknowns: [], conflicts: [], resolvedFacts: [] },
+const merchantWorkspaceId = internalId('mw-1', 'MerchantWorkspace');
+const request: AiGatewayRequest = {
+  merchantWorkspaceId,
+  runId: internalId('run-1', 'Run'),
+  locale: localeTag('tr-TR'),
+  approvedFactSet: {
+    approvedFactSetId: internalId('afs-1', 'ApprovedFactSet'),
+    merchantWorkspaceId,
+    intent: 'test-intent',
+    unknowns: [],
+    conflicts: [],
+    resolvedFacts: [],
+    generatedAt: utcTimestamp('2026-08-09T00:00:00Z'),
+    freshnessSummary: 'FRESH',
+  },
   conversationContext: { messages: [] },
   responsePolicyRef: 'policy-1',
   toolPolicy: { allowedTools: ['get_product'], actionAuthority: 'NONE' },
-} as AiGatewayRequest;
+};
 assert(isToolAllowed(request, 'get_product'), 'registered-allowed-tool-passes');
 assert(!isToolAllowed(request, 'get_order'), 'registered-but-unexposed-fails');
 assert(!isToolAllowed(request, 'made_up_tool'), 'unregistered-candidate-fails');
 
-const forgedPolicyRequest = {
+const forgedPolicyRequest: AiGatewayRequest = {
   ...request,
   toolPolicy: { allowedTools: ['get_product', 'made_up_tool'], actionAuthority: 'NONE' },
-} as unknown as AiGatewayRequest;
+};
 assert(!isToolAllowed(forgedPolicyRequest, 'get_product'), 'invalid-policy-fails-closed');
 const candidate = { candidateText: '', claimedFacts: [], requestedTools: [{ toolName: 'get_product', argumentsRef: 'args-1' }], providerRef: 'p', modelRef: 'm' };
 assert(checkAiCandidate(forgedPolicyRequest, candidate).result === 'FAIL', 'candidate-rejected-on-invalid-policy');

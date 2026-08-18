@@ -1,5 +1,5 @@
 import { internalId, idempotencyKey } from '../../packages/domain/src/ids';
-import type { ProviderTimestamp, UtcTimestamp } from '../../packages/domain/src/time';
+import { providerTimestamp, utcTimestamp } from '../../packages/domain/src/time';
 import {
   API_CONTRACT_VERSION,
   PUBLIC_FIELD_ERROR_CODES,
@@ -83,7 +83,7 @@ const cases: Array<[string, () => void]> = [
   }],
   ['IF-PUBLIC-FIELD-ERRORS-ARE-BOUNDED-CODES', () => {
     assert(PUBLIC_FIELD_ERROR_CODES.includes('INVALID'), 'bounded field code catalog missing');
-    expectThrow(() => safeHttpErrorEnvelope({ code: 'AUTH_PERMISSION_DENIED', requestId, retryable: false, requiredAction: 'NONE', fieldErrors: ['rawException=secret'] as any }), 'arbitrary field-error text accepted');
+    expectThrow(() => safeHttpErrorEnvelope({ code: 'AUTH_PERMISSION_DENIED', requestId, retryable: false, requiredAction: 'NONE', fieldErrors: ['rawException=secret'] }), 'arbitrary field-error text accepted');
   }],
   ['IF-OPAQUE-CURSOR-REJECTS-EMPTY', () => expectThrow(() => opaqueCursor('  '), 'empty cursor accepted')],
   ['IF-CURSOR-SCOPE-VALID-SAME-WORKSPACE-QUERY', () => {
@@ -125,7 +125,7 @@ const cases: Array<[string, () => void]> = [
   ['IF-ASYNC-ENVELOPE-ALLOWS-MISSING-SOURCE-TIMESTAMP-BUT-REQUIRES-OBSERVED-AT', () => {
     const envelope: AsyncEventEnvelope = {
       schemaVersion: '1', eventId: internalId('event-1', 'OperationalEvent'), merchantWorkspaceId: workspaceId,
-      source: 'INTERNAL', observedAt: '2026-08-10T09:00:00.000Z' as UtcTimestamp,
+      source: 'INTERNAL', observedAt: utcTimestamp('2026-08-10T09:00:00.000Z'),
       correlationId: internalId('corr-1', 'Correlation'), idempotencyKey: idempotencyKey('idem-1'), payloadType: 'TEST', payload: Object.freeze({ ref: 'safe' }),
     };
     assert(envelope.sourceTimestamp === undefined && envelope.observedAt.length > 0, 'source timestamp semantics regressed');
@@ -133,7 +133,7 @@ const cases: Array<[string, () => void]> = [
   ['IF-ASYNC-ENVELOPE-PRESERVES-PROVIDER-SOURCE-TIMESTAMP-WHEN-EVIDENCED', () => {
     const envelope: AsyncEventEnvelope = {
       schemaVersion: '1', eventId: internalId('event-2', 'OperationalEvent'), merchantWorkspaceId: workspaceId,
-      source: 'PROVIDER', sourceTimestamp: 'provider-ts' as ProviderTimestamp, observedAt: '2026-08-10T09:00:00.000Z' as UtcTimestamp,
+      source: 'PROVIDER', sourceTimestamp: providerTimestamp('provider-ts'), observedAt: utcTimestamp('2026-08-10T09:00:00.000Z'),
       correlationId: internalId('corr-2', 'Correlation'), idempotencyKey: idempotencyKey('idem-2'), payloadType: 'TEST', payload: Object.freeze({ ref: 'safe' }),
     };
     assert(envelope.sourceTimestamp === 'provider-ts', 'provider timestamp not preserved');

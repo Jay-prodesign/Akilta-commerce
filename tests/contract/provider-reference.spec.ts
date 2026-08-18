@@ -2,7 +2,7 @@ import {
   canAdmitProviderExecution,
   providerPublicReferenceCapability,
   referenceCanClaimTargetProviderSupport,
-} from './provider-reference';
+} from '../../packages/commerce-contract/src/provider-reference';
 
 let passed = 0;
 function assert(condition: unknown, name: string): void {

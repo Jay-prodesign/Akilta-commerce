@@ -5,7 +5,6 @@ import {
   type IntegrationId,
   type InventoryObservationId,
   type MerchantWorkspaceId,
-  type OrderId,
   type ProductId,
   type VariantId,
 } from '../../packages/domain/src';
@@ -45,12 +44,12 @@ const variant: Variant = {
   providerVariantId: 'provider-variant-1',
   optionPairs: [exactOptionPair('Women’s Size', 'US 7 / EU 38')],
   priceMoney: money(1299n, 'USD'),
-  sourceTimestamp: product.sourceTimestamp,
+  sourceTimestamp: product.sourceTimestamp!,
   observedAt: product.observedAt,
 };
 
 const boundedOrder: Order = {
-  orderId: internalId('order-1', 'Order') as OrderId,
+  orderId: internalId('order-1', 'Order'),
   merchantWorkspaceId: workspace,
   integrationId: integration,
   providerOrderId: 'provider-order-1',

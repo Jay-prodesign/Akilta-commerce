@@ -47,10 +47,16 @@ const target: ServerResolvedResourceContext = {
   owningOrganizationId: organization,
   merchantWorkspaceId: workspace,
   resourceType: 'merchant_workspace',
-  resourceId: workspace as string,
+  resourceId: workspace,
 };
 
-function basePlan(overrides: Partial<IntegrationContextChangePlan> = {}): IntegrationContextChangePlan {
+function basePlan(
+  overrides: Partial<Omit<IntegrationContextChangePlan, 'ownerApprovalRef'>> & {
+    ownerApprovalRef?: string | undefined;
+  } = {},
+): IntegrationContextChangePlan {
+  const { ownerApprovalRef, ...rest } = overrides;
+  const resolvedOwnerApprovalRef = 'ownerApprovalRef' in overrides ? ownerApprovalRef : 'owner-approval:bpc-readonly';
   return {
     merchantWorkspaceId: workspace,
     provider: 'shopify',
@@ -58,11 +64,11 @@ function basePlan(overrides: Partial<IntegrationContextChangePlan> = {}): Integr
     currentContextRef: 'shopify:akilta',
     targetContextRef: 'shopify:bpc',
     authorizationSource: 'EXPLICIT_OWNER',
-    ownerApprovalRef: 'owner-approval:bpc-readonly',
+    ...(resolvedOwnerApprovalRef !== undefined ? { ownerApprovalRef: resolvedOwnerApprovalRef } : {}),
     approvedTargetContextRef: 'shopify:bpc',
     downstreamIntent: 'READ_ONLY',
     requestedAt: now,
-    ...overrides,
+    ...rest,
   };
 }
 

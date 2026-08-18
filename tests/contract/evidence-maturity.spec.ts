@@ -40,7 +40,7 @@ const tests: Array<readonly [string, () => void]> = [
   }],
   ['valid E3 supports exact provider operation', () => assert(canEvidenceSupportClaim(e3, 'TARGET_PROVIDER_OPERATION_SUPPORTED'), 'E3 provider claim blocked')],
   ['E3 without exact auth evidence is invalid', () => {
-    const broken: EvidenceRecord = { ...e3, authEvidenceRef: undefined } as unknown as EvidenceRecord;
+    const { authEvidenceRef: _droppedAuthEvidenceRef, ...broken } = e3;
     assert(!validateEvidenceRecord(broken).valid, 'missing auth evidence accepted');
   }],
   ['blocked provider test never supports provider claim', () => {

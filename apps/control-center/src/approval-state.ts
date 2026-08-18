@@ -29,12 +29,10 @@ export function selectApprovalSurface(input: {
   }
 
   if (input.requestedSurface === 'WEB_CONTROL_CENTER') {
-    return {
-      decision: assuranceRank[input.assuranceLevel] >= assuranceRank.STANDARD ? 'ALLOW_SURFACE' : 'DENY_SURFACE',
-      ...(assuranceRank[input.assuranceLevel] >= assuranceRank.STANDARD
-        ? { surface: 'WEB_CONTROL_CENTER' as const, requiresStepUp: false }
-        : { reason: 'ASSURANCE_INSUFFICIENT' as const }),
-    } as ApprovalSurfaceDecision;
+    if (assuranceRank[input.assuranceLevel] >= assuranceRank.STANDARD) {
+      return { decision: 'ALLOW_SURFACE', surface: 'WEB_CONTROL_CENTER', requiresStepUp: false };
+    }
+    return { decision: 'DENY_SURFACE', reason: 'ASSURANCE_INSUFFICIENT' };
   }
 
   if (assuranceRank[input.assuranceLevel] < assuranceRank.STEP_UP) {

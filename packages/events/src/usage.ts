@@ -12,16 +12,31 @@ export type UsageUnit = Brand<string, 'UsageUnit'>;
 export type RateCardVersion = Brand<string, 'RateCardVersion'>;
 export type ReconciliationState = Brand<string, 'ReconciliationState'>;
 
+function assertIsUsageUnit(value: string): asserts value is UsageUnit {
+  assertNonEmptyString(value, 'UsageUnit');
+}
+
+function assertIsRateCardVersion(value: string): asserts value is RateCardVersion {
+  assertNonEmptyString(value, 'RateCardVersion');
+}
+
+function assertIsReconciliationState(value: string): asserts value is ReconciliationState {
+  assertNonEmptyString(value, 'ReconciliationState');
+}
+
 export function usageUnit(value: string): UsageUnit {
-  return assertNonEmptyString(value, 'UsageUnit') as UsageUnit;
+  assertIsUsageUnit(value);
+  return value;
 }
 
 export function rateCardVersion(value: string): RateCardVersion {
-  return assertNonEmptyString(value, 'RateCardVersion') as RateCardVersion;
+  assertIsRateCardVersion(value);
+  return value;
 }
 
 export function reconciliationState(value: string): ReconciliationState {
-  return assertNonEmptyString(value, 'ReconciliationState') as ReconciliationState;
+  assertIsReconciliationState(value);
+  return value;
 }
 
 export interface UsageEvent {

@@ -12,26 +12,49 @@ export type ExternalAuthSubjectRef = string & { readonly __brand: 'ExternalAuthS
 export type ExternalAuthOrganizationRef = string & { readonly __brand: 'ExternalAuthOrganizationRef' };
 export type ExternalSessionRef = string & { readonly __brand: 'ExternalSessionRef' };
 
-function nonEmptyBrand<T extends string>(value: string, label: string): T {
-  const normalized = value.trim();
-  if (!normalized) throw new DomainPrimitiveError(`${label} must be non-empty`);
-  return normalized as T;
+function assertNonEmpty(value: string, label: string): void {
+  if (!value) throw new DomainPrimitiveError(`${label} must be non-empty`);
+}
+
+/**
+ * Not generic: each brand gets its own assertion tied to a concrete target type, so no caller can
+ * claim an arbitrary brand from the shared non-empty check alone (see assertNonEmpty above).
+ */
+function assertIsAuthProviderKey(value: string): asserts value is AuthProviderKey {
+  assertNonEmpty(value, 'AuthProviderKey');
+}
+function assertIsExternalAuthSubjectRef(value: string): asserts value is ExternalAuthSubjectRef {
+  assertNonEmpty(value, 'ExternalAuthSubjectRef');
+}
+function assertIsExternalAuthOrganizationRef(value: string): asserts value is ExternalAuthOrganizationRef {
+  assertNonEmpty(value, 'ExternalAuthOrganizationRef');
+}
+function assertIsExternalSessionRef(value: string): asserts value is ExternalSessionRef {
+  assertNonEmpty(value, 'ExternalSessionRef');
 }
 
 export function authProviderKey(value: string): AuthProviderKey {
-  return nonEmptyBrand<AuthProviderKey>(value, 'AuthProviderKey');
+  const normalized = value.trim();
+  assertIsAuthProviderKey(normalized);
+  return normalized;
 }
 
 export function externalAuthSubjectRef(value: string): ExternalAuthSubjectRef {
-  return nonEmptyBrand<ExternalAuthSubjectRef>(value, 'ExternalAuthSubjectRef');
+  const normalized = value.trim();
+  assertIsExternalAuthSubjectRef(normalized);
+  return normalized;
 }
 
 export function externalAuthOrganizationRef(value: string): ExternalAuthOrganizationRef {
-  return nonEmptyBrand<ExternalAuthOrganizationRef>(value, 'ExternalAuthOrganizationRef');
+  const normalized = value.trim();
+  assertIsExternalAuthOrganizationRef(normalized);
+  return normalized;
 }
 
 export function externalSessionRef(value: string): ExternalSessionRef {
-  return nonEmptyBrand<ExternalSessionRef>(value, 'ExternalSessionRef');
+  const normalized = value.trim();
+  assertIsExternalSessionRef(normalized);
+  return normalized;
 }
 
 export interface UserIdentity {

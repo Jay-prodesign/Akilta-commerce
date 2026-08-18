@@ -21,16 +21,40 @@ export type TimezoneId = Brand<string, 'TimezoneId'>;
 export type WorkspaceOnboardingState = Brand<string, 'WorkspaceOnboardingState'>;
 export type ModuleKey = Brand<string, 'ModuleKey'>;
 
+function assertIsOperationalStatus(value: string): asserts value is OperationalStatus {
+  assertNonEmptyString(value, 'OperationalStatus');
+}
+
+function assertIsWorkspaceOnboardingState(value: string): asserts value is WorkspaceOnboardingState {
+  assertNonEmptyString(value, 'WorkspaceOnboardingState');
+}
+
+function assertIsModuleKey(value: string): asserts value is ModuleKey {
+  assertNonEmptyString(value, 'ModuleKey');
+}
+
+/** Re-runs the identical IANA timezone check on the exact value being returned. */
+function assertIsTimezoneId(value: string): asserts value is TimezoneId {
+  try {
+    Intl.DateTimeFormat('en', { timeZone: value }).format(new Date(0));
+  } catch {
+    throw new DomainPrimitiveError('TimezoneId must be a valid IANA-style timezone identifier');
+  }
+}
+
 export function operationalStatus(value: string): OperationalStatus {
-  return assertNonEmptyString(value, 'OperationalStatus') as OperationalStatus;
+  assertIsOperationalStatus(value);
+  return value;
 }
 
 export function workspaceOnboardingState(value: string): WorkspaceOnboardingState {
-  return assertNonEmptyString(value, 'WorkspaceOnboardingState') as WorkspaceOnboardingState;
+  assertIsWorkspaceOnboardingState(value);
+  return value;
 }
 
 export function moduleKey(value: string): ModuleKey {
-  return assertNonEmptyString(value, 'ModuleKey') as ModuleKey;
+  assertIsModuleKey(value);
+  return value;
 }
 
 export function timezoneId(value: string): TimezoneId {
@@ -38,13 +62,8 @@ export function timezoneId(value: string): TimezoneId {
   if (candidate.length === 0) {
     throw new DomainPrimitiveError('TimezoneId must be non-empty');
   }
-
-  try {
-    Intl.DateTimeFormat('en', { timeZone: candidate }).format(new Date(0));
-    return candidate as TimezoneId;
-  } catch {
-    throw new DomainPrimitiveError('TimezoneId must be a valid IANA-style timezone identifier');
-  }
+  assertIsTimezoneId(candidate);
+  return candidate;
 }
 
 export interface Organization {

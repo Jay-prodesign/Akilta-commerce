@@ -96,7 +96,7 @@ function nonEmpty(value: string): boolean {
 }
 
 function timestampMs(value: UtcTimestamp): number {
-  return Date.parse(value as string);
+  return Date.parse(value);
 }
 
 function privilegedContextDenyReason(context: ExecutionContext): BreakGlassDenyReason | null {
@@ -120,7 +120,7 @@ function activationEvent(
     actorUserId: request.executionContext.actorUserId,
     targetMerchantWorkspaceId: request.target.merchantWorkspaceId,
     occurredAt: request.now,
-    decisionReason,
+    ...(decisionReason !== undefined ? { decisionReason } : {}),
     approvalRef: request.approvalRef,
     policyRef: request.policy.policyRef,
   };
@@ -212,7 +212,7 @@ function useEvent(
     targetMerchantWorkspaceId: request.target.merchantWorkspaceId,
     occurredAt: request.now,
     permission: request.requiredPermission,
-    decisionReason,
+    ...(decisionReason !== undefined ? { decisionReason } : {}),
     approvalRef: request.grant.approvalRef,
     policyRef: request.grant.policyRef,
   };

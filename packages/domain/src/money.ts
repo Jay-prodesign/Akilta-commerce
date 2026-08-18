@@ -9,12 +9,16 @@ export interface Money {
 
 const ISO_CURRENCY_PATTERN = /^[A-Z]{3}$/;
 
-export function isoCurrencyCode(value: string): IsoCurrencyCode {
-  const normalized = value.trim().toUpperCase();
-  if (!ISO_CURRENCY_PATTERN.test(normalized)) {
+function assertIsIsoCurrencyCode(value: string): asserts value is IsoCurrencyCode {
+  if (!ISO_CURRENCY_PATTERN.test(value)) {
     throw new DomainPrimitiveError('Currency must be a three-letter uppercase ISO-style currency code');
   }
-  return normalized as IsoCurrencyCode;
+}
+
+export function isoCurrencyCode(value: string): IsoCurrencyCode {
+  const normalized = value.trim().toUpperCase();
+  assertIsIsoCurrencyCode(normalized);
+  return normalized;
 }
 
 export function money(amountMinor: bigint, currency: string | IsoCurrencyCode): Money {

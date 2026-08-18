@@ -2,14 +2,20 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['node_modules/**', '.staging-build/**', 'tests/**/*.mjs'],
+    ignores: [
+      'node_modules/**',
+      '.staging-build/**',
+      'tests/**/*.mjs',
+      'tests/runtime/**/*.ts',
+      'tests/contract/domain-primitives.spec.ts',
+    ],
   },
   ...tseslint.configs.recommendedTypeChecked,
   {
     files: ['{apps,packages,connectors,tests}/**/*.ts'],
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        project: ['./tsconfig.json', './tsconfig.plain-tests.json'],
         tsconfigRootDir: import.meta.dirname,
         onUnsupportedTypeScriptVersion: 'error',
       },
@@ -17,7 +23,11 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unsafe-type-assertion': 'error'
+      '@typescript-eslint/no-unsafe-type-assertion': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', destructuredArrayIgnorePattern: '^_' },
+      ],
     },
   },
 );

@@ -127,20 +127,20 @@ const goodCandidate: AiGatewayCandidate = {
 class MemoryIdempotency implements IdempotencyRegistry {
   readonly records = new Map<string, IdempotencyRecord>();
   private key(ws: string, ns: string, key: string) { return `${ws}:${ns}:${key}`; }
-  async get(ws: IdempotencyRecord['merchantWorkspaceId'], ns: string, key: IdempotencyRecord['idempotencyKey']) {
-    return this.records.get(this.key(ws, ns, key)) ?? null;
+  get(ws: IdempotencyRecord['merchantWorkspaceId'], ns: string, key: IdempotencyRecord['idempotencyKey']) {
+    return Promise.resolve(this.records.get(this.key(ws, ns, key)) ?? null);
   }
-  async putIfAbsent(record: IdempotencyRecord) {
+  putIfAbsent(record: IdempotencyRecord) {
     const key = this.key(record.merchantWorkspaceId, record.namespace, record.idempotencyKey);
-    if (this.records.has(key)) return 'EXISTS' as const;
+    if (this.records.has(key)) return Promise.resolve('EXISTS' as const);
     this.records.set(key, record);
-    return 'INSERTED' as const;
+    return Promise.resolve('INSERTED' as const);
   }
 }
 
 class MemoryWriter<T> implements AppendOnlyEventWriter<T> {
   readonly events: T[] = [];
-  async append(event: T) { this.events.push(event); }
+  append(event: T) { this.events.push(event); return Promise.resolve(); }
 }
 
 function makeDeps(options: {
@@ -156,15 +156,15 @@ function makeDeps(options: {
   const idempotencyRegistry = new MemoryIdempotency();
   const deps: GroundedResponseDependencies = {
     evidenceLookup: {
-      async collect() {
+      collect() {
         evidenceCalls += 1;
-        return options.facts ?? knownFacts;
+        return Promise.resolve(options.facts ?? knownFacts);
       },
     },
     aiGateway: {
-      async generateResponse() {
+      generateResponse() {
         aiCalls += 1;
-        return options.candidate ?? goodCandidate;
+        return Promise.resolve(options.candidate ?? goodCandidate);
       },
     },
     idempotencyRegistry,

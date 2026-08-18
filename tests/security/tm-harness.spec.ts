@@ -90,7 +90,7 @@ const scenarios = [
   {id:'TM-10-CROSS-TENANT-BUDGET-DENY',actual:tm10Cross.decision,expected:'DENY'},
   {id:'TM-11-WEBHOOK-INVALID-SECURITY-DESCRIPTOR',actual:ERROR_DESCRIPTORS.WEBHOOK_INVALID.securitySeverity,expected:'HIGH'},
   {id:'TM-13-DEACTIVATED-KNOWLEDGE-NOT-TRUTH',actual:deletedFact.unknowns.length,expected:1},
-  {id:'TM-14-NORMAL-PLATFORM-INTERNAL-PATH-DENY',actual:evaluateAuthorization({...({executionContext:{...context,actorOrganizationType:'PLATFORM_INTERNAL'} as ExecutionContext,requiredPermission:'conversation:respond',target:{...targetB,merchantWorkspaceId:wsA,owningOrganizationId:orgA}})}).decision,expected:'DENY'},
+  {id:'TM-14-NORMAL-PLATFORM-INTERNAL-PATH-DENY',actual:evaluateAuthorization({...({executionContext:{...context,actorOrganizationType:'PLATFORM_INTERNAL'},requiredPermission:'conversation:respond',target:{...targetB,merchantWorkspaceId:wsA,owningOrganizationId:orgA}})}).decision,expected:'DENY'},
   {id:'TM-15-TIMEOUT-CLASSIFIED-RETRYABLE',actual:ERROR_DESCRIPTORS.PROVIDER_TIMEOUT.retryable,expected:true},
   {id:'TM-15-INTERNAL-UNEXPECTED-FAILS-SAFE-HANDOFF',actual:ERROR_DESCRIPTORS.INTERNAL_UNEXPECTED.customerSafeHandling,expected:'HANDOFF'},
 ] as const;

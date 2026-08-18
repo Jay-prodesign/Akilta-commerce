@@ -4,6 +4,7 @@ import {
   type FactCandidate,
   type TruthAuthorityPolicy,
 } from '../../packages/truth-policy/src/truth';
+import { internalId, utcTimestamp } from '../../packages/domain/src';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -29,13 +30,13 @@ assert(!containsUnresolvedTemplateSyntax('Size {L} is available.'), 'ordinary si
 
 function resolve(candidate: FactCandidate) {
   return resolveFactCandidates({
-    approvedFactSetId: 'afs-template-test' as never,
-    merchantWorkspaceId: 'mw-template-test' as never,
+    approvedFactSetId: internalId('afs-template-test', 'ApprovedFactSet'),
+    merchantWorkspaceId: internalId('mw-template-test', 'MerchantWorkspace'),
     intent: 'policy_answer',
     policies: policy,
     requestedFacts: [{ factClass: 'policy', factKey: 'privacy.summary' }],
     candidates: [candidate],
-    generatedAt: '2026-08-09T20:30:00+03:00' as never,
+    generatedAt: utcTimestamp('2026-08-09T20:30:00+03:00'),
   });
 }
 

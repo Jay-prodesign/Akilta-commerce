@@ -14,11 +14,17 @@ import type {
 import type { ErrorCode } from '../../domain/src/errors';
 
 export type TrainingEligibility = Brand<string, 'TrainingEligibility'>;
-export const NOT_CLASSIFIED = 'NOT_CLASSIFIED' as TrainingEligibility;
+
+function assertIsTrainingEligibility(value: string): asserts value is TrainingEligibility {
+  assertNonEmptyString(value, 'TrainingEligibility');
+}
 
 export function trainingEligibility(value: string): TrainingEligibility {
-  return assertNonEmptyString(value, 'TrainingEligibility') as TrainingEligibility;
+  assertIsTrainingEligibility(value);
+  return value;
 }
+
+export const NOT_CLASSIFIED = trainingEligibility('NOT_CLASSIFIED');
 
 export type AuditDecision = 'ALLOW' | 'DENY' | 'APPROVAL_REQUIRED';
 
