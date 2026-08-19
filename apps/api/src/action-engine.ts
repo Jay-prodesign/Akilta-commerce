@@ -71,6 +71,102 @@ export type PrepareExecutionDecision =
       readonly reason: string;
     };
 
+export type ActionSafetyDecision =
+  | { readonly decision: 'ALLOW'; readonly effect?: ExternalEffect }
+  | { readonly decision: 'APPROVAL_REQUIRED'; readonly reason: string }
+  | { readonly decision: 'DENY'; readonly reason: string };
+
+export interface ActionSafetyInput {
+  readonly actionName: string;
+  readonly requestedMaturity: ExecutionMaturityLevel;
+  readonly executionContext: ExecutionContext;
+  readonly target: ServerResolvedResourceContext;
+  readonly agencyAssignment?: AgencyClientAssignment;
+  readonly capability?: CapabilityAuthoritySnapshot;
+  readonly policyApprovalRequired?: boolean;
+  readonly approval?: ApprovalSnapshot;
+  readonly actionPlanId: ActionPlanId;
+  readonly payloadHash: string;
+  readonly merchantWorkspaceId: MerchantWorkspaceId;
+  readonly now: UtcTimestamp;
+  readonly environment: EnvironmentName;
+  readonly configVersion: string;
+  readonly releaseFlagEnabled: boolean;
+  readonly switches: readonly SafetySwitchSnapshot[];
+  readonly provider?: string;
+  readonly integrationId?: IntegrationId;
+}
+
+/**
+ * Authority + approval + external-effect-gate composition, factored out of
+ * prepareActionExecution so it can be called a second time, unchanged, immediately
+ * before an external effect actually dispatches or retries (see dispatch-safety.ts /
+ * I3-RG-AUTH-RACE). Behavior is identical to the inline checks this replaced.
+ */
+export function evaluateActionSafety(input: ActionSafetyInput): ActionSafetyDecision {
+  const actionDefinition = getActionDefinition(input.actionName);
+  if (!actionDefinition) return { decision: 'DENY', reason: 'UNREGISTERED_ACTION' };
+
+  const authority = resolveActionAuthority({
+    actionName: input.actionName,
+    requestedMaturity: input.requestedMaturity,
+    executionContext: input.executionContext,
+    target: input.target,
+    ...(input.agencyAssignment ? { agencyAssignment: input.agencyAssignment } : {}),
+    ...(input.capability ? { capability: input.capability } : {}),
+    ...(input.integrationId ? { integrationId: input.integrationId } : {}),
+    ...(input.policyApprovalRequired !== undefined
+      ? { policyApprovalRequired: input.policyApprovalRequired }
+      : {}),
+  });
+  if (authority.decision === 'DENY') {
+    return { decision: 'DENY', reason: `ACTION_AUTHORITY:${authority.reason}` };
+  }
+
+  if (authority.decision === 'APPROVAL_REQUIRED') {
+    if (!input.approval) {
+      return { decision: 'APPROVAL_REQUIRED', reason: authority.reason };
+    }
+    const approval = validateApprovalExecution({
+      approval: input.approval,
+      merchantWorkspaceId: input.merchantWorkspaceId,
+      actionPlanId: input.actionPlanId,
+      payloadHash: input.payloadHash,
+      now: input.now,
+    });
+    if (approval.decision === 'DENY') {
+      return { decision: 'DENY', reason: `APPROVAL:${approval.reason}` };
+    }
+  }
+
+  const effect = ACTION_EFFECT[input.actionName];
+  // Any registered action explicitly marked as an external effect must never
+  // bypass the safety-effect layer because its mapping is missing or stale.
+  if (actionDefinition.externalEffect && !effect) {
+    return { decision: 'DENY', reason: 'UNMAPPED_EXTERNAL_EFFECT' };
+  }
+  if (effect) {
+    const gate = evaluateExternalEffectGate({
+      effect,
+      environment: input.environment,
+      configVersion: input.configVersion,
+      merchantWorkspaceId: input.merchantWorkspaceId,
+      ...(input.provider ? { provider: input.provider } : {}),
+      ...(input.integrationId ? { integrationId: input.integrationId } : {}),
+      operation: input.actionName,
+      releaseFlagEnabled: input.releaseFlagEnabled,
+      authorizationDecision: 'ALLOW',
+      ...(input.capability ? { providerSupportState: input.capability.supportState } : {}),
+      switches: input.switches,
+    });
+    if (gate.decision === 'DENY') {
+      return { decision: 'DENY', reason: `SAFETY_GATE:${gate.reason}` };
+    }
+  }
+
+  return { decision: 'ALLOW', ...(effect ? { effect } : {}) };
+}
+
 export function prepareActionExecution(input: {
   readonly plan: StagedActionPlan;
   readonly executionContext: ExecutionContext;
@@ -97,63 +193,33 @@ export function prepareActionExecution(input: {
     return { decision: 'DENY', reason: 'ACTION_PLAN_WORKSPACE_MISMATCH' };
   }
 
-  const authority = resolveActionAuthority({
+  const safety = evaluateActionSafety({
     actionName: plan.actionName,
     requestedMaturity: plan.requestedMaturity,
     executionContext: input.executionContext,
     target: input.target,
     ...(input.agencyAssignment ? { agencyAssignment: input.agencyAssignment } : {}),
     ...(input.capability ? { capability: input.capability } : {}),
-    ...(input.integrationId ? { integrationId: input.integrationId } : {}),
     ...(input.policyApprovalRequired !== undefined
       ? { policyApprovalRequired: input.policyApprovalRequired }
       : {}),
+    ...(input.approval ? { approval: input.approval } : {}),
+    actionPlanId: plan.actionPlanId,
+    payloadHash: plan.payloadHash,
+    merchantWorkspaceId: plan.merchantWorkspaceId,
+    now: input.now,
+    environment: input.environment,
+    configVersion: input.configVersion,
+    releaseFlagEnabled: input.releaseFlagEnabled,
+    switches: input.switches,
+    ...(input.provider ? { provider: input.provider } : {}),
+    ...(input.integrationId ? { integrationId: input.integrationId } : {}),
   });
-  if (authority.decision === 'DENY') {
-    return { decision: 'DENY', reason: `ACTION_AUTHORITY:${authority.reason}` };
-  }
 
-  if (authority.decision === 'APPROVAL_REQUIRED') {
-    if (!input.approval) {
-      return { decision: 'APPROVAL_REQUIRED', plan, reason: authority.reason };
-    }
-    const approval = validateApprovalExecution({
-      approval: input.approval,
-      merchantWorkspaceId: plan.merchantWorkspaceId,
-      actionPlanId: plan.actionPlanId,
-      payloadHash: plan.payloadHash,
-      now: input.now,
-    });
-    if (approval.decision === 'DENY') {
-      return { decision: 'DENY', reason: `APPROVAL:${approval.reason}` };
-    }
+  if (safety.decision === 'DENY') return { decision: 'DENY', reason: safety.reason };
+  if (safety.decision === 'APPROVAL_REQUIRED') {
+    return { decision: 'APPROVAL_REQUIRED', plan, reason: safety.reason };
   }
-
-  const effect = ACTION_EFFECT[plan.actionName];
-  // Any registered action explicitly marked as an external effect must never
-  // bypass the safety-effect layer because its mapping is missing or stale.
-  if (actionDefinition.externalEffect && !effect) {
-    return { decision: 'DENY', reason: 'UNMAPPED_EXTERNAL_EFFECT' };
-  }
-  if (effect) {
-    const gate = evaluateExternalEffectGate({
-      effect,
-      environment: input.environment,
-      configVersion: input.configVersion,
-      merchantWorkspaceId: plan.merchantWorkspaceId,
-      ...(input.provider ? { provider: input.provider } : {}),
-      ...(input.integrationId ? { integrationId: input.integrationId } : {}),
-      operation: plan.actionName,
-      releaseFlagEnabled: input.releaseFlagEnabled,
-      authorizationDecision: 'ALLOW',
-      ...(input.capability ? { providerSupportState: input.capability.supportState } : {}),
-      switches: input.switches,
-    });
-    if (gate.decision === 'DENY') {
-      return { decision: 'DENY', reason: `SAFETY_GATE:${gate.reason}` };
-    }
-  }
-
   return {
     decision: 'EXECUTION_READY',
     plan,
