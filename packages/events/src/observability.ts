@@ -1,5 +1,6 @@
 import type {
   CorrelationId,
+  JobId,
   MerchantWorkspaceId,
   RequestId,
   RunId,
@@ -21,6 +22,7 @@ export interface StructuredLogRecord {
   readonly merchantWorkspaceId?: MerchantWorkspaceId;
   readonly requestId?: RequestId;
   readonly runId?: RunId;
+  readonly jobId?: JobId;
   readonly correlationId?: CorrelationId;
   readonly resultCode?: string;
   readonly errorCode?: ErrorCode;
@@ -52,6 +54,11 @@ export const METRIC_NAMES = [
   'provider_cost_minor',
   'security_deny_count',
   'approval_required_count',
+  'job_dispatch_attempt_count',
+  'job_dispatch_denied_count',
+  'outbox_delivery_count',
+  'outbox_replay_prevented_count',
+  'quota_reservation_denied_count',
 ] as const;
 export type MetricName = (typeof METRIC_NAMES)[number];
 
@@ -61,6 +68,7 @@ export interface MetricPoint {
   readonly occurredAt: UtcTimestamp;
   readonly merchantWorkspaceId?: MerchantWorkspaceId;
   readonly runId?: RunId;
+  readonly jobId?: JobId;
   readonly correlationId?: CorrelationId;
   readonly providerType?: string;
   readonly operation?: string;
@@ -125,6 +133,10 @@ function descriptorFor(code: ErrorCode): ErrorDescriptor {
       return { code, retryable: false, customerSafeHandling: 'HANDOFF', operatorVisibility: 'ELEVATED', securitySeverity: code === 'AI_OUTPUT_POLICY_FAIL' ? 'MEDIUM' : 'NONE', createsEvaluationEvidence: true, createsIncidentEvidence: false };
     case 'USAGE_COST_UNKNOWN':
       return { code, retryable: false, customerSafeHandling: 'HIDE_DETAIL', operatorVisibility: 'ELEVATED', securitySeverity: 'NONE', createsEvaluationEvidence: true, createsIncidentEvidence: false };
+    case 'QUOTA_RESERVATION_DENIED':
+      return { code, retryable: true, customerSafeHandling: 'SAFE_MESSAGE', operatorVisibility: 'NORMAL', securitySeverity: 'NONE', createsEvaluationEvidence: true, createsIncidentEvidence: false };
+    case 'DISPATCH_REVALIDATION_DENIED':
+      return { code, retryable: false, customerSafeHandling: 'HANDOFF', operatorVisibility: 'ELEVATED', securitySeverity: 'LOW', createsEvaluationEvidence: true, createsIncidentEvidence: false };
     case 'INTERNAL_UNEXPECTED':
       return { code, retryable: 'UNKNOWN', customerSafeHandling: 'HANDOFF', operatorVisibility: 'ELEVATED', securitySeverity: 'UNKNOWN', createsEvaluationEvidence: true, createsIncidentEvidence: true };
   }
@@ -158,6 +170,8 @@ export const ERROR_DESCRIPTORS: Readonly<Record<ErrorCode, ErrorDescriptor>> = O
   AI_OUTPUT_POLICY_FAIL: descriptorFor('AI_OUTPUT_POLICY_FAIL'),
   AI_OUTPUT_GROUNDEDNESS_FAIL: descriptorFor('AI_OUTPUT_GROUNDEDNESS_FAIL'),
   USAGE_COST_UNKNOWN: descriptorFor('USAGE_COST_UNKNOWN'),
+  QUOTA_RESERVATION_DENIED: descriptorFor('QUOTA_RESERVATION_DENIED'),
+  DISPATCH_REVALIDATION_DENIED: descriptorFor('DISPATCH_REVALIDATION_DENIED'),
   INTERNAL_UNEXPECTED: descriptorFor('INTERNAL_UNEXPECTED'),
 } satisfies Record<ErrorCode, ErrorDescriptor>);
 

@@ -1,4 +1,5 @@
 import type { MerchantWorkspaceId, QuotaReservationId, UtcTimestamp } from '../../domain/src';
+import type { ErrorCode } from '../../domain/src/errors';
 import { authorizeBudgetConsume, type TenantUsageBudget } from './budget';
 
 export interface QuotaReservation {
@@ -11,7 +12,11 @@ export interface QuotaReservation {
 
 export type ReserveQuotaResult =
   | { readonly decision: 'ALLOW'; readonly reservation: QuotaReservation }
-  | { readonly decision: 'DENY'; readonly reason: 'BUDGET_NOT_FOUND' | 'TENANT_MISMATCH' | 'LIMIT_EXCEEDED' | 'INVALID_AMOUNT' };
+  | {
+      readonly decision: 'DENY';
+      readonly reason: 'BUDGET_NOT_FOUND' | 'TENANT_MISMATCH' | 'LIMIT_EXCEEDED' | 'INVALID_AMOUNT';
+      readonly code: Extract<ErrorCode, 'QUOTA_RESERVATION_DENIED'>;
+    };
 
 /**
  * D-090 I5 / RG-QUOTA (D-088 S1 pre-spend cost admission): in-memory atomic quota
@@ -44,14 +49,14 @@ export class AtomicQuotaLedger {
   }): ReserveQuotaResult {
     const key = AtomicQuotaLedger.key(input.merchantWorkspaceId, input.budgetKey);
     const budget = this.budgets.get(key);
-    if (!budget) return { decision: 'DENY', reason: 'BUDGET_NOT_FOUND' };
+    if (!budget) return { decision: 'DENY', reason: 'BUDGET_NOT_FOUND', code: 'QUOTA_RESERVATION_DENIED' };
 
     const decision = authorizeBudgetConsume({
       budget,
       merchantWorkspaceId: input.merchantWorkspaceId,
       amount: input.amount,
     });
-    if (decision.decision === 'DENY') return decision;
+    if (decision.decision === 'DENY') return { ...decision, code: 'QUOTA_RESERVATION_DENIED' };
 
     this.budgets.set(key, { ...budget, used: decision.nextUsed });
     return {

@@ -1,8 +1,9 @@
 import { evaluateActionSafety, type ActionSafetyInput } from './action-engine';
+import type { ErrorCode } from '../../../packages/domain/src/errors';
 
 export type RevalidateBeforeDispatchDecision =
   | { readonly decision: 'ALLOW' }
-  | { readonly decision: 'DENY'; readonly reason: string };
+  | { readonly decision: 'DENY'; readonly reason: string; readonly code: Extract<ErrorCode, 'DISPATCH_REVALIDATION_DENIED'> };
 
 export interface RevalidateBeforeDispatchInput extends ActionSafetyInput {
   /** Forwarded for the caller's own observability; not evaluated here. */
@@ -32,7 +33,7 @@ export function revalidateBeforeDispatch(
   const safety = evaluateActionSafety(input);
   if (safety.decision === 'ALLOW') return { decision: 'ALLOW' };
   if (safety.decision === 'APPROVAL_REQUIRED') {
-    return { decision: 'DENY', reason: `APPROVAL_REQUIRED_AT_DISPATCH:${safety.reason}` };
+    return { decision: 'DENY', reason: `APPROVAL_REQUIRED_AT_DISPATCH:${safety.reason}`, code: 'DISPATCH_REVALIDATION_DENIED' };
   }
-  return { decision: 'DENY', reason: safety.reason };
+  return { decision: 'DENY', reason: safety.reason, code: 'DISPATCH_REVALIDATION_DENIED' };
 }
