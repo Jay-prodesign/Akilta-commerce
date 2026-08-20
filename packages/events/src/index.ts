@@ -6,5 +6,6 @@ export * from './budget';
 export * from './async-envelope';
 export * from './retry-policy';
 export * from './job';
+export * from './job-lease';
 export * from './outbox';
 export * from './quota-ledger';

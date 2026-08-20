@@ -34,5 +34,7 @@ run('node', [join(root, 'tests', 'contract', 'schema-migration-0002.spec.mjs')])
 executed += 1;
 run('node', [join(root, 'tests', 'contract', 'p0-026-source-safety.spec.mjs')]);
 executed += 1;
+run('node', [join(root, 'tests', 'contract', 'schema-migration-0003.spec.mjs')]);
+executed += 1;
 console.log(`STAGING_DEPENDENCY_FREE_SUITE_PASS ${executed}/${executed}`);
 console.log('RUNTIME_DEPENDENCY_TESTS_NOT_RUN: hono/vitest/wrangler/workerd/postgres/provider adapters require real install/runtime evidence.');
