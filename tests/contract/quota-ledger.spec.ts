@@ -139,6 +139,25 @@ async function main(): Promise<void> {
         assert(threw, 'maxConcurrent=0 must be rejected');
       },
     ],
+    [
+      'QUOTA-08-SAME-RESERVATION-ID-ACROSS-WORKSPACES-DOES-NOT-COLLIDE',
+      () => {
+        // Reservation lookup/consumption is always keyed by (workspace, budgetKey),
+        // never by quotaReservationId alone -- a reused/predictable reservation id
+        // string cannot let a caller consume a different tenant's budget.
+        const ledger = new AtomicQuotaLedger();
+        ledger.seed({ merchantWorkspaceId: workspaceA, budgetKey: 'ai.generate_batch', used: 0n, limit: 5n });
+        ledger.seed({ merchantWorkspaceId: workspaceB, budgetKey: 'ai.generate_batch', used: 0n, limit: 5n });
+
+        const sharedReservationId = internalId('qr_shared', 'QuotaReservation');
+        const first = ledger.reserveAtomic({ quotaReservationId: sharedReservationId, merchantWorkspaceId: workspaceA, budgetKey: 'ai.generate_batch', amount: 3n, now });
+        const second = ledger.reserveAtomic({ quotaReservationId: sharedReservationId, merchantWorkspaceId: workspaceB, budgetKey: 'ai.generate_batch', amount: 3n, now });
+
+        assert(first.decision === 'ALLOW' && second.decision === 'ALLOW', 'both tenant-scoped reservations should independently succeed');
+        assert(ledger.currentUsed(workspaceA, 'ai.generate_batch') === 3n, 'workspace A usage must reflect only its own reservation');
+        assert(ledger.currentUsed(workspaceB, 'ai.generate_batch') === 3n, 'workspace B usage must reflect only its own reservation, unaffected by the shared reservation id string');
+      },
+    ],
   ];
 
   for (const [name, fn] of cases) {

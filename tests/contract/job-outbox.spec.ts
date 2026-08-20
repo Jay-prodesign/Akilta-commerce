@@ -1,9 +1,17 @@
-import { createChildJob, createJob, projectParentAggregateStatus, type JobRecord } from '../../packages/events/src/job';
+import {
+  classifyJobSubmission,
+  createChildJob,
+  createJob,
+  jobDeduplicationKey,
+  projectParentAggregateStatus,
+  type JobRecord,
+} from '../../packages/events/src/job';
 import {
   createOutboxDeliveryRegistry,
   deliverOutboxRecord,
   stageJobWithOutbox,
 } from '../../packages/events/src/outbox';
+import { settleActionExecution } from '../../apps/api/src/action-settlement';
 import { idempotencyKey, internalId, utcTimestamp } from '../../packages/domain/src';
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -178,6 +186,83 @@ const cases: Array<[string, () => void]> = [
       assert(first.outcome === 'DELIVERED', 'first delivery attempt should deliver');
       assert(replay.outcome === 'ALREADY_DELIVERED', 'D-090 I1: replayed delivery must be recognized, not redelivered');
       assert(effectCalls === 1, 'at-least-once delivery must still fire the external effect exactly once');
+    },
+  ],
+  [
+    'JOB-08-RG-DUP-DUPLICATE-SUBMISSION-DETECTED-APPLICATION-LEVEL',
+    () => {
+      const first = job();
+      const seen = new Set<string>([jobDeduplicationKey(first)]);
+      // Same workspace/capabilityRef/idempotencyKey resubmitted out of order (e.g. a
+      // retried client request) must be recognized before ever reaching the DB
+      // UNIQUE constraint.
+      const resubmission = job();
+      assert(
+        classifyJobSubmission(seen, resubmission) === 'DUPLICATE',
+        'RG-DUP: a resubmitted job with identical workspace/capabilityRef/idempotencyKey must be classified DUPLICATE',
+      );
+    },
+  ],
+  [
+    'JOB-09-RG-DUP-DIFFERENT-IDEMPOTENCY-KEY-NOT-A-DUPLICATE',
+    () => {
+      const first = job();
+      const seen = new Set<string>([jobDeduplicationKey(first)]);
+      const distinct = job({ jobId: internalId('job_distinct_001', 'Job'), idempotencyKey: idempotencyKey('mw_job_001:commerce.sync_inventory:distinct') });
+      assert(classifyJobSubmission(seen, distinct) === 'ACCEPT', 'a genuinely distinct job must not be misclassified as duplicate');
+    },
+  ],
+  [
+    'OUTBOX-04-CROSS-WORKSPACE-IDENTITY-CANNOT-BE-FORGED',
+    () => {
+      // The outbox record's merchantWorkspaceId is always derived from the
+      // committed job, never independently supplied -- there is no input path
+      // that lets a caller stage an outbox entry against a workspace other than
+      // the one its job actually belongs to.
+      const staged = stageJobWithOutbox({
+        job: job({ merchantWorkspaceId: otherWorkspace, idempotencyKey: idempotencyKey('mw_job_other:commerce.sync_inventory:cross') }),
+        outboxId: internalId('outbox_004', 'Outbox'),
+        topic: 'action.execute',
+        payloadRef: 'payload:ref:004',
+      });
+      assert(staged.outbox.merchantWorkspaceId === otherWorkspace, 'outbox workspace must track its job, never be independently settable');
+    },
+  ],
+  [
+    'OUTBOX-05-AMBIGUOUS-SETTLEMENT-NEVER-BLINDLY-REPLAYED',
+    () => {
+      // Compose the outbox's at-least-once delivery tracking with the existing
+      // action-settlement reconciliation contract: an ambiguous (OUTCOME_UNKNOWN)
+      // provider result is a *business* ambiguity that action-settlement routes to
+      // RECONCILE_PROVIDER_RESULT (manual/explicit reconciliation) -- it is never,
+      // by itself, treated by the outbox layer as "not yet delivered", so a caller
+      // cannot get a second automatic mutation attempt merely by calling
+      // deliverOutboxRecord again for the same outboxId.
+      const staged = stageJobWithOutbox({
+        job: job(),
+        outboxId: internalId('outbox_005', 'Outbox'),
+        topic: 'action.execute',
+        payloadRef: 'payload:ref:005',
+      });
+      const registry = createOutboxDeliveryRegistry();
+      let attempts = 0;
+      const first = deliverOutboxRecord(registry, staged.outbox, () => { attempts += 1; });
+      assert(first.outcome === 'DELIVERED', 'first attempt should deliver');
+
+      const settlement = settleActionExecution({
+        actionName: 'conversation.reply.send',
+        evidence: { providerState: 'OUTCOME_UNKNOWN' },
+      });
+      assert(
+        settlement.status === 'BLOCKED' && settlement.nextSafeAction === 'RECONCILE_PROVIDER_RESULT',
+        'an ambiguous provider outcome must route to explicit reconciliation, not an implicit retry signal',
+      );
+
+      // A caller that (incorrectly) tries to "retry" by redelivering the same
+      // outbox entry after seeing the ambiguous settlement must still be refused.
+      const secondAttempt = deliverOutboxRecord(registry, staged.outbox, () => { attempts += 1; });
+      assert(secondAttempt.outcome === 'ALREADY_DELIVERED', 'ambiguous settlement must not unlock a second delivery of the same outbox entry');
+      assert(attempts === 1, 'the external effect must never fire twice off the back of an ambiguous outcome');
     },
   ],
 ];

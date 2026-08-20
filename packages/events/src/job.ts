@@ -100,6 +100,24 @@ export function transitionJobStatus(job: JobRecord, next: JobStatus, now: UtcTim
   return { ...job, status: next, updatedAt: now };
 }
 
+/**
+ * D-090 I2/RG-DUP application-level defense-in-depth, mirroring the identical
+ * eventDeduplicationKey/classifyDelivery pattern in operational.ts: this is a
+ * pre-write check a caller can run before ever reaching the DB; the real
+ * guarantee is still the migration's `UNIQUE (merchant_workspace_id,
+ * capability_ref, idempotency_key)` constraint on `jobs`.
+ */
+export function jobDeduplicationKey(job: Pick<JobRecord, 'merchantWorkspaceId' | 'capabilityRef' | 'idempotencyKey'>): string {
+  return `${job.merchantWorkspaceId}:${job.capabilityRef}:${job.idempotencyKey}`;
+}
+
+export function classifyJobSubmission(
+  previouslySeenKeys: ReadonlySet<string>,
+  job: Pick<JobRecord, 'merchantWorkspaceId' | 'capabilityRef' | 'idempotencyKey'>,
+): 'ACCEPT' | 'DUPLICATE' {
+  return previouslySeenKeys.has(jobDeduplicationKey(job)) ? 'DUPLICATE' : 'ACCEPT';
+}
+
 export type ParentAggregateStatus =
   | 'PENDING'
   | 'PARTIAL_SUCCESS'
