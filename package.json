@@ -14,7 +14,7 @@
     "lint": "eslint \"{apps,packages,connectors,tests}/**/*.ts\"",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
-    "test:worker": "vitest run --config vitest.worker.config.ts tests/runtime/worker-health.spec.ts",
+    "test:worker": "vitest run --config vitest.worker.config.ts tests/runtime/worker-health.spec.ts tests/runtime/job-run-workerd-smoke.spec.ts",
     "typecheck:staging": "tsc -p tsconfig.plain-tests.json --noEmit"
   },
   "dependencies": {
