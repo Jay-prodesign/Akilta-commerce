@@ -5,6 +5,8 @@ import {
   type ConnectorIdentity,
 } from '../../../packages/commerce-contract/src';
 
+export * from './mapping';
+
 /**
  * D-099 designates Shopify the default REFERENCE_CONNECTOR for AC v1.0. This module is the
  * Shopify counterpart to the existing Ticimax/IdeaSoft/ikas/T-Soft/Meta evidence-gated stubs:
