@@ -129,8 +129,9 @@ both gates.
   (Shopify MCP) does not itself create an executable cursor when its bound context fails the
   D-100 target check.
 
-**FINAL_CHECKPOINT_SHA:** `4c195ec9cfb1be10742acb3b1ff5aee3c83dbb61` (unchanged; this is a
-documentation-only reconciliation record — no source/schema/test delta since `b456466`).
+**FINAL_CHECKPOINT_SHA:** this reconcile record's own commit (documentation-only; no
+source/schema/test delta since the accepted engineering checkpoint `b456466`). Base HEAD at
+the start of this reconcile was `4c195ec9cfb1be10742acb3b1ff5aee3c83dbb61`.
 
 **RESUME CONDITION:** either (a) the isolated AI Commerce Shopify development-store target
 becomes known/reachable and passes D-100 re-verification, making P0-027 eligible for RB-05
