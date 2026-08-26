@@ -21,6 +21,7 @@
     "node_modules",
     ".staging-build",
     "apps/api/src/worker.ts",
+    "apps/control-center/vite.config.ts",
     "tests/runtime/**/*.ts"
   ]
 }

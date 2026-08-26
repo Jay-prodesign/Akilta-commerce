@@ -30,4 +30,19 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ['apps/control-center/**/*.tsx'],
+    languageOptions: {
+      parserOptions: {
+        project: ['./apps/control-center/tsconfig.json'],
+        tsconfigRootDir: import.meta.dirname,
+        onUnsupportedTypeScriptVersion: 'error',
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unsafe-type-assertion': 'error',
+    },
+  },
 );
