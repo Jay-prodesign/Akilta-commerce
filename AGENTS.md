@@ -37,6 +37,8 @@ Those states require Brain verification with evidence.
 - Architecture and CR-V1 scope must not be silently changed by repository work.
 - A material conflict between repository state and canonical project truth requires `ESCALATION_REQUIRED` — stop and escalate to the AI Commerce Brain before changing architecture or scope.
 - Routine founder/manual relay between engineering models is not the intended workflow. Task, checkpoint, and evidence continuity must be repository-native (issues, PRs, docs/exec-plans, commit history) rather than depending on manual relay.
+- Repository work is scoped exclusively to the AI Commerce / AKILTA Commerce project (this repository). Per the AKILTA boundary invariant below, this repository must not be used as a shared or merged engineering workspace for the separate AKILTA core project, even when a Drive record or an instruction references AKILTA-core task IDs (for example a `V2-CDO-*`/`V2-APP-*` continuous-train head). Treat that as a project-isolation conflict requiring `ESCALATION_REQUIRED`, not as work to perform here.
+- All repository changes go through the branch/PR lifecycle in `docs/engineering/GIT_WORKFLOW.md`: no direct push to `main`, one branch per bounded implementation, Brain reviews and approves independently via the PR before merge.
 
 ## D-090 — Seven Engineering Invariants (Mandatory Summary)
 
