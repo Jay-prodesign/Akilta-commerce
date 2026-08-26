@@ -3,6 +3,9 @@ import {
   deriveShopifyAvailability,
   deriveShopifyOrderCompletenessScope,
   mapShopifyInventoryToDerivationInput,
+  mapShopifyOnlineStoreUrl,
+  mapShopifyProductStatus,
+  mapShopifySelectedOptionsToVariantOptionPairs,
 } from '../../connectors/shopify/src';
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -90,7 +93,24 @@ function main(): void {
   });
   assert(contradicted.kind === 'UNKNOWN', 'Observed data older than the assumed default window fails closed instead of asserting a wrong boundary');
 
-  console.log('shopify-connector-mapping: 11/11 PASS');
+  // Real ProductStatus enum (ACTIVE | ARCHIVED | DRAFT | UNLISTED), no lossy transform.
+  assert(mapShopifyProductStatus('ACTIVE') === 'ACTIVE', 'ACTIVE passes through unchanged');
+  assert(mapShopifyProductStatus('UNLISTED') === 'UNLISTED', 'UNLISTED (2025-10+) passes through unchanged');
+
+  // onlineStoreUrl is nullable; null must never become a fabricated URL.
+  assert(mapShopifyOnlineStoreUrl(null) === undefined, 'null onlineStoreUrl maps to undefined, never a guessed URL');
+  assert(mapShopifyOnlineStoreUrl('https://example.myshopify.com/products/x') === 'https://example.myshopify.com/products/x', 'Present onlineStoreUrl passes through unchanged');
+
+  // SelectedOption[] -> VariantOptionPair[] (real name/value fields).
+  const optionPairs = mapShopifySelectedOptionsToVariantOptionPairs([
+    { name: 'Size', value: 'Large' },
+    { name: 'Color', value: 'Blue' },
+  ]);
+  assert(optionPairs.length === 2, 'Both selected options are mapped');
+  assert(optionPairs[0]?.label === 'Size' && optionPairs[0]?.value === 'Large', 'SelectedOption.name maps to label, .value maps to value');
+  assert(optionPairs[1]?.label === 'Color' && optionPairs[1]?.value === 'Blue', 'Second option pair mapped correctly');
+
+  console.log('shopify-connector-mapping: 17/17 PASS');
 }
 
 main();

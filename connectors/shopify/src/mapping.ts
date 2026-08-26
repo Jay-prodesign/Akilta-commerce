@@ -5,6 +5,8 @@ import type {
   InventoryDerivationInput,
 } from '../../../packages/commerce-contract/src/inventory';
 import { deriveAvailability } from '../../../packages/commerce-contract/src/inventory';
+import type { ProductStatus, VariantOptionPair } from '../../../packages/commerce-contract/src/product';
+import { exactOptionPair, productStatus } from '../../../packages/commerce-contract/src/product';
 import { utcTimestamp, type UtcTimestamp } from '../../../packages/domain/src';
 
 /**
@@ -88,4 +90,33 @@ export function deriveShopifyOrderCompletenessScope(input: {
     windowStart,
     windowEnd: input.observedAt,
   };
+}
+
+/**
+ * Product.status is a real ProductStatus! enum (ACTIVE | ARCHIVED | DRAFT | UNLISTED,
+ * confirmed by schema introspection this session) with no lossy transformation needed --
+ * the normalized ProductStatus brand accepts any non-empty provider string as-is. Kept as
+ * an explicit function (not a raw cast at the call site) so a future non-string/renamed
+ * enum value fails loudly here rather than silently at an arbitrary call site.
+ */
+export function mapShopifyProductStatus(rawStatus: 'ACTIVE' | 'ARCHIVED' | 'DRAFT' | 'UNLISTED'): ProductStatus {
+  return productStatus(rawStatus);
+}
+
+/**
+ * Product.onlineStoreUrl is nullable: Shopify returns null whenever the product is not
+ * currently published/reachable on the Online Store sales channel (for example DRAFT/
+ * ARCHIVED status, or ACTIVE but not published to that channel). Never substitute a
+ * constructed handle-based URL for a null onlineStoreUrl -- that would assert reachability
+ * the provider itself did not confirm.
+ */
+export function mapShopifyOnlineStoreUrl(onlineStoreUrl: string | null): string | undefined {
+  return onlineStoreUrl ?? undefined;
+}
+
+/** ProductVariant.selectedOptions: [SelectedOption!]! -- each has real, non-null name/value fields. */
+export function mapShopifySelectedOptionsToVariantOptionPairs(
+  selectedOptions: readonly { readonly name: string; readonly value: string }[],
+): readonly VariantOptionPair[] {
+  return selectedOptions.map((option) => exactOptionPair(option.name, option.value));
 }
