@@ -7,6 +7,7 @@ import {
 
 export * from './mapping';
 export * from './queries';
+export * from './parse-order-response';
 
 /**
  * D-099 designates Shopify the default REFERENCE_CONNECTOR for AC v1.0. This module is the
