@@ -37,7 +37,7 @@ export const SHOPIFY_GET_PRODUCT_QUERY = `query GetProductForNormalizedContract(
   }
 }`;
 
-/** Feeds deriveShopifyOrderCompletenessScope. Required scopes: read_orders, read_marketplace_orders, read_quick_sale, read_customers. */
+/** Feeds deriveShopifyOrderCompletenessScope / parseShopifyOrderResponse. Required scopes: read_orders, read_marketplace_orders, read_quick_sale, read_customers. */
 export const SHOPIFY_GET_ORDER_QUERY = `query GetOrderForNormalizedContract($id: ID!) {
   order(id: $id) {
     id
@@ -45,6 +45,9 @@ export const SHOPIFY_GET_ORDER_QUERY = `query GetOrderForNormalizedContract($id:
     createdAt
     updatedAt
     displayFinancialStatus
+    displayFulfillmentStatus
+    closed
+    cancelledAt
     currentTotalPriceSet {
       shopMoney {
         amount

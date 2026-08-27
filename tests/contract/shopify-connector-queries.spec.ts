@@ -25,12 +25,16 @@ function main(): void {
   assert(SHOPIFY_GET_ORDER_QUERY.includes('currentTotalPriceSet'), 'Order query selects the real MoneyBag field, not a guessed totalPrice scalar');
   assert(SHOPIFY_GET_ORDER_QUERY.includes('shopMoney'), 'Order query drills into MoneyBag.shopMoney per the real schema shape');
   assert(SHOPIFY_GET_ORDER_QUERY.includes('displayFinancialStatus'), 'Order query selects the real displayFinancialStatus enum field');
+  assert(SHOPIFY_GET_ORDER_QUERY.includes('displayFulfillmentStatus'), 'Order query selects the real displayFulfillmentStatus enum field (feeds parseShopifyOrderResponse orderStatus)');
+  assert(SHOPIFY_GET_ORDER_QUERY.includes('closed'), 'Order query selects the real closed boolean field');
+  assert(SHOPIFY_GET_ORDER_QUERY.includes('cancelledAt'), 'Order query selects the real cancelledAt field');
 
   // Neither query fabricates a field name this session did not confirm exists.
   assert(!SHOPIFY_GET_PRODUCT_QUERY.includes('totalPrice'), 'No guessed scalar totalPrice field on Product');
   assert(!SHOPIFY_GET_ORDER_QUERY.includes('financialStatus:'), 'Order query uses displayFinancialStatus, not a guessed legacy field name');
+  assert(!SHOPIFY_GET_ORDER_QUERY.includes('fulfillmentStatus:'), 'Order query uses displayFulfillmentStatus, not a guessed legacy field name');
 
-  console.log('shopify-connector-queries: 12/12 PASS');
+  console.log('shopify-connector-queries: 15/15 PASS');
 }
 
 main();
