@@ -72,9 +72,12 @@ export function resolveRuleGroup(versions: readonly MerchantRuleVersion[]): Rule
   const minimumRank = Math.min(...eligible.map((version) => authorityRank.get(version.authorityClass) ?? 999));
   const top = eligible.filter((version) => authorityRank.get(version.authorityClass) === minimumRank);
 
+  // Ascending sort so that, when a rule has multiple eligible versions, the higher
+  // version is the later Map entry and therefore the one that survives the overwrite
+  // (Map construction keeps the last-seen value for a repeated key).
   const latestPerRule = [...new Map(
     top
-      .sort((a, b) => b.version - a.version)
+      .sort((a, b) => a.version - b.version)
       .map((version) => [version.merchantRuleId, version] as const),
   ).values()];
 

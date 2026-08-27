@@ -135,6 +135,13 @@ export const COMMERCE_CONTRACT_SCENARIOS = [
   },
 ] as const;
 
+let commerceContractPass = 0;
+for (const scenario of COMMERCE_CONTRACT_SCENARIOS) {
+  if (JSON.stringify(scenario.actual) === JSON.stringify(scenario.expected)) commerceContractPass += 1;
+  else throw new Error(`${scenario.id}: expected ${JSON.stringify(scenario.expected)} got ${JSON.stringify(scenario.actual)}`);
+}
+console.log(`COMMERCE_CONTRACT_SCENARIOS ${commerceContractPass}/${COMMERCE_CONTRACT_SCENARIOS.length} PASS`);
+
 export const COMMERCE_TYPE_SMOKE = {
   product,
   variant,

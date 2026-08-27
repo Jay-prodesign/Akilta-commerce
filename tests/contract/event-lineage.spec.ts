@@ -145,3 +145,10 @@ export const EVENT_LINEAGE_SCENARIOS = [
     expected: 'KNOWN',
   },
 ] as const;
+
+let eventLineagePass = 0;
+for (const scenario of EVENT_LINEAGE_SCENARIOS) {
+  if (JSON.stringify(scenario.actual) === JSON.stringify(scenario.expected)) eventLineagePass += 1;
+  else throw new Error(`${scenario.id}: expected ${JSON.stringify(scenario.expected)} got ${JSON.stringify(scenario.actual)}`);
+}
+console.log(`EVENT_LINEAGE_SCENARIOS ${eventLineagePass}/${EVENT_LINEAGE_SCENARIOS.length} PASS`);
