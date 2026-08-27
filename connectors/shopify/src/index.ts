@@ -6,6 +6,7 @@ import {
 } from '../../../packages/commerce-contract/src';
 
 export * from './mapping';
+export * from './queries';
 
 /**
  * D-099 designates Shopify the default REFERENCE_CONNECTOR for AC v1.0. This module is the
