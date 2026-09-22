@@ -8,3 +8,4 @@ allowBuilds:
 overrides:
   undici: '>=7.29.0'
   esbuild: '>=0.24.3'
+  sharp: '>=0.35.4'
