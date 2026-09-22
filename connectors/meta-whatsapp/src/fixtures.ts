@@ -1,5 +1,5 @@
-import { idempotencyKey, internalId } from '../../../packages/domain/src';
-import type { ConversationId, MessageId } from '../../../packages/domain/src';
+import { channelType, conversationStatus, idempotencyKey, internalId, localeTag } from '../../../packages/domain/src';
+import type { Conversation, ConversationId, MessageId } from '../../../packages/domain/src';
 import type { MetaWhatsAppSendRequest } from './port';
 
 /** Deterministic fixtures only. No real WhatsApp thread/phone reference is encoded here. */
@@ -20,6 +20,21 @@ export function fixtureSendRequest(
     contentType: 'text/plain',
     safeText: 'Merhaba, siparişiniz hazırlanıyor.',
     idempotencyKey: idempotencyKey('meta-whatsapp-fixture-send-1'),
+    ...overrides,
+  };
+}
+
+export function fixtureConversation(overrides: Partial<Conversation> = {}): Conversation {
+  return {
+    conversationId: fixtureConversationId(),
+    merchantWorkspaceId: internalId('meta-whatsapp-fixture-workspace-1', 'MerchantWorkspace'),
+    channel: channelType('whatsapp'),
+    integrationId: internalId('meta-whatsapp-fixture-integration-1', 'Integration'),
+    channelThreadRef: 'mock-thread-ref-1',
+    ownershipState: 'AI_ACTIVE',
+    ownershipEpoch: 1,
+    status: conversationStatus('OPEN'),
+    locale: localeTag('tr-TR'),
     ...overrides,
   };
 }
