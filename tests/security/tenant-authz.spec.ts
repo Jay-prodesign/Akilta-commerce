@@ -63,7 +63,8 @@ const assignment: AgencyClientAssignment = {
   status: operationalStatus('ACTIVE'),
 };
 
-// Compile-time scenario table. Executable Vitest assertions are activated at final runtime transfer.
+// Scenario table, asserted below. RB-09 final runtime transfer is complete (Brain VERIFIED/PASS);
+// the deferred-activation condition this comment originally named has already occurred.
 export const AUTHZ_SECURITY_SCENARIOS = [
   {
     id: 'VS-01-VALID-MERCHANT-A-ALLOW',
@@ -197,6 +198,23 @@ export const AUTHZ_SECURITY_SCENARIOS = [
     expected: { decision: 'DENY', code: 'AUTH_PERMISSION_DENIED' },
   },
 ] as const;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+/** expected is a partial-field match against actual (actual may carry extra fields, e.g. DENY.reason / ALLOW.matchedGrantSourceRef) -- never a guessed full-shape equality. */
+function matchesExpectedFields(actual: unknown, expected: Readonly<Record<string, unknown>>): boolean {
+  if (!isRecord(actual)) return false;
+  return Object.entries(expected).every(([key, value]) => JSON.stringify(actual[key]) === JSON.stringify(value));
+}
+
+let authzSecurityPass = 0;
+for (const scenario of AUTHZ_SECURITY_SCENARIOS) {
+  if (matchesExpectedFields(scenario.actual, scenario.expected)) authzSecurityPass += 1;
+  else throw new Error(`${scenario.id}: expected fields ${JSON.stringify(scenario.expected)} not found in actual ${JSON.stringify(scenario.actual)}`);
+}
+console.log(`AUTHZ_SECURITY_SCENARIOS ${authzSecurityPass}/${AUTHZ_SECURITY_SCENARIOS.length} PASS`);
 
 // Keep otherwise-unused primitive constructors referenced so staging compile validates their exports.
 export const TENANCY_PRIMITIVE_SMOKE = {
