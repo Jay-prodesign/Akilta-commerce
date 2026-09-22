@@ -3,6 +3,7 @@ import type { UtcTimestamp } from '../../../packages/domain/src';
 export * from './e3-acceptance';
 export * from './port';
 export * from './fixtures';
+export * from './dispatch';
 
 export const META_WHATSAPP_STAGING_OPERATIONS = Object.freeze({
   webhookAuthenticity: 'BLOCKED_BY_ACCESS',
