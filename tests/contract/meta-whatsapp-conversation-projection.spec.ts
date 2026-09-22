@@ -59,6 +59,27 @@ function main(): void {
     'a non-advancing projection must return the original Conversation object unchanged, not a mutated copy',
   );
 
+  // Equal timestamp: sentAt exactly equal to the Conversation's current lastMessageAt
+  // must not advance either (shouldAdvanceMonotonicProjection uses strict >, not >=).
+  const equalTimestamp = utcTimestamp('2026-09-22T16:00:00Z'); // exactly advanced.lastMessageAt
+  const equalDelivery = projectConversationAfterDispatch({
+    conversation: advanced,
+    messageId: internalId('proj-message-5', 'Message'),
+    senderType: 'AI',
+    contentType: 'text/plain',
+    sentAt: equalTimestamp,
+    result: { status: 'SUCCEEDED', providerMessageRef: 'mock-send-5' },
+  });
+  assert(equalDelivery.outcome === 'PROJECTED', 'an equal-timestamp successful send still materializes a Message');
+  assert(
+    equalDelivery.outcome === 'PROJECTED' && equalDelivery.conversation.lastMessageAt === advanced.lastMessageAt,
+    'an equal sentAt must not advance lastMessageAt (strict > semantics, not >=)',
+  );
+  assert(
+    equalDelivery.outcome === 'PROJECTED' && equalDelivery.conversation === advanced,
+    'an equal-timestamp non-advancing projection must return the original Conversation object unchanged',
+  );
+
   // A newer sentAt than the current lastMessageAt does advance the projection.
   const newer = projectConversationAfterDispatch({
     conversation: advanced,
@@ -74,7 +95,7 @@ function main(): void {
     'a genuinely newer sentAt must advance lastMessageAt',
   );
 
-  console.log('meta-whatsapp-conversation-projection: 11/11 PASS');
+  console.log('meta-whatsapp-conversation-projection: 14/14 PASS');
 }
 
 main();
