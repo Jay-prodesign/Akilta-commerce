@@ -1,0 +1,74 @@
+{
+  "artifact_id": "IKAS_NORMALIZED_MAPPING_GAP_20260808",
+  "captured_at": "2026-08-08T11:47:00+03:00",
+  "provider": "IKAS",
+  "evidence_maturity": "E2_PROVIDER_REFERENCE",
+  "provider_authentic_test": false,
+  "adapter_mapping_admitted": false,
+  "support_claim_admitted": false,
+  "source_evidence": "release/IKAS_E2_ADMIN_API_REFERENCE_20260808.json",
+  "normalized_contract_refs": [
+    "packages/commerce-contract/src/product.ts",
+    "packages/commerce-contract/src/inventory.ts",
+    "packages/commerce-contract/src/order.ts",
+    "packages/domain/src/customer-identity.ts",
+    "apps/api/src/webhook-boundary.ts"
+  ],
+  "classification_values": ["EXACT_DIRECT", "DERIVED_WITH_RULE", "UNRESOLVED", "SENSITIVE_AUTHZ"],
+  "mappings": [
+    {"provider_field":"product.id","normalized_target":"Product.providerProductId","classification":"EXACT_DIRECT","note":"Provider identity is preserved as provider-scoped string; internal ProductId remains separate."},
+    {"provider_field":"product.title","normalized_target":"Product.title","classification":"UNRESOLVED","note":"listProduct surface is documented but title field was not admitted in the bounded evidence capture."},
+    {"provider_field":"product.status","normalized_target":"Product.status","classification":"UNRESOLVED","note":"Sales-channel visibility operation exists, but exact read-side product status semantics were not admitted."},
+    {"provider_field":"variant.id","normalized_target":"Variant.providerVariantId","classification":"EXACT_DIRECT","note":"Variant identity is separately addressable."},
+    {"provider_field":"variant.sku","normalized_target":"Variant.sku","classification":"EXACT_DIRECT","note":"Exact SKU field documented."},
+    {"provider_field":"variant.variantValues.variantTypeName","normalized_target":"Variant.optionPairs.label","classification":"EXACT_DIRECT","note":"Preserve provider-facing option label without normalization."},
+    {"provider_field":"variant.variantValues.variantValueName","normalized_target":"Variant.optionPairs.value","classification":"EXACT_DIRECT","note":"Preserve provider-facing option value without normalization."},
+    {"provider_field":"variant.price","normalized_target":"Variant.priceMoney","classification":"UNRESOLVED","note":"Price mutation surface exists, but exact read-side price+currency evidence is not admitted in this capture."},
+    {"provider_field":"variant.sellability","normalized_target":"Variant.providerSellabilityState","classification":"UNRESOLVED","note":"No exact public sellability field was admitted."},
+
+    {"provider_field":"stock.variantId","normalized_target":"InventoryObservation.variantId","classification":"DERIVED_WITH_RULE","note":"Provider variantId must first resolve to internal VariantId within the same integration/workspace."},
+    {"provider_field":"stock.stockLocationId","normalized_target":"InventoryObservation.scopeRef","classification":"EXACT_DIRECT","note":"Location scope can be preserved as provider-scoped reference."},
+    {"provider_field":"stock.stockCount","normalized_target":"InventoryObservation.rawQuantity","classification":"EXACT_DIRECT","note":"Raw location stock quantity can be preserved; it cannot alone determine customer-visible availability."},
+    {"provider_field":"inventory.trackingState","normalized_target":"InventoryObservation.trackingState","classification":"UNRESOLVED","note":"No exact tracking-state semantic was admitted."},
+    {"provider_field":"inventory.sellableQuantity","normalized_target":"InventoryObservation.sellableQuantity","classification":"UNRESOLVED","note":"stockCount is not automatically sellable quantity."},
+    {"provider_field":"inventory.providerAvailability","normalized_target":"InventoryObservation.providerAvailability","classification":"UNRESOLVED","note":"No exact sellability/channel availability field admitted."},
+    {"provider_field":"inventory.inventoryPolicy","normalized_target":"InventoryObservation.inventoryPolicy","classification":"UNRESOLVED","note":"No exact continue-selling/positive-quantity policy semantic admitted."},
+    {"provider_field":"inventory.sourceTimestamp","normalized_target":"InventoryObservation.sourceTimestamp","classification":"UNRESOLVED","note":"Provider-side source timestamp/freshness field not admitted for stock observations."},
+    {"provider_field":"inventory.derivedAvailability","normalized_target":"InventoryObservation.derivedAvailability","classification":"DERIVED_WITH_RULE","note":"Must remain UNKNOWN until freshness + tracking + quantity + provider availability + inventory policy evidence is sufficient."},
+
+    {"provider_field":"order.id","normalized_target":"Order.providerOrderId","classification":"EXACT_DIRECT","note":"Provider order identity is direct."},
+    {"provider_field":"order.orderNumber","normalized_target":"Order.displayOrderRef","classification":"EXACT_DIRECT","note":"Display/order reference is direct."},
+    {"provider_field":"order.orderedAt","normalized_target":"Order.createdAtProvider","classification":"EXACT_DIRECT","note":"Provider order timestamp is direct after timestamp parser validation."},
+    {"provider_field":"order.status","normalized_target":"Order.orderStatus","classification":"EXACT_DIRECT","note":"Preserve provider status rather than inventing normalized lifecycle meaning."},
+    {"provider_field":"order.totalFinalPrice","normalized_target":"Order.totalMoney","classification":"UNRESOLVED","note":"Amount is documented but bounded capture did not admit currency; Money cannot be constructed safely without currency evidence."},
+    {"provider_field":"order.pagination","normalized_target":"Order.completenessScope","classification":"DERIVED_WITH_RULE","note":"Page/count/hasNext can support bounded/full-history evidence only after traversal and permission/provider-limit scope are proven."},
+    {"provider_field":"order.customerRef","normalized_target":"Order.providerCustomerRef","classification":"UNRESOLVED","note":"Bounded listOrder evidence did not admit a customer reference field."},
+
+    {"provider_field":"customer.id","normalized_target":"CustomerIdentity.providerIdentifierRef","classification":"DERIVED_WITH_RULE","note":"Provider customer ID may be preserved as match evidence; it does not itself bind a channel identity to internal CustomerId."},
+    {"provider_field":"customer.email","normalized_target":"CustomerIdentity.normalizedIdentifierRef","classification":"SENSITIVE_AUTHZ","note":"PII can support identity resolution only within tenant/CV policy; provider readability never grants customer disclosure."},
+    {"provider_field":"customer.phone","normalized_target":"CustomerIdentity.normalizedIdentifierRef","classification":"SENSITIVE_AUTHZ","note":"Inbound phone alone cannot grant broad order/customer access; CV0-CV3 remains server authority."},
+    {"provider_field":"customer.fullName","normalized_target":"customer_context.display_name","classification":"SENSITIVE_AUTHZ","note":"PII presentation requires authorized customer context and data-minimization policy."},
+
+    {"provider_field":"webhook.scope","normalized_target":"WebhookIngressContext.sourceEventRef","classification":"DERIVED_WITH_RULE","note":"Documented event scope can identify event family, but tenant/integration must be resolved server-side before enqueue."},
+    {"provider_field":"webhook.signature","normalized_target":"WebhookIngressContext.authenticity","classification":"UNRESOLVED","note":"Validation is required but exact signature algorithm is not admitted; authenticity must fail closed until verified."},
+    {"provider_field":"webhook.retry_non_200","normalized_target":"async_delivery_policy","classification":"DERIVED_WITH_RULE","note":"Provider retry count informs idempotency/replay design but does not replace internal dedupe/reconciliation."}
+  ],
+  "critical_findings": [
+    "Current normalized Product/Variant identity and option-pair shape fits the exact public ikas variant evidence without provider-specific core fields.",
+    "Current InventoryObservation is intentionally richer than ikas stockCount evidence; tracking, sellability, policy and freshness must remain unresolved rather than inferred.",
+    "Current Order shape can preserve id/orderNumber/orderedAt/status, but totalMoney must not be populated from totalFinalPrice until currency evidence is admitted.",
+    "Provider customer PII is retrieval evidence, not customer-disclosure authority; CV0-CV3 remains independent server-side policy.",
+    "Webhook boundary correctly requires authenticity + tenant + integration before enqueue; ikas public docs confirm validation/retry/scopes but not enough signature detail for implementation admission.",
+    "No core schema expansion is required by the bounded ikas E2 evidence. The primary gaps are adapter evidence/mapping, not normalized-contract redesign."
+  ],
+  "open_gates": [
+    "Exact listProduct read fields for title/status/media/source timestamps",
+    "Exact variant read price/currency/sellability fields",
+    "Inventory tracking/sellability/policy/freshness semantics",
+    "Order currency/customer relation/update timestamp/full line/fulfillment fields",
+    "Webhook signature algorithm and provider-authentic replay behavior",
+    "Production .com vs sample .dev endpoint behavior",
+    "Provider-authentic permission/rate-limit/error/readback evidence"
+  ],
+  "decision": "NORMALIZED_CONTRACT_HOLDS_AT_E2_NO_CORE_EXPANSION_E3_MAPPING_PENDING"
+}

@@ -1,0 +1,82 @@
+{
+  "schema_version": "1.0",
+  "authority": "08 — SECURITY, PRIVACY, IP & COMPLIANCE / TM-01..TM-15",
+  "classification_rule": "Synthetic PASS never substitutes for provider/runtime/release evidence.",
+  "cases": [
+    {
+      "id": "TM-01",
+      "synthetic": "PASS",
+      "remaining": "CapabilityAuthority evidence now fails closed on MerchantWorkspace + Integration binding with current targeted Action Registry 13/13 and Action Engine 13/13 source scenarios; real persistence/query boundary, tenant-bound IntegrationCapability lookup and release test remain pending."
+    },
+    {
+      "id": "TM-02",
+      "synthetic": "PASS",
+      "remaining": "production agency workspace integration test"
+    },
+    {
+      "id": "TM-03",
+      "synthetic": "PASS",
+      "remaining": "model/provider red-team during runtime activation"
+    },
+    {
+      "id": "TM-04",
+      "synthetic": "PASS",
+      "remaining": "registered action execution maturity/approval integration"
+    },
+    {
+      "id": "TM-05",
+      "synthetic": "PARTIAL_PASS",
+      "remaining": "Provider-independent action-input validator + ActionDefinition/ActionPlan schema-version binding and typed AI ToolRegistry exposure are staged; targeted action-input 16/16, AI ToolRegistry 20/20, current Action Registry 13/13 and Action Engine 13/13 source scenarios PASS. Exact production per-action/per-tool runtime schemas/executors and real runtime invocation remain PENDING."
+    },
+    {
+      "id": "TM-06",
+      "synthetic": "PASS",
+      "remaining": "persistent one-time execution/transaction proof"
+    },
+    {
+      "id": "TM-07",
+      "synthetic": "PARTIAL_PASS",
+      "remaining": "provider-authentic signature/verification and real webhook replay"
+    },
+    {
+      "id": "TM-08",
+      "synthetic": "PARTIAL_PASS",
+      "remaining": "exact provider schema/host/error-body tests"
+    },
+    {
+      "id": "TM-09",
+      "synthetic": "PARTIAL_PASS",
+      "remaining": "runtime DNS resolution, redirect and egress enforcement"
+    },
+    {
+      "id": "TM-10",
+      "synthetic": "PARTIAL_PASS",
+      "remaining": "runtime rate limits, queue backpressure, model token/call budgets"
+    },
+    {
+      "id": "TM-11",
+      "synthetic": "PARTIAL_PASS",
+      "remaining": "runtime secret binding/redaction/export tests"
+    },
+    {
+      "id": "TM-12",
+      "synthetic": "PENDING",
+      "remaining": "dependency manifest/lockfile, provenance, license and vulnerability scans"
+    },
+    {
+      "id": "TM-13",
+      "synthetic": "PARTIAL_PASS",
+      "remaining": "cache/vector invalidation and backup/restore deletion reconciliation"
+    },
+    {
+      "id": "TM-14",
+      "synthetic": "PARTIAL_PASS",
+      "remaining": "provider-independent break-glass source path is staged with strong-auth, policy-bounded time window, workspace/permission scope and revocation tests; real persistent audit/event storage, alerting/notification and runtime enforcement remain pending"
+    },
+    {
+      "id": "TM-15",
+      "synthetic": "PARTIAL_PASS",
+      "remaining": "provider-independent bounded retry/exhaustion/quarantine decision contract is staged with 12/12 source-level scenarios and provider-neutral action settlement/post-read policy is staged with 14/14 source-level scenarios; real queue retry/DLQ behavior, provider effect classification, partial-write, post-read, compensation and persistence/runtime tests remain pending"
+    }
+  ]
+}

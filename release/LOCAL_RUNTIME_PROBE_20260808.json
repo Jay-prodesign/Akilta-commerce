@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "evidence_id": "ENV-RUNTIME-PROBE-20260808-001",
+  "observed_date": "2026-08-08",
+  "result_state": "BLOCKED_BY_ENVIRONMENT",
+  "evidence_maturity": "E1_SYNTHETIC_PASS",
+  "scope": "current execution container only; no cloud deployment or resource creation",
+  "observations": {
+    "node": "v22.16.0",
+    "npm": "10.9.2",
+    "corepack": "0.32.0",
+    "pnpm": "NOT_INSTALLED",
+    "wrangler": "NOT_INSTALLED",
+    "workerd": "NOT_INSTALLED",
+    "local_node_modules": false,
+    "hono_resolvable": false,
+    "vitest_resolvable": false,
+    "corepack_pnpm_attempt": "BLOCKED",
+    "registry_endpoint_attempted": "https://registry.npmjs.org/pnpm/latest",
+    "registry_result": "fetch failed"
+  },
+  "conclusion": "Pinned dependency manifest can remain staged, but deterministic install/lockfile, transitive license-security-secret scan, Wrangler/workerd runtime smoke and Workers/PostgreSQL runtime evidence cannot be produced in this execution environment without external package/runtime access.",
+  "non_claims": [
+    "Does not imply the pinned dependency set is invalid.",
+    "Does not imply Cloudflare runtime is unsupported.",
+    "Does not satisfy P0-024 runtime PASS.",
+    "Does not trigger a GitHub owner gate by itself."
+  ],
+  "external_effects": "NONE"
+}

@@ -1,0 +1,434 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-10T13:48:00+03:00",
+  "scope": "CR-V1 WhatsApp Support & Sales foundation/dogfood readiness",
+  "release_claim": "NOT_PRODUCTION_READY",
+  "evidence_maturity_note": "Drive-staged/synthetic PASS is not provider-authentic or production-runtime PASS.",
+  "tasks": [
+    {
+      "task_id": "P0-001",
+      "module": "domain",
+      "status": "DRIVE_STAGED_PASS"
+    },
+    {
+      "task_id": "P0-002",
+      "module": "identity-tenancy",
+      "status": "DRIVE_STAGED_PASS"
+    },
+    {
+      "task_id": "P0-003",
+      "module": "authz",
+      "status": "DRIVE_STAGED_PASS"
+    },
+    {
+      "task_id": "P0-004",
+      "module": "events",
+      "status": "DRIVE_STAGED_PASS"
+    },
+    {
+      "task_id": "P0-005",
+      "module": "audit-evaluation",
+      "status": "DRIVE_STAGED_PASS"
+    },
+    {
+      "task_id": "P0-006",
+      "module": "usage-cost",
+      "status": "DRIVE_STAGED_PASS"
+    },
+    {
+      "task_id": "P0-007",
+      "module": "commerce-contract",
+      "status": "DRIVE_STAGED_PROVIDER_PENDING"
+    },
+    {
+      "task_id": "P0-008",
+      "module": "commerce-contract",
+      "status": "DRIVE_STAGED_PROVIDER_PENDING"
+    },
+    {
+      "task_id": "P0-009",
+      "module": "commerce-contract",
+      "status": "DRIVE_STAGED_PROVIDER_PENDING"
+    },
+    {
+      "task_id": "P0-010",
+      "module": "conversation",
+      "status": "DRIVE_STAGED_PROVIDER_PENDING"
+    },
+    {
+      "task_id": "P0-011",
+      "module": "customer-identity",
+      "status": "DRIVE_STAGED_PROVIDER_PENDING"
+    },
+    {
+      "task_id": "P0-012",
+      "module": "handoff",
+      "status": "DRIVE_STAGED_PASS"
+    },
+    {
+      "task_id": "P0-013",
+      "module": "truth-policy",
+      "status": "DRIVE_STAGED_PROVIDER_PENDING",
+      "provider_authentic_policy_material_evidence": "E3_PROVIDER_AUTHENTIC_READONLY_PARTIAL_SHOPIFY_AKILTA",
+      "template_safety_source": "packages/truth-policy/src/truth.ts",
+      "template_safety_test": "tests/contract/truth-template-safety.spec.ts",
+      "template_safety_validation": "PASS_9_OF_9_TARGETED_STRICT_TS",
+      "template_safety_rule": "Unresolved template syntax {{...}}, {%...%}, {#...#} is ineligible for truth resolution and fails closed to UNKNOWN.",
+      "release_effect": "NONE"
+    },
+    {
+      "task_id": "P0-014",
+      "module": "merchant-rules",
+      "status": "DRIVE_STAGED_PASS"
+    },
+    {
+      "task_id": "P0-015",
+      "module": "ai-gateway",
+      "status": "DRIVE_STAGED_RUNTIME_PENDING"
+    },
+    {
+      "task_id": "P0-016",
+      "module": "orchestration",
+      "status": "DRIVE_STAGED_PROVIDER_PENDING"
+    },
+    {
+      "task_id": "P0-017",
+      "module": "meta-whatsapp",
+      "status": "BLOCKED_BY_PROVIDER_ACCESS",
+      "preparation_status": "MACHINE_READABLE_E3_HARNESS_STAGED",
+      "provider_execution_status": "NOT_RUN",
+      "acceptance_gate_state": "BLOCKED_BY_OWNER_ACCESS",
+      "evidence_refs": [
+        "connectors/meta-whatsapp/src/e3-acceptance.ts",
+        "release/META_E3_ACCEPTANCE_TEMPLATE_20260808.json",
+        "tests/contract/meta-e3-acceptance-template.spec.mjs"
+      ],
+      "targeted_validation": "PASS_18_OF_18_STRUCTURAL_ONLY",
+      "typescript_validation": "STRICT_NOEMIT_PASS",
+      "release_effect": "NONE",
+      "note": "Harness integrity only; M-01..M-08 remain provider-authentic E3 blocked and no connector AVAILABLE/production claim is authorized."
+    },
+    {
+      "task_id": "P0-018",
+      "module": "ticimax",
+      "status": "BLOCKED_BY_PROVIDER_ACCESS"
+    },
+    {
+      "task_id": "P0-019",
+      "module": "ideasoft",
+      "status": "BLOCKED_BY_PROVIDER_ACCESS"
+    },
+    {
+      "task_id": "P0-020",
+      "module": "onboarding-readiness",
+      "status": "DRIVE_STAGED_PROVIDER_PENDING",
+      "ux_presentation_preparation_status": "FRAMEWORK_INDEPENDENT_PRESENTATION_HARNESS_STAGED",
+      "ux_evidence_refs": [
+        "apps/control-center/src/ux-presentation.ts",
+        "tests/contract/control-center-ux-acceptance.spec.ts"
+      ],
+      "ux_targeted_validation": "PASS_20_OF_20_SOURCE_LEVEL_ONLY",
+      "ux_release_effect": "NONE",
+      "integration_context_ux_alignment": "Server-resolved owner-approval, RBAC denial, source-project non-interference, target mismatch and post-read-required states are presented distinctly; client state remains non-authoritative."
+    },
+    {
+      "task_id": "P0-021",
+      "module": "observability",
+      "status": "DRIVE_STAGED_RUNTIME_PENDING"
+    },
+    {
+      "task_id": "P0-022",
+      "module": "data-migrations",
+      "status": "DRIVE_STAGED_RUNTIME_PENDING"
+    },
+    {
+      "task_id": "P0-023",
+      "module": "security",
+      "status": "DRIVE_STAGED_PARTIAL_RUNTIME_PROVIDER_PENDING",
+      "integration_context_change_safety_status": "RESOLVED_STAGED_SOURCE_LEVEL",
+      "integration_context_change_safety_refs": [
+        "packages/authz/src/integration-context-change.ts",
+        "tests/security/integration-context-change.spec.ts"
+      ],
+      "integration_context_change_safety_validation": "PASS_15_OF_15_STRICT_TYPESCRIPT_TARGETED",
+      "integration_context_change_safety_release_effect": "NONE"
+    },
+    {
+      "task_id": "P0-024",
+      "module": "runtime-data",
+      "status": "DRIVE_STAGED_RUNTIME_RESOURCE_PENDING"
+    },
+    {
+      "task_id": "P0-025",
+      "module": "release-prep",
+      "status": "DRIVE_STAGED_EVIDENCE_PENDING",
+      "design_partner_preparation_status": "E5_ADMISSION_TEMPLATE_STAGED_FAIL_CLOSED",
+      "design_partner_evidence_refs": [
+        "release/DESIGN_PARTNER_E5_ADMISSION_TEMPLATE_20260809.json",
+        "tests/contract/design-partner-e5-admission-template.spec.mjs"
+      ],
+      "design_partner_targeted_validation": "PASS_20_OF_20_STRUCTURAL_ONLY",
+      "design_partner_execution_status": "NOT_RUN",
+      "design_partner_release_effect": "NONE",
+      "owned_dogfood_preparation_status": "E4_ADMISSION_TEMPLATE_STAGED_FAIL_CLOSED",
+      "owned_dogfood_evidence_refs": [
+        "release/OWNED_DOGFOOD_E4_ADMISSION_TEMPLATE_20260809.json",
+        "tests/contract/owned-dogfood-e4-admission-template.spec.mjs",
+        "release/SHOPIFY_OWNED_READONLY_DOGFOOD_20260809.json"
+      ],
+      "owned_dogfood_targeted_validation": "PASS_18_OF_18_STRUCTURAL_ONLY",
+      "owned_dogfood_execution_status": "NOT_RUN",
+      "owned_dogfood_release_effect": "NONE",
+      "commercial_ready_preparation_status": "E6_REVIEW_TEMPLATE_STAGED_FAIL_CLOSED",
+      "commercial_ready_evidence_refs": [
+        "release/COMMERCIAL_READY_E6_REVIEW_TEMPLATE_20260809.json",
+        "tests/contract/commercial-ready-e6-review-template.spec.mjs"
+      ],
+      "commercial_ready_targeted_validation": "PASS_22_OF_22_STRUCTURAL_ONLY",
+      "commercial_ready_execution_status": "NOT_RUN",
+      "commercial_ready_release_effect": "NONE",
+      "owned_shopify_readonly_dogfood_state": "E3_PROVIDER_AUTHENTIC_READONLY_PARTIAL",
+      "owned_shopify_live_entity_counts": "products=0;orders=0;customers=0;abandoned_checkouts=0;exact",
+      "owned_shopify_readonly_release_effect": "NONE",
+      "owned_shopify_mapping_limit": "Real Product/Order/Customer entity mapping cannot advance on current AKILTA store without actual data; no fixture mutation or store switch is auto-authorized."
+    }
+  ],
+  "summary": {
+    "DRIVE_STAGED_PASS": 8,
+    "DRIVE_STAGED_PROVIDER_PENDING": 8,
+    "DRIVE_STAGED_RUNTIME_PENDING": 3,
+    "BLOCKED_BY_PROVIDER_ACCESS": 3,
+    "DRIVE_STAGED_PARTIAL_RUNTIME_PROVIDER_PENDING": 1,
+    "DRIVE_STAGED_RUNTIME_RESOURCE_PENDING": 1,
+    "DRIVE_STAGED_EVIDENCE_PENDING": 1
+  },
+  "open_gate_classes": [
+    "PROVIDER_AUTHENTIC_META",
+    "PROVIDER_AUTHENTIC_COMMERCE",
+    "REAL_ORDER_FULFILLMENT",
+    "REAL_AI_PROVIDER_RUNTIME",
+    "PACKAGE_INSTALL_LOCKFILE_SCAN",
+    "WORKERS_WORKERD_RUNTIME",
+    "CLOUDFLARE_QUEUE_RETRY_DLQ",
+    "HYPERDRIVE_POSTGRES_CONNECTIVITY",
+    "POSTGRES_MIGRATION_APPLY_RESTORE",
+    "RUNTIME_TELEMETRY",
+    "BACKUP_RESTORE",
+    "DEPENDENCY_LICENSE_VULNERABILITY_SCAN",
+    "PRODUCTION_SECRET_BINDING",
+    "PILOT_OWNER_APPROVAL",
+    "BROWSER_AUTH_ACCESSIBILITY_USABILITY",
+    "E4_OWNED_DOGFOOD",
+    "E5_DESIGN_PARTNER_PILOT",
+    "INTERNAL_DOGFOOD_AUTH_PERIMETER_REAL_CONFIG"
+  ],
+  "meta_e3_acceptance_harness": {
+    "state": "STAGED_FAIL_CLOSED",
+    "maturity": "E0_E1_IMPLEMENTATION_READINESS_ONLY",
+    "provider_execution": "NOT_RUN",
+    "required_next_evidence": "E3_PROVIDER_AUTHENTIC_M01_M08",
+    "owner_prerequisite": "controlled Meta developer/test app + test WABA + test phone-number assets + safe webhook/runtime execution surface",
+    "secret_policy": "NO_TOKENS_CREDENTIALS_OR_2FA_PINS_IN_DRIVE_OR_MODEL_CONVERSATIONS"
+  },
+  "release_gate_contract": {
+    "state": "STAGED_TYPED_EVIDENCE_BOUND",
+    "source": "packages/domain/src/release-gate.ts",
+    "test": "tests/contract/release-gate.spec.ts",
+    "validation": "PASS_14_OF_14_INCREMENTAL",
+    "supersedes": "PASS_12_OF_12_PREVIOUS_RELEASE_GATE_TEST",
+    "rule": "Provider/runtime/recovery/design-partner release roles require bound valid EvidenceRecord; no boolean evidence-presence bypass.",
+    "release_effect": "NONE"
+  },
+  "ux_presentation_harness": {
+    "state": "STAGED_FRAMEWORK_INDEPENDENT",
+    "maturity": "E1_SYNTHETIC_PASS_SOURCE_PRESENTATION_ONLY",
+    "validation": "PASS_20_OF_20_TARGETED",
+    "browser_execution": "NOT_RUN",
+    "required_next_evidence": "BROWSER_E2E_ACCESSIBILITY_AUTH_AND_MERCHANT_USABILITY",
+    "release_effect": "NONE",
+    "integration_context_alignment": "PRESENTATION_ONLY — context-action READY/blocked states are projected from server authority; owner approval does not imply RBAC, active source-project non-interference remains visible, and post-read/target mismatch cannot render ready."
+  },
+  "design_partner_e5_admission_harness": {
+    "state": "STAGED_FAIL_CLOSED_TEMPLATE",
+    "target_maturity": "E5_DESIGN_PARTNER_PILOT_PASS",
+    "current_execution": "NOT_RUN",
+    "validation": "PASS_20_OF_20_STRUCTURAL_ONLY",
+    "template": "release/DESIGN_PARTNER_E5_ADMISSION_TEMPLATE_20260809.json",
+    "test": "tests/contract/design-partner-e5-admission-template.spec.mjs",
+    "entry_prerequisites": [
+      "E4_OWNED_DOGFOOD_PASS",
+      "E3_PROVIDER_AUTHENTIC_PASS_FOR_CLAIMED_OPERATIONS",
+      "CRITICAL_SECURITY_CORRECTNESS_PREREQUISITES_CLEAR",
+      "NO_OPEN_SEV0_SEV1",
+      "FROZEN_CR_V1_NO_PARALLEL_BRANCH"
+    ],
+    "exit_criteria_source": "24 §32 DESIGN PARTNER PILOT EXIT",
+    "commercial_signals_separate": [
+      "willingness_to_pay",
+      "real_active_use",
+      "retention_or_continued_use",
+      "measurable_outcome"
+    ],
+    "rule": "Template cannot create E5 PASS; typed EvidenceRecord + release gate remain authoritative.",
+    "release_effect": "NONE"
+  },
+  "owned_dogfood_e4_admission_harness": {
+    "state": "STAGED_FAIL_CLOSED_TEMPLATE",
+    "target_maturity": "E4_OWNED_DOGFOOD_PASS",
+    "current_execution": "NOT_RUN",
+    "validation": "PASS_18_OF_18_STRUCTURAL_ONLY",
+    "template": "release/OWNED_DOGFOOD_E4_ADMISSION_TEMPLATE_20260809.json",
+    "test": "tests/contract/owned-dogfood-e4-admission-template.spec.mjs",
+    "entry_prerequisites": [
+      "E3_PROVIDER_AUTHENTIC_PASS_FOR_CLAIMED_OPERATIONS",
+      "CRITICAL_SECURITY_CORRECTNESS_PREREQUISITES_CLEAR",
+      "RUNTIME_RELIABILITY_RECOVERY_EXECUTION_SURFACE",
+      "BOUNDED_INTERNAL_AUTH_PERIMETER",
+      "FROZEN_CR_V1_BASELINE"
+    ],
+    "exit_criteria_source": "24 §31 DOGFOOD EXIT CRITERIA",
+    "rule": "Template cannot create E4 PASS; typed EvidenceRecord and actual owned dogfood evidence remain required. E4 cannot imply E5/E6.",
+    "release_effect": "NONE"
+  },
+  "commercial_ready_e6_review_harness": {
+    "state": "STAGED_FAIL_CLOSED_TEMPLATE",
+    "target_maturity": "E6_COMMERCIAL_READY_PASS",
+    "current_execution": "NOT_RUN",
+    "validation": "PASS_22_OF_22_STRUCTURAL_ONLY",
+    "template": "release/COMMERCIAL_READY_E6_REVIEW_TEMPLATE_20260809.json",
+    "test": "tests/contract/commercial-ready-e6-review-template.spec.mjs",
+    "requires": [
+      "E5_DESIGN_PARTNER_PILOT_PASS",
+      "RUNTIME_RELIABILITY",
+      "RECOVERY",
+      "TRUTHFUL_PROVIDER_CLAIMS",
+      "NO_OPEN_CRITICAL_HIGH_DEFECTS",
+      "NO_OPEN_SEV0_SEV1",
+      "UX_LANGUAGE_BROWSER_AUTH_ACCESSIBILITY_USABILITY",
+      "SECURITY_PRIVACY_RECOVERY_COMPLIANCE",
+      "WILLINGNESS_TO_PAY",
+      "ACTIVE_USE",
+      "RETENTION_OR_CONTINUED_USE",
+      "MEASURABLE_OUTCOME",
+      "MEASURED_COSTS",
+      "COMMERCIAL_REVIEW_REF",
+      "COMPLETE_RELEASE_CANDIDATE_PACK"
+    ],
+    "rule": "E6 cannot be inferred from E5, a filled UI or prose. Release gate + typed EvidenceRecord remain authoritative.",
+    "release_effect": "NONE"
+  },
+  "internal_dogfood_auth_perimeter_admission_harness": {
+    "state": "STAGED_FAIL_CLOSED_TEMPLATE",
+    "scope": "OWNED_INTERNAL_DOGFOOD_ONLY",
+    "current_execution": "NOT_RUN",
+    "validation": "PASS_18_OF_18_STRUCTURAL_ONLY",
+    "template": "release/INTERNAL_DOGFOOD_AUTH_PERIMETER_ADMISSION_20260809.json",
+    "test": "tests/contract/internal-dogfood-auth-perimeter-admission.spec.mjs",
+    "candidate_modes": [
+      "CLOUDFLARE_ACCESS_INTERNAL_PERIMETER",
+      "AUTH_CANDIDATE_TEST_ENVIRONMENT",
+      "EXISTING_SECURE_INTERNAL_PERIMETER"
+    ],
+    "customer_iam_vendor_selected": false,
+    "required_before": "E4_OWNED_WEB_DOGFOOD_WITH_PERSISTENT_LOGIN",
+    "rule": "Perimeter evidence proves authentication/session boundary only; internal authorization remains authoritative. Template cannot select customer IAM or create E3/E4/E5/E6 PASS.",
+    "release_effect": "NONE"
+  },
+  "owned_shopify_readonly_dogfood": {
+    "state": "E3_PROVIDER_AUTHENTIC_READONLY_PARTIAL",
+    "evidence": "release/SHOPIFY_OWNED_READONLY_DOGFOOD_20260809.json",
+    "authenticated_admin_api_read": true,
+    "real_location_observed": true,
+    "native_policy_observed": true,
+    "published_locales_observed": [
+      "en",
+      "tr"
+    ],
+    "webhook_subscription_count_observed": 0,
+    "exact_entity_counts": {
+      "products": 0,
+      "orders": 0,
+      "customers": 0,
+      "abandoned_checkouts": 0
+    },
+    "mutation_performed": false,
+    "store_switched": false,
+    "e4_effect": "NONE",
+    "remaining_mapping_gate": "Prefer existing BPC/Akilta project evidence/readback without disturbing active work. Direct integration/account/store context change requires explicit owner target approval and must pass source-project non-interference; generic continuation is insufficient."
+  },
+  "truth_template_safety": {
+    "state": "RESOLVED_STAGED",
+    "source": "packages/truth-policy/src/truth.ts",
+    "test": "tests/contract/truth-template-safety.spec.ts",
+    "validation": "PASS_9_OF_9_TARGETED_STRICT_TS",
+    "trigger": "Provider-authentic Shopify Privacy Policy body contained unresolved Liquid/template syntax.",
+    "rule": "Otherwise APPROVED/FRESH fact candidates containing {{...}}, {%...%}, or {#...#} fail closed and are not resolved as truth.",
+    "release_effect": "NONE"
+  },
+  "integration_context_change_safety": {
+    "state": "RESOLVED_STAGED_SOURCE_LEVEL",
+    "source": "packages/authz/src/integration-context-change.ts",
+    "test": "tests/security/integration-context-change.spec.ts",
+    "validation": "STRICT_TYPESCRIPT_PASS_AND_15_OF_15_TARGETED",
+    "owner_gate": "Explicit owner approval + exact target binding required for connect/disconnect/relink/store-account switch/access revoke.",
+    "non_interference": "Active or UNKNOWN source-project disruption fails closed; BPC/Akilta active execution must not be disturbed.",
+    "post_change": "Exact target readback required; prior context/capability authority assumptions invalidated; no downstream action authority inherited.",
+    "release_effect": "NONE",
+    "authority_composition": "Exact owner approval is necessary but not sufficient: server-resolved workspace + canonical RBAC permissions are also required. CONNECT requires integration:connect; DISCONNECT/REVOKE requires integration:disconnect; RELINK/SWITCH requires both."
+  },
+  "transport_contract_boundary": {
+    "state": "RESOLVED_STAGED_SOURCE_LEVEL",
+    "source": "apps/api/src/transport-contracts.ts",
+    "test": "tests/contract/transport-contracts.spec.ts",
+    "validation": "STRICT_TYPESCRIPT_PASS_AND_23_OF_23_TARGETED",
+    "authority_rule": "Client/request transport never grants tenant, permission, approval, provider capability or credential authority; server re-resolution remains mandatory.",
+    "idempotency_rule": "External effects require explicit idempotency at the transport contract boundary.",
+    "async_time_rule": "observedAt is required capture time; sourceTimestamp is optional and preserved only when provider/evidence supplies it.",
+    "settlement_rule": "Transport cannot expose SUCCEEDED while required post-read is pending, unknown or mismatched.",
+    "pagination_rule": "Opaque cursor text is not authority. Server-decoded cursor integrity must be VERIFIED and its MerchantWorkspace + queryScopeRef must exactly match the current server-resolved request before positionRef may influence a query.",
+    "public_error_rule": "Caller/request exception text has no public response authority. TR/EN public messages come from a fixed server-owned catalog; arbitrary field-error text is rejected and only bounded symbolic validation codes may be emitted.",
+    "legacy_interface_boundary": "TEST_SOURCE_UPDATED_NOT_INDEPENDENTLY_RERUN_AFTER_AC_ENG_053",
+    "provider_runtime": "NOT_RUN",
+    "release_effect": "NONE"
+  },
+  "webhook_ingress_binding_boundary": {
+    "state": "RESOLVED_STAGED_SOURCE_LEVEL",
+    "evidence_level": "SYNTHETIC_SOURCE_CONTRACT",
+    "source": "apps/api/src/webhook-boundary.ts",
+    "test": "tests/security/webhook-ingress-boundary.spec.ts",
+    "targeted_result": "STRICT_TYPESCRIPT_PASS + 9/9",
+    "authority_refs": [
+      "12",
+      "26",
+      "D-050",
+      "D-056",
+      "D-057",
+      "D-058",
+      "AC-ENG-054"
+    ],
+    "claim_boundary": "Proves fail-closed server-side Integration→MerchantWorkspace binding at webhook ingress source level only. Does not prove provider signature algorithms, exact provider payloads, runtime queue delivery or connector availability.",
+    "provider_runtime": "NOT_RUN"
+  },
+  "async_retry_dlq_tenant_binding": {
+    "state": "RESOLVED_STAGED_SOURCE_LEVEL",
+    "evidence_level": "SYNTHETIC_SOURCE_CONTRACT",
+    "source_files": [
+      "packages/events/src/async-envelope.ts",
+      "packages/events/src/retry-policy.ts"
+    ],
+    "test": "tests/security/async-retry-dlq.spec.ts",
+    "targeted_result": "STRICT_TYPESCRIPT_PASS + 16/16",
+    "authority_refs": [
+      "08",
+      "12",
+      "26",
+      "D-050",
+      "D-056",
+      "D-057",
+      "D-058",
+      "AC-ENG-055"
+    ],
+    "claim_boundary": "Proves integration-bound async envelopes are not persisted/rerouted into DLQ without current server-resolved Integration→MerchantWorkspace validation. Does not prove queue persistence/runtime provider behavior.",
+    "runtime_queue_persistence": "NOT_RUN"
+  }
+}

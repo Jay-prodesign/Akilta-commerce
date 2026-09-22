@@ -1,0 +1,555 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-10T15:48:00+03:00",
+  "claim": "DRIVE_STAGING_SYNTHETIC_AND_E2_REFERENCE_ONLY",
+  "dependency_free_strict_compile": {
+    "status": "PASS",
+    "config": "tsconfig.plain-tests.json",
+    "note": "Excludes Worker/runtime tests that require real installed Hono/Cloudflare/Vitest dependencies."
+  },
+  "plain_test_files": {
+    "status": "PASS",
+    "count": 21,
+    "runner": "scripts/run-staging-tests.mjs",
+    "aggregate": "STAGING_DEPENDENCY_FREE_SUITE_PASS 21/21",
+    "includes": [
+      "commerce-contract",
+      "connector-stubs",
+      "control-center-state",
+      "domain-primitives-plain",
+      "event-lineage",
+      "grounded-response",
+      "observability",
+      "readiness",
+      "schema-migration-structural",
+      "support-core",
+      "tenant-authz",
+      "tm-harness",
+      "interface-boundary",
+      "auth-identity",
+      "runtime-config",
+      "ai-routing",
+      "data-lifecycle",
+      "recovery",
+      "action-registry",
+      "action-engine",
+      "approval-surface"
+    ]
+  },
+  "connector_stub_contract": {
+    "status": "PASS",
+    "scenarios": "6/6",
+    "rule": "No Meta/Ticimax/IdeaSoft executable AVAILABLE state before provider evidence."
+  },
+  "strict_source_corrections": [
+    "DomainPrimitiveError override marker",
+    "optional authz agencyAssignment omission",
+    "optional Message fields omission",
+    "IPv4 noUnchecked index guard",
+    "MerchantRule winner invariant",
+    "Truth resolved-value invariant",
+    "ConnectorCapability exact-optional construction",
+    "grounded-response test optional fixture fields",
+    "sourceTimestamp provenance: provider/source-origin time optional; observedAt required; no observedAt substitution; missing source time fails closed for monotonic provider-state ordering"
+  ],
+  "not_run": [
+    "pnpm install / generated lockfile",
+    "pinned TypeScript 6.0.3 compiler execution",
+    "Vitest dependency-backed domain test",
+    "Hono/Workers runtime health test",
+    "Wrangler types/config-schema/dry-run",
+    "ESLint/Prettier with pinned packages",
+    "Cloudflare Queues retry/DLQ/backpressure",
+    "Hyperdrive/PostgreSQL connection",
+    "PostgreSQL migration apply/restore",
+    "provider-authentic Meta/Ticimax/IdeaSoft/order tests",
+    "Real internal dogfood authentication perimeter configuration/session/revocation verification"
+  ],
+  "release_effect": "Does not change NOT_PRODUCTION_READY. AC-ENG-056 hardens OperationalEvent deduplication scope so provider event identity is integration-aware when IntegrationId is present; real persistence/runtime remains NOT_RUN.",
+  "interface_boundary_contract": {
+    "status": "HISTORICAL_PASS_8_OF_8_NOT_RERUN_AFTER_AC_ENG_053_TEST_EDIT",
+    "scenarios": "8/8 historical before AC-ENG-053",
+    "covers": [
+      "webhook authenticity-before-enqueue",
+      "server tenant/integration resolution",
+      "safe HTTP error envelope",
+      "dead-letter logical topic",
+      "bounded AI tool registry",
+      "switch_tenant/arbitrary_http forbidden"
+    ],
+    "current_note": "Test source was updated to the fixed-catalog safe HTTP-error call shape in AC-ENG-053, but this legacy multi-dependency suite was not independently rerun in that wave. Current public-error evidence comes from the dedicated 23/23 transport suite."
+  },
+  "control_center_state_contract": {
+    "status": "PASS",
+    "scenarios": "12/12",
+    "covers": [
+      "UNKNOWN/blocked explicit status",
+      "READY_FOR_TEST != PILOT_READY",
+      "human ownership composer mode",
+      "workspace-switch tenant-state reset",
+      "canonical route presence"
+    ]
+  },
+  "auth_identity_boundary": {
+    "status": "PASS",
+    "scenarios": "9/9",
+    "covers": [
+      "verified external session produces identity principal only, never workspace/permission authority",
+      "forged external organization claim cannot bind workspace",
+      "revoked membership denies despite valid external session",
+      "agency assignment remains required",
+      "expired session denied",
+      "auth provider outage never defaults allow"
+    ]
+  },
+  "schema_migration_structural": {
+    "status": "PASS",
+    "scenarios": "14/14",
+    "addition": "auth_organization_bindings maps provider external org only to internal Organization; no merchant_workspace_id field"
+  },
+  "runtime_config_boundary": {
+    "status": "PASS",
+    "scenarios": "10/10",
+    "real_runtime": "PENDING"
+  },
+  "ai_routing_boundary": {
+    "status": "PASS",
+    "scenarios": "10/10",
+    "real_provider_model": "PENDING"
+  },
+  "data_lifecycle_boundary": {
+    "status": "PASS",
+    "scenarios": "9/9",
+    "legal_runtime": "PENDING"
+  },
+  "recovery_reconciliation": {
+    "status": "PASS",
+    "scenarios": "8/8",
+    "real_backup_restore": "PENDING"
+  },
+  "runner_correction": {
+    "status": "PASS",
+    "note": "Aggregate staging runner no longer attempts Hono/Vitest/Workers dependency-backed tests before a real package install; connector sources are included in dependency-free strict compile."
+  },
+  "action_registry_boundary": {
+    "status": "PASS",
+    "scenarios": "13/13",
+    "covers": [
+      "registered-action-only execution",
+      "R0-R5 risk taxonomy",
+      "independent execution maturity ceiling",
+      "authz and AgencyClientAssignment",
+      "evidence-backed capability",
+      "capability MerchantWorkspace binding",
+      "capability Integration binding / required current integration context",
+      "R3/R4 approval behavior"
+    ],
+    "note": "Current-source targeted strict TypeScript validation after AC-ENG-043. CapabilityAuthoritySnapshot is merchantWorkspaceId + integrationId bound; cross-workspace, cross-integration and missing-integration-context capability replay fail closed. Real provider-authentic IntegrationCapability resolution remains pending."
+  },
+  "action_engine_boundary": {
+    "status": "PASS",
+    "scenarios": "13/13",
+    "covers": [
+      "plan registration/schema-version binding",
+      "approval payload/workspace validation",
+      "mapped external-effect safety gate",
+      "UNMAPPED_EXTERNAL_EFFECT fail-closed behavior",
+      "capability workspace binding",
+      "capability integration binding",
+      "kill-switch deny paths"
+    ],
+    "note": "Current-source targeted strict TypeScript validation after AC-ENG-043. This supersedes the prior SOURCE_CHANGED_NOT_FULLY_RERUN note: the staged action-engine source and test suite were rerun in a strict targeted harness at 13/13. This is not runtime/provider evidence.",
+    "real_provider_execution": "PENDING"
+  },
+  "approval_surface_boundary": {
+    "status": "PASS",
+    "scenarios": "10/10",
+    "covers": [
+      "R4/R5 force web step-up",
+      "bounded R3 assurance rule",
+      "opaque server-issued approval reference",
+      "no client-supplied approved payload authority"
+    ],
+    "browser_auth_stepup_e2e": "PENDING"
+  },
+  "housekeeping_note": "2026-08-08 checksum refresh incorporated Action Registry, Action Engine and approval-surface artifacts. No source mutation occurred during this refresh; 21/21 result is the immediately preceding executed aggregate suite.",
+  "incremental_checks": {
+    "language_equivalence": {
+      "status": "PASS",
+      "scenarios": "12/12",
+      "test_file": "tests/contract/language-equivalence.spec.ts",
+      "note": "Deterministic TR/EN factual/policy/action authority equivalence; real model bilingual evaluation pending."
+    },
+    "reference_learning": {
+      "status": "PASS",
+      "scenarios": "13/13",
+      "test_file": "tests/contract/reference-learning.spec.ts",
+      "note": "READ_ONLY/provenance/classification/two-distinct-project generalization gate; BPC/FVCKU completion evidence still future."
+    },
+    "evidence_maturity": {
+      "status": "PASS",
+      "scenarios": "13/13",
+      "test_file": "tests/contract/evidence-maturity.spec.ts",
+      "note": "E0-E6 no-pass-by-prose validator; higher maturity provider/dogfood/pilot/commercial evidence remains pending."
+    },
+    "provenance": {
+      "status": "PASS",
+      "scenarios": "10/10",
+      "test_file": "tests/contract/provenance.spec.mjs",
+      "validator": "scripts/provenance-check.mjs",
+      "note": "Direct source/dependency provenance fail-closed; lockfile/transitive license/security/secret scans remain pending."
+    },
+    "release_gate": {
+      "status": "PASS",
+      "scenarios": "14/14",
+      "test_file": "tests/contract/release-gate.spec.ts",
+      "note": "Typed EvidenceRecord + requirement-role binding. Provider-authentic, runtime reliability, recovery and design-partner evidence can no longer be represented by boolean presence flags. Invalid E3 records and requirement mismatches fail closed. Real higher-maturity evidence remains pending.",
+      "supersedes": "12/12 previous release-gate contract"
+    },
+    "shopify_e2_inventory_reference": {
+      "status": "PASS",
+      "scenarios": "3/3",
+      "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+      "test_file": "tests/contract/shopify-e2-inventory-reference.spec.ts",
+      "evidence_file": "release/SHOPIFY_E2_INVENTORY_REFERENCE_20260808.json",
+      "note": "Owned Shopify READ_ONLY reference proves zero quantity alone cannot imply OUT_OF_STOCK; does not prove target Türkiye connector support."
+    },
+    "provider_reference_contract": {
+      "status": "PASS",
+      "scenarios": "11/11",
+      "test_file": "tests/contract/provider-reference.spec.ts",
+      "source_file": "packages/commerce-contract/src/provider-reference.ts",
+      "note": "Public/official E2 provider-reference evidence cannot grant exact schema or execution authority. Target-provider execution admission requires E3 provider-authentic auth + operation evidence."
+    },
+    "provider_reference_profile": {
+      "status": "PASS",
+      "scenarios": "18/18",
+      "test_file": "tests/contract/provider-reference-profile.spec.mjs",
+      "evidence_file": "release/PROVIDER_PUBLIC_REFERENCE_PROFILE_20260808.json",
+      "note": "Current official Meta/Ticimax/IdeaSoft public evidence is recorded without upgrading connector execution. IdeaSoft abandoned-cart Admin API surface is Post-V1 high-level reference evidence only; exact auth/schema/payload/consent semantics remain unadmitted."
+    },
+    "tsoft_e2_inventory_reference": {
+      "status": "PASS",
+      "scenarios": "3/3",
+      "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+      "test_file": "tests/contract/tsoft-e2-inventory-reference.spec.ts",
+      "evidence_file": "release/TSOFT_E2_INVENTORY_REFERENCE_20260808.json",
+      "note": "Official T-Soft stock-policy semantics independently confirm that zero quantity can remain sellable when negative-stock selling is enabled; provider policy/workflow/timing must be preserved. No authenticated API payload or connector support claim."
+    },
+    "ikas_e2_admin_api_reference": {
+      "status": "PASS",
+      "scenarios": "18/18",
+      "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+      "test_file": "tests/contract/ikas-e2-admin-api-reference.spec.mjs",
+      "evidence_file": "release/IKAS_E2_ADMIN_API_REFERENCE_20260808.json",
+      "note": "Exact public ikas Admin API auth/order/customer/product-stock/webhook schema pressure test only. Current production .com auth endpoint vs .dev endpoint examples remain an explicit documentation distinction to verify at E3. No provider-authentic execution or connector support claim."
+    },
+    "ikas_normalized_mapping_gap": {
+      "status": "PASS",
+      "scenarios": "43/43",
+      "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+      "test_file": "tests/contract/ikas-normalized-mapping-gap.spec.mjs",
+      "evidence_file": "release/IKAS_NORMALIZED_MAPPING_GAP_20260808.json",
+      "note": "Field-by-field ikas public-schema vs current normalized Product/Variant/Inventory/Order/CustomerIdentity/Webhook contracts. Core contract holds at E2; currency/sellability/tracking-policy/freshness/customer relation/webhook signature remain unresolved or authz-gated. No adapter execution admission."
+    },
+    "tsoft_normalized_mapping_gap": {
+      "status": "PASS",
+      "scenarios": "36/36",
+      "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+      "test_file": "tests/contract/tsoft-normalized-mapping-gap.spec.mjs",
+      "evidence_file": "release/TSOFT_NORMALIZED_MAPPING_GAP_20260808.json",
+      "note": "T-Soft public order/auth/inventory/webhook evidence mapped against current normalized contracts. Explicit adapter rules include timezone interpretation, TL->TRY currency normalization, mutable web-service code identity caution and fail-closed X-Hub-Signature verification. No core expansion or adapter execution admission."
+    },
+    "normalized_contract_cross_provider_pressure": {
+      "status": "PASS",
+      "scenarios": "14/14",
+      "evidence_maturity": "E2_CROSS_PROVIDER_REFERENCE_PASS",
+      "test_file": "tests/contract/normalized-contract-cross-provider-pressure.spec.mjs",
+      "evidence_file": "release/NORMALIZED_CONTRACT_CROSS_PROVIDER_PRESSURE_TEST_20260808.json",
+      "note": "Shopify + ikas + T-Soft reference comparison PASS 14/14. Prior sourceTimestamp watch is now RESOLVED at staged contract level by explicit optional provider-origin time + required observedAt semantics; E3 remains required."
+    },
+    "source_timestamp_provenance": {
+      "status": "PASS",
+      "scenarios": "13/13",
+      "test_file": "tests/contract/source-timestamp-provenance.spec.ts",
+      "evidence_file": "release/SOURCE_TIMESTAMP_PROVENANCE_RESOLUTION_20260808.json",
+      "note": "Provider/source-origin sourceTimestamp is optional and never replaced by observedAt; observedAt remains required; missing incoming source time cannot advance monotonic provider projection."
+    },
+    "source_timestamp_schema": {
+      "status": "PASS",
+      "scenarios": "12/12",
+      "test_file": "tests/contract/source-timestamp-schema.spec.mjs",
+      "evidence_file": "release/SOURCE_TIMESTAMP_PROVENANCE_RESOLUTION_20260808.json",
+      "note": "products/variants/inventory_observations/fulfillments/shipments/operational_events source_timestamp nullable; observed_at remains NOT NULL."
+    },
+    "phase1b_evidence_gated_connectors": {
+      "status": "PASS",
+      "scenarios": "12/12",
+      "evidence_maturity": "E2_STAGED_FAIL_CLOSED_PREPARATION",
+      "test_file": "tests/contract/phase1b-evidence-gated-connectors.spec.mjs",
+      "source_files": [
+        "connectors/ikas/src/index.ts",
+        "connectors/tsoft/src/index.ts"
+      ],
+      "note": "D-050 owner-free Phase 1B preparation. Both connector stubs remain EVIDENCE_REQUIRED with no AVAILABLE capability; provider-authentic E3 execution, exact mappings and commercial support claims remain blocked."
+    },
+    "control_center_ux_presentation": {
+      "status": "PASS",
+      "scenarios": "20/20",
+      "test_file": "tests/contract/control-center-ux-acceptance.spec.ts",
+      "source_file": "apps/control-center/src/ux-presentation.ts",
+      "note": "Framework-independent presentation policy for artifact 22 UX semantics. Existing coverage remains for unverified onboarding, UNKNOWN/stale inventory, CV0 disclosure, bounded history labels, Agent Assist warnings, rule conflict/rollback, degraded integration, TR/EN warning equivalence, UNKNOWN cost and send-lineage completeness. AC-ENG-049 additionally projects server-resolved integration-context authority distinctly: owner approval required, tenant/RBAC denial, source-project non-interference, target-context mismatch and post-read-required are separate from READY; READY remains server-rechecked and client state grants no authority. Browser/E2E/accessibility/auth/provider/pilot usability remain pending."
+    },
+    "design_partner_e5_admission_template": {
+      "status": "PASS",
+      "scenarios": "20/20",
+      "test_file": "tests/contract/design-partner-e5-admission-template.spec.mjs",
+      "evidence_file": "release/DESIGN_PARTNER_E5_ADMISSION_TEMPLATE_20260809.json",
+      "note": "Fail-closed E5 design-partner pilot admission/exit evidence template. Defaults NOT_RUN; missing E4/E3/evidence refs/open SEV0/1 block E5 projection; E6 willingness-to-pay/active-use/retention/outcome signals remain separate and NOT_RUN. No pilot execution or release promotion."
+    },
+    "owned_dogfood_e4_admission_template": {
+      "status": "PASS",
+      "scenarios": "18/18",
+      "test_file": "tests/contract/owned-dogfood-e4-admission-template.spec.mjs",
+      "evidence_file": "release/OWNED_DOGFOOD_E4_ADMISSION_TEMPLATE_20260809.json",
+      "note": "Fail-closed E4 owned-dogfood preparation template. Defaults NOT_RUN; E3 provider evidence, runtime/recovery, bounded internal auth and all artifact-24 dogfood exit evidence are required before E4 projection. No dogfood/runtime/release PASS."
+    },
+    "commercial_ready_e6_review_template": {
+      "status": "PASS",
+      "scenarios": "22/22",
+      "test_file": "tests/contract/commercial-ready-e6-review-template.spec.mjs",
+      "evidence_file": "release/COMMERCIAL_READY_E6_REVIEW_TEMPLATE_20260809.json",
+      "note": "Fail-closed E6 release-board/commercial review template. Defaults NOT_RUN; E5, runtime/recovery, truthful provider claims, commercial signals, release-board YES decisions, commercialReviewRef and full release candidate pack remain required. No E6/production PASS."
+    },
+    "internal_dogfood_auth_perimeter_admission_template": {
+      "status": "PASS",
+      "scenarios": "18/18",
+      "test_file": "tests/contract/internal-dogfood-auth-perimeter-admission.spec.mjs",
+      "evidence_file": "release/INTERNAL_DOGFOOD_AUTH_PERIMETER_ADMISSION_20260809.json",
+      "note": "Fail-closed internal dogfood authentication-perimeter admission template. Defaults NOT_RUN, selects no customer IAM vendor, keeps external identity separate from internal workspace/permission authority, and requires real session/revocation/assurance/outage/audit evidence before admission. No runtime/auth/E4 PASS."
+    },
+    "ai_tool_registry": {
+      "status": "PASS",
+      "scenarios": "20/20",
+      "test_file": "tests/security/ai-tool-registry.spec.ts",
+      "source_files": [
+        "packages/ai-gateway/src/tool-registry.ts",
+        "packages/ai-gateway/src/contract.ts",
+        "packages/ai-gateway/src/guard.ts"
+      ],
+      "note": "Provider-independent ToolRegistry exposure hardening. AiToolPolicy is registry-typed; untrusted model tool names must be registered and in the validated allowed subset. Unregistered, explicitly forbidden and duplicate policy entries fail closed. Tool definitions preserve candidate-only/no-action-authority, server revalidation, UNKNOWN/UNSUPPORTED/error, freshness and evidence metadata requirements. Real tool executors/provider runtime remain PENDING."
+    },
+    "action_external_effect_mapping_fail_closed": {
+      "status": "PASS",
+      "scenarios": "3/3 isolated mapping harness",
+      "source_file": "apps/api/src/action-engine.ts",
+      "test_file": "tests/security/action-engine.spec.ts",
+      "note": "UNMAPPED_EXTERNAL_EFFECT remains fail-closed. AC-ENG-043 subsequently reran the current staged Action Engine targeted strict TypeScript suite at 13/13 while preserving this behavior. No runtime/provider/legal/export readiness PASS."
+    },
+    "capability_authority_tenant_integration_binding": {
+      "status": "PASS",
+      "scenarios": "13/13 Action Registry + 13/13 Action Engine",
+      "source_files": [
+        "packages/authz/src/action-registry.ts",
+        "apps/api/src/action-engine.ts"
+      ],
+      "test_files": [
+        "tests/security/action-registry.spec.ts",
+        "tests/security/action-engine.spec.ts"
+      ],
+      "note": "Provider-independent authority hardening. Capability evidence must match server-resolved MerchantWorkspace and exact current Integration; missing integration context, cross-workspace replay and cross-integration replay deny before AVAILABLE capability evidence can authorize. No connector/provider/runtime maturity is promoted."
+    },
+    "truth_template_safety": {
+      "status": "PASS",
+      "scenarios": "9/9",
+      "test_file": "tests/contract/truth-template-safety.spec.ts",
+      "source_file": "packages/truth-policy/src/truth.ts",
+      "trigger": "Live owned Shopify Privacy Policy body contained unresolved Liquid/template syntax.",
+      "note": "Unresolved {{...}}, {%...%}, and {#...#} template material is ineligible for fact resolution and fails closed to UNKNOWN. Plain policy text and ordinary single-brace content remain eligible subject to existing approval/freshness/authority gates. No provider/runtime/E4/production promotion."
+    }
+  },
+  "staged_dependency_free_test_file_count": 52,
+  "aggregate_scope_note": "Last full dependency-free aggregate remains historical 21/21 baseline. Later targeted suites are independently executed, including AI ToolRegistry 20/20 and E4/E5/E6/auth-perimeter structural checks. None may be merged into a fabricated aggregate or treated as provider/runtime/dogfood/release PASS.",
+  "environment_probes": {
+    "local_runtime_20260808": {
+      "status": "BLOCKED_BY_ENVIRONMENT",
+      "evidence_file": "release/LOCAL_RUNTIME_PROBE_20260808.json",
+      "node": "v22.16.0",
+      "missing": [
+        "pnpm",
+        "wrangler",
+        "workerd",
+        "node_modules",
+        "hono",
+        "vitest"
+      ],
+      "registry_fetch": "FAILED",
+      "note": "No production/runtime PASS or FAIL inferred."
+    }
+  },
+  "gate_activation_surface_probe": {
+    "status": "OBSERVED_BLOCKED_NO_NEW_EXECUTABLE_PASS",
+    "plugin_discovery": "No matching WhatsApp/Meta Business, Ticimax/IdeaSoft/ikas/T-Soft, or Cloudflare connector/plugin available in the current ChatGPT plugin discovery surface.",
+    "runtime_probe": "Node v22.16.0 and npm 10.9.2 available; pnpm absent; Wrangler/package resolution unavailable through current internal npm registry; direct public npm registry DNS access failed (registry.npmjs.org unresolved) and direct npm public-registry probe returned no usable response.",
+    "effect": "Records exact activation path only. Does not change provider/runtime PASS state or NOT_PRODUCTION_READY claim.",
+    "artifact": "release/GATE_ACTIVATION_PATH_20260808.json"
+  },
+  "meta_e3_acceptance_harness": {
+    "status": "PASS_18_OF_18_INCREMENTAL_STRUCTURAL_ONLY",
+    "registry": "connectors/meta-whatsapp/src/e3-acceptance.ts",
+    "template": "release/META_E3_ACCEPTANCE_TEMPLATE_20260808.json",
+    "test": "tests/contract/meta-e3-acceptance-template.spec.mjs",
+    "typescript_compile": "PASS — e3-acceptance.ts strict noEmit against staged evidence-maturity contract",
+    "provider_execution": "NOT_RUN",
+    "e3_gate_state": "BLOCKED_BY_OWNER_ACCESS",
+    "secret_policy": "RAW_CREDENTIALS_FORBIDDEN_IN_DRIVE_MODEL_FIXTURES_LOGS",
+    "release_effect": "NO_RELEASE_PASS; NOT_PRODUCTION_READY unchanged"
+  },
+  "release_gate_typed_evidence_binding": {
+    "status": "PASS_14_OF_14_INCREMENTAL_SUPERSEDING_12_OF_12",
+    "source_file": "packages/domain/src/release-gate.ts",
+    "test_file": "tests/contract/release-gate.spec.ts",
+    "compile": "STRICT_TYPESCRIPT_PASS",
+    "provider_execution": "NOT_RUN",
+    "release_effect": "NONE",
+    "note": "Contract hardening only; historical 21/21 aggregate unchanged."
+  },
+  "manifest_reconciliation": {
+    "status": "CORRECTED_STALE_ALIAS",
+    "removed_stale_path": "STAGING_TEST_REPORT.json",
+    "canonical_path": "release/STAGING_TEST_REPORT.json",
+    "reason": "Both manifest paths referenced the same Drive file ID; root alias was stale and inflated path-entry count.",
+    "result": "New ai-tool-registry test adds one real path while stale alias removal subtracts one; corrected unique tracked path count remains 172."
+  },
+  "shopify_owned_readonly_dogfood_20260809": {
+    "status": "E3_PROVIDER_AUTHENTIC_READONLY_PARTIAL",
+    "authenticated_query_execution": "PASS",
+    "schema_validation": "PASS",
+    "observed": "shop identity; exact zero product/order/customer/abandoned-checkout counts; one active online-fulfillment Location; native Privacy Policy; en/tr published locales; zero current webhook subscriptions; current app access-scope readback",
+    "entity_mapping": "NOT_RUN_NO_LIVE_PRODUCT_ORDER_CUSTOMER_DATA",
+    "mutation_performed": false,
+    "e4_release_effect": "NONE",
+    "evidence_file": "release/SHOPIFY_OWNED_READONLY_DOGFOOD_20260809.json"
+  },
+  "integration_context_change_safety": {
+    "status": "PASS",
+    "strict_typescript": "PASS",
+    "scenarios": "15/15",
+    "source": "packages/authz/src/integration-context-change.ts",
+    "test": "tests/security/integration-context-change.spec.ts",
+    "classification": "PROVIDER_INDEPENDENT_SOURCE_LEVEL_ONLY",
+    "incident_trigger": "Owned Shopify connector-context transition exposed that a read-only downstream goal can still require a token/account/store context mutation.",
+    "rules": [
+      "GENERIC_CONTINUATION_DENIED",
+      "EXPLICIT_OWNER_TARGET_BINDING_REQUIRED",
+      "READ_ONLY_DOWNSTREAM_DOES_NOT_DOWNGRADE_CONTEXT_CHANGE",
+      "ACTIVE_OR_UNKNOWN_SOURCE_PROJECT_DISRUPTION_DENIED",
+      "SERVER_RESOLVED_WORKSPACE_BINDING_REQUIRED",
+      "OWNER_APPROVAL_DOES_NOT_SUBSTITUTE_FOR_RBAC",
+      "CONNECT_REQUIRES_INTEGRATION_CONNECT_PERMISSION",
+      "DISCONNECT_OR_REVOKE_REQUIRES_INTEGRATION_DISCONNECT_PERMISSION",
+      "RELINK_OR_SWITCH_REQUIRES_CONNECT_AND_DISCONNECT_PERMISSIONS",
+      "TARGET_POST_READ_REQUIRED",
+      "PREVIOUS_CONTEXT_AUTHORITY_INVALIDATED",
+      "NO_DOWNSTREAM_MUTATION_AUTHORITY_GRANTED"
+    ],
+    "provider_runtime_status": "NOT_RUN",
+    "release_effect": "NONE",
+    "authority_wiring": "PASS — resolveIntegrationContextChangeAuthority composes D-057 owner/exact-target/non-interference preparation with canonical tenant/RBAC evaluateAuthorization before READY."
+  },
+  "ac_eng_047_reconciliation": {
+    "status": "PASS",
+    "tracked_unique_paths": 176,
+    "tracked_unique_drive_ids": 176,
+    "staged_dependency_free_test_files": 50,
+    "new_paths": [
+      "packages/authz/src/integration-context-change.ts",
+      "tests/security/integration-context-change.spec.ts"
+    ],
+    "modified_path": "packages/authz/src/index.ts",
+    "historical_aggregate_21_of_21_unchanged": true,
+    "note": "New 9/9 targeted suite remains separate; no fabricated aggregate."
+  },
+  "transport_contract_boundary": {
+    "status": "PASS_23_OF_23_TARGETED_STRICT_TYPESCRIPT",
+    "source": "apps/api/src/transport-contracts.ts",
+    "test": "tests/contract/transport-contracts.spec.ts",
+    "classification": "PROVIDER_INDEPENDENT_SOURCE_LEVEL_ONLY",
+    "covers": [
+      "v1 transport contract registry uniqueness",
+      "server-resolved workspace required for tenant-sensitive operations",
+      "external-effect operations require idempotency",
+      "client permission/approval/provider-capability/credential authority injection fails closed",
+      "public HTTP error text derives only from fixed server-owned TR/EN safe catalog",
+      "caller-supplied raw message text is ignored and cannot become public response text",
+      "public validation details accept bounded symbolic codes only; arbitrary field-error text fails closed",
+      "safe HTTP error envelope and field-error list immutability",
+      "opaque cursor non-empty semantics",
+      "server-decoded cursor integrity must be VERIFIED before use",
+      "pagination cursor workspace binding prevents cross-tenant reuse",
+      "pagination cursor query-scope binding prevents filter/scope replay",
+      "decoded cursor position must be non-empty",
+      "async observedAt required while sourceTimestamp remains optional/evidence-bound",
+      "provider sourceTimestamp preserved when evidenced",
+      "SUCCEEDED cannot be exposed with pending/unknown/mismatched required post-read"
+    ],
+    "provider_runtime_status": "NOT_RUN",
+    "release_effect": "NONE",
+    "note": "AC-ENG-053 hardens public error construction in place; 23/23 supersedes AC-ENG-052 20/20 for this exact transport suite only. No GitHub/Shopify/Meta/external site/store/provider connection was used."
+  },
+  "webhook_ingress_binding_boundary": {
+    "status": "PASS",
+    "strict_typescript": "PASS",
+    "scenarios": "9/9",
+    "source": "apps/api/src/webhook-boundary.ts",
+    "test": "tests/security/webhook-ingress-boundary.spec.ts",
+    "covers": [
+      "authenticity must be VERIFIED before tenant/integration binding",
+      "target MerchantWorkspace must be server resolved",
+      "safe routing Integration candidate must exist but is not sufficient authority",
+      "current server-resolved Integration binding is mandatory",
+      "routing Integration ID must equal current Integration record ID",
+      "current Integration MerchantWorkspace must equal target MerchantWorkspace",
+      "sourceEventRef/provider/body data cannot substitute for Integration binding authority",
+      "exact current Integration-to-workspace binding allows normalize/enqueue"
+    ],
+    "provider_signature_payload_runtime": "NOT_RUN",
+    "release_effect": "NONE"
+  },
+  "async_retry_dlq_tenant_binding": {
+    "status": "PASS",
+    "strict_typescript": "PASS",
+    "scenarios": "16/16",
+    "source_files": [
+      "packages/events/src/async-envelope.ts",
+      "packages/events/src/retry-policy.ts"
+    ],
+    "test": "tests/security/async-retry-dlq.spec.ts",
+    "supersedes": "12/12 prior async retry/DLQ targeted result for this exact suite",
+    "covers": [
+      "bounded retry/exhaustion/quarantine policy",
+      "safe-reference-only DLQ record",
+      "integration-bound async envelope requires current server Integration binding before DLQ persistence",
+      "cross-workspace Integration binding fails closed",
+      "Integration ID mismatch fails closed",
+      "integration-less internal event remains supported"
+    ],
+    "runtime_queue_persistence": "NOT_RUN",
+    "release_effect": "NONE"
+  },
+  "operational_event_dedup_boundary": {
+    "status": "PASS",
+    "strict_typescript": "PASS",
+    "scenarios": "4/4 isolated source harness",
+    "source_file": "packages/events/src/operational.ts",
+    "staged_test_file_added": false,
+    "covers": [
+      "same provider sourceEventId remains duplicate within the same Integration",
+      "same provider sourceEventId is not deduplicated across different Integrations in the same MerchantWorkspace",
+      "dedup keys differ across Integration scope",
+      "integration-less internal event behavior remains preserved"
+    ],
+    "runtime_persistence": "NOT_RUN",
+    "release_effect": "NONE"
+  }
+}

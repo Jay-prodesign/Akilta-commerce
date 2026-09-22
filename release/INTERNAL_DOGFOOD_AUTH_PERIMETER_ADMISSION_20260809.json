@@ -1,0 +1,122 @@
+{
+  "schema_version": "1.0",
+  "authority": [
+    "31 — AUTHENTICATION PROVIDER STRATEGY & SELECTION GATE v0.1",
+    "24 — CR-V1 TEST, RELEASE, INCIDENT & EVIDENCE PLAN v0.1",
+    "release/OWNED_DOGFOOD_E4_ADMISSION_TEMPLATE_20260809.json",
+    "packages/authz/src",
+    "packages/domain/src"
+  ],
+  "purpose": "Fail-closed evidence template for the bounded internal authentication perimeter required before owned web dogfood with persistent login. It does not select a customer IAM vendor and cannot create E4 PASS by itself.",
+  "overall_state": "NOT_RUN",
+  "scope": "OWNED_INTERNAL_DOGFOOD_ONLY",
+  "customer_iam_vendor_selected": false,
+  "selected_perimeter_mode": null,
+  "candidate_modes": [
+    "CLOUDFLARE_ACCESS_INTERNAL_PERIMETER",
+    "AUTH_CANDIDATE_TEST_ENVIRONMENT",
+    "EXISTING_SECURE_INTERNAL_PERIMETER"
+  ],
+  "secrets_or_customer_pii_allowed": false,
+  "evidence_identity": {
+    "perimeter_evidence_ref": null,
+    "dogfood_plan_ref": null,
+    "internal_actor_ref": null,
+    "test_environment_ref": null,
+    "last_verified_at": null
+  },
+  "admission_criteria": [
+    {
+      "id": "DOGAUTH-01",
+      "criterion": "authenticated_external_or_perimeter_identity_maps_to_internal_user_identity_only",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    },
+    {
+      "id": "DOGAUTH-02",
+      "criterion": "external_org_or_perimeter_claim_cannot_grant_merchant_workspace_membership_assignment_permission_or_approval_authority",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    },
+    {
+      "id": "DOGAUTH-03",
+      "criterion": "session_has_server_verified_subject_assurance_issued_expiry_and_safe_session_reference",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    },
+    {
+      "id": "DOGAUTH-04",
+      "criterion": "expired_or_revoked_perimeter_session_denies_new_application_requests",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    },
+    {
+      "id": "DOGAUTH-05",
+      "criterion": "internal_user_membership_or_agency_assignment_revocation_denies_authorization_even_when_perimeter_session_remains_valid",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    },
+    {
+      "id": "DOGAUTH-06",
+      "criterion": "protected_action_assurance_or_step_up_requirements_remain_server_enforced",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    },
+    {
+      "id": "DOGAUTH-07",
+      "criterion": "account_recovery_or_identity_rebinding_cannot_bypass_mfa_security_policy_or_transfer_protected_ownership",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    },
+    {
+      "id": "DOGAUTH-08",
+      "criterion": "perimeter_or_identity_provider_outage_fails_closed_without_weakening_existing_authorization",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    },
+    {
+      "id": "DOGAUTH-09",
+      "criterion": "workspace_switching_still_requires_internal_membership_and_agency_assignment_authority",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    },
+    {
+      "id": "DOGAUTH-10",
+      "criterion": "privileged_support_break_glass_path_remains_separate_from_normal_perimeter_authentication",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    },
+    {
+      "id": "DOGAUTH-11",
+      "criterion": "logs_audit_and_client_state_use_safe_references_without_tokens_secrets_or_raw_identity_credentials",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    },
+    {
+      "id": "DOGAUTH-12",
+      "criterion": "perimeter_configuration_is_bounded_to_owned_internal_dogfood_and_is_not_represented_as_external_customer_saas_auth",
+      "state": "NOT_RUN",
+      "evidence_refs": []
+    }
+  ],
+  "promotion_rules": {
+    "admission_pass_requires_selected_perimeter_mode": true,
+    "admission_pass_requires_all_criteria_pass": true,
+    "admission_pass_requires_nonempty_perimeter_evidence_ref": true,
+    "admission_pass_requires_dogfood_plan_ref": true,
+    "admission_pass_forbidden_if_customer_iam_vendor_is_inferred_selected": true,
+    "admission_pass_does_not_imply_provider_e3_runtime_recovery_e4_e5_or_e6": true,
+    "external_design_partner_auth_requires_separate_managed_customer_iam_selection_gate": true
+  },
+  "current_blockers": [
+    "REAL_INTERNAL_PERIMETER_NOT_CONFIGURED_OR_VERIFIED",
+    "RUNTIME_ENVIRONMENT_PENDING",
+    "OWNED_DOGFOOD_NOT_YET_RUN"
+  ],
+  "notes": [
+    "Cloudflare Access is only a candidate internal perimeter; this template does not select or configure it.",
+    "An auth candidate test environment may also satisfy the temporary internal dogfood perimeter when verified against the same criteria.",
+    "No vendor token, cookie, credential, secret, customer PII or provider-specific authorization claim belongs in this file.",
+    "Customer SaaS IAM remains deferred until the external design-partner web onboarding trigger defined by artifact 31."
+  ]
+}

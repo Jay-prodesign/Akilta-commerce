@@ -1,0 +1,3 @@
+node_modules
+.staging-build
+pnpm-lock.yaml

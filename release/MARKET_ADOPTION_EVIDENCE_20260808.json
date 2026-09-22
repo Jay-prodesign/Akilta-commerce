@@ -1,0 +1,115 @@
+{
+  "artifact_id": "CRV1-MARKET-ADOPTION-EVIDENCE-20260808",
+  "captured_at": "2026-08-08T11:18:00+03:00",
+  "evidence_maturity": "E2_PROVIDER_PUBLIC_REFERENCE",
+  "purpose": "Separate market presence from adoption evidence for CR-V1 competitive/commercial readiness.",
+  "rules": {
+    "listing_presence": "SUPPLY_EVIDENCE_ONLY",
+    "download_count": "INSTALL_OR_DOWNLOAD_SIGNAL_NOT_ACTIVE_PAID_CUSTOMERS",
+    "install_band": "COARSE_USAGE_SIGNAL_NOT_RETENTION_OR_REVENUE",
+    "vendor_testimonial": "VENDOR_CLAIM_NOT_INDEPENDENT_ADOPTION_PROOF",
+    "merchant_retention": "UNKNOWN_UNLESS_SEPARATELY_VERIFIED",
+    "paid_conversion": "UNKNOWN_UNLESS_SEPARATELY_VERIFIED",
+    "business_outcome": "UNKNOWN_UNLESS_SEPARATELY_VERIFIED"
+  },
+  "observations": [
+    {
+      "product": "Qpien — IdeaSoft Appstore integration",
+      "source_url": "https://apps.ideasoft.com.tr/qpien-cok-kanalli-musteri-hizmetleri-ve-satis",
+      "platform": "IdeaSoft",
+      "visible_signal": {
+        "downloads": 343,
+        "added_at": "2022-04-28",
+        "last_updated_at": "2026-07-20"
+      },
+      "evidence_strength": "DIRECT_PLATFORM_COUNTER",
+      "interpretation": "Meaningful historical installation/download signal in a target platform ecosystem. Does not prove 343 current active, paid or retained merchants."
+    },
+    {
+      "product": "Qpien developer profile — IdeaSoft Appstore",
+      "source_url": "https://apps.ideasoft.com.tr/gelistirici/qpien",
+      "platform": "IdeaSoft",
+      "visible_signal": {
+        "developer_member_since": "2022-05-13",
+        "developer_score": 5.0,
+        "ideasoft_active_sites_marketing_claim": "18,000+"
+      },
+      "evidence_strength": "PLATFORM_PROFILE",
+      "interpretation": "Long-lived platform partnership signal. Rating denominator and active Qpien merchant count are not exposed in this evidence."
+    },
+    {
+      "product": "LoopsAI — IdeaSoft Appstore",
+      "source_url": "https://apps.ideasoft.com.tr/loops-ai",
+      "platform": "IdeaSoft",
+      "visible_signal": {
+        "downloads": 0,
+        "added_at": "2025-12-26",
+        "last_updated_at": "2026-06-22"
+      },
+      "evidence_strength": "DIRECT_PLATFORM_COUNTER",
+      "interpretation": "Category supply exists, but the visible Appstore counter does not show adoption at capture time. This cannot prove zero customers outside the counter or future demand."
+    },
+    {
+      "product": "UppyPro — ikas App Marketplace",
+      "source_url": "https://apps.ikas.com/tr/uygulama/cabd7860-e992-40af-b285-919dbec29d6e",
+      "platform": "ikas",
+      "visible_signal": {
+        "install_band": "0-50 stores",
+        "release_date": "2026-04-09"
+      },
+      "evidence_strength": "DIRECT_PLATFORM_INSTALL_BAND",
+      "interpretation": "Early/limited visible adoption band; exact active or paid installs unknown."
+    },
+    {
+      "product": "Pilother — ikas App Marketplace",
+      "source_url": "https://apps.ikas.com/de/apps/7bc85e83-724c-486a-a35f-0608e28334a7",
+      "platform": "ikas",
+      "visible_signal": {
+        "install_band": "0-50 stores",
+        "release_date": "2026-06-08"
+      },
+      "evidence_strength": "DIRECT_PLATFORM_INSTALL_BAND",
+      "interpretation": "Very recent listing; current band is insufficient for market saturation claims."
+    },
+    {
+      "product": "etkileş — ikas App Marketplace",
+      "source_url": "https://apps.ikas.com/tr/uygulama/3f3a1d4f-5c74-46a3-9cb3-5d1aae4ef046",
+      "platform": "ikas",
+      "visible_signal": {
+        "install_band": "0-50 stores",
+        "release_date": "2026-07-09"
+      },
+      "evidence_strength": "DIRECT_PLATFORM_INSTALL_BAND",
+      "interpretation": "Very recent WhatsApp automation competitor; current band does not establish broad adoption."
+    },
+    {
+      "product": "Qpien direct customer references",
+      "source_url": "https://qpien.com/",
+      "platform": "cross-platform SaaS",
+      "visible_signal": {
+        "named_customer_testimonials_present": true,
+        "examples": ["Altın Aşkı", "Dilvin", "Homefesto", "Kaktüs Moda", "I Love Shoes"]
+      },
+      "evidence_strength": "VENDOR_CLAIM",
+      "interpretation": "Useful customer-reference signal but not independent active-customer, retention or outcome measurement."
+    },
+    {
+      "product": "Meta Business Agent",
+      "source_url": "https://about.fb.com/news/2026/06/meta-business-agent/",
+      "platform": "Meta",
+      "visible_signal": {
+        "vendor_claim_businesses_using_agent": "more than one million",
+        "scope": "global / WhatsApp and Messenger"
+      },
+      "evidence_strength": "VENDOR_PLATFORM_CLAIM",
+      "interpretation": "Strong evidence of platform-native category scale globally, but not a Türkiye ICP adoption count and not independently audited in this artifact."
+    }
+  ],
+  "current_conclusion": {
+    "category_supply": "STRONG",
+    "target_turkiye_market_broad_adoption": "NOT_PROVEN",
+    "local_competitor_adoption": "MIXED_EVIDENCE",
+    "market_closed": false,
+    "commercial_implication": "AI Commerce cannot rely on category novelty, but there remains room to validate a differentiated cross-platform/governed product. Design-partner evidence and willingness-to-pay are still required."
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "artifact_id": "SOURCE_TIMESTAMP_PROVENANCE_RESOLUTION_20260808",
+  "evidence_maturity": "E1_SYNTHETIC_PASS_PLUS_E2_CROSS_PROVIDER_PRESSURE",
+  "trigger": "Shopify + ikas + T-Soft normalized-contract pressure showed provider-origin entity timestamps are not guaranteed for every Product/Variant/Inventory/Fulfillment/Shipment observation.",
+  "problem": {
+    "prior_contract": "sourceTimestamp was mandatory in TypeScript and NOT NULL in six relational tables.",
+    "ambiguity": "Canonical specs separated source_timestamp and observed_at but did not define whether observedAt could substitute for absent provider-origin time.",
+    "risk": "Substituting receipt/capture time for provider-origin time can fabricate freshness and silently misorder out-of-order provider events."
+  },
+  "resolution": {
+    "sourceTimestamp_semantics": "Provider/source-origin event/entity/effective timestamp only when explicitly supplied and evidenced by the source/provider.",
+    "sourceTimestamp_required": false,
+    "observedAt_semantics": "AI Commerce receipt/read/capture time.",
+    "observedAt_required": true,
+    "substitution_rule": "observedAt MUST NOT be copied or relabeled as sourceTimestamp.",
+    "freshness_rule": "When sourceTimestamp is unavailable, provider-independent logic must not invent source recency; freshness remains UNKNOWN unless a separate provider-specific evidence rule safely establishes it.",
+    "ordering_rule": "Monotonic provider-state advancement requires an incoming sourceTimestamp. Missing provider-origin time does not use observedAt as ordering authority and must fail closed to reconciliation/UNKNOWN.",
+    "scope": [
+      "Product",
+      "Variant",
+      "InventoryObservation",
+      "Fulfillment",
+      "Shipment",
+      "OperationalEvent",
+      "AsyncEventEnvelope"
+    ],
+    "relational_change": "products, variants, inventory_observations, fulfillments, shipments and operational_events source_timestamp become nullable; observed_at stays NOT NULL."
+  },
+  "tests": {
+    "source_timestamp_provenance": "13/13 PASS",
+    "source_timestamp_schema": "12/12 PASS"
+  },
+  "non_claims": [
+    "Does not prove provider-authentic E3 mapping.",
+    "Does not change CR-V1 scope.",
+    "Does not use observedAt as provider chronology.",
+    "Does not mark stale/unknown provider data fresh."
+  ],
+  "status": "RESOLVED_SPEC_GAP_STAGED"
+}

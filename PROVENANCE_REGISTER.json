@@ -1,0 +1,2487 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-10T15:48:00+03:00",
+  "governance": "D-046 + D-050 + D-056 + D-057 + D-021 + artifact 09",
+  "source_file_count": 178,
+  "source_files": [
+    {
+      "path": ".prettierignore",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": ".prettierrc.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "DEPENDENCY_BASELINE.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "09",
+        "13",
+        "D-046"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "PROVENANCE_REGISTER.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "STAGING_README.md",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15",
+        "D-050",
+        "D-051",
+        "D-052",
+        "D-054"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "apps/api/RUNTIME_BINDING_PLAN.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "apps/api/RUNTIME_SPIKE_STATUS.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "apps/api/src/action-engine.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "apps/api/src/action-settlement.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-050",
+        "20",
+        "24",
+        "26",
+        "32"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "apps/api/src/grounded-response.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "apps/api/src/index.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "apps/api/src/runtime-config.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "apps/api/src/transport-contracts.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_HARDENING_FROM_CANONICAL_EXTERNAL_API_CONTRACT",
+      "canonical_authority_refs": [
+        "D-046",
+        "D-057",
+        "D-058",
+        "26",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "apps/api/src/webhook-boundary.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_TENANT_ISOLATION_HARDENING_FROM_CANONICAL_WEBHOOK_AND_TENANCY_CONTRACTS",
+      "canonical_authority_refs": [
+        "D-046",
+        "D-050",
+        "D-056",
+        "D-057",
+        "D-058",
+        "12",
+        "26",
+        "AC-ENG-054"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "apps/api/src/worker.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "apps/api/wrangler.jsonc",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "apps/control-center/FRONTEND_STAGING_STATUS.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_FRONTEND_SPEC_AND_D057_UX_RECONCILIATION",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15",
+        "D-057",
+        "22",
+        "30",
+        "AC-ENG-049",
+        "AC-ENG-050"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "apps/control-center/src/api-client-contract.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "apps/control-center/src/approval-state.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "apps/control-center/src/index.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "apps/control-center/src/routes.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "apps/control-center/src/state.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "apps/control-center/src/ux-presentation.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC_AND_D057_AUTHORITY_ALIGNMENT",
+      "canonical_authority_refs": [
+        "D-046",
+        "22",
+        "30",
+        "19",
+        "D-057",
+        "12",
+        "AC-ENG-049"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "connectors/ideasoft/src/index.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "connectors/ikas/src/index.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-050",
+        "D-046",
+        "06",
+        "10",
+        "11",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "connectors/meta-whatsapp/src/e3-acceptance.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-042",
+        "D-046",
+        "D-050",
+        "10",
+        "15",
+        "19"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "connectors/meta-whatsapp/src/index.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "connectors/ticimax/src/index.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "connectors/tsoft/src/index.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-050",
+        "D-046",
+        "06",
+        "10",
+        "11",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "eslint.config.mjs",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "migrations/0001_foundation.preproduction_rollback.sql",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "migrations/0001_foundation.sql",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "migrations/README.md",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "package.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "09",
+        "13",
+        "D-046"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/ai-gateway/src/contract.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/ai-gateway/src/guard.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/ai-gateway/src/index.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/ai-gateway/src/language-equivalence.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/ai-gateway/src/routing.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/ai-gateway/src/tool-registry.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/authz/src/action-input-schema.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "D-050",
+        "08",
+        "12",
+        "20",
+        "33",
+        "TM-05"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/authz/src/action-registry.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/authz/src/approval.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/authz/src/auth-identity.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/authz/src/break-glass.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "08",
+        "12",
+        "24",
+        "D-050",
+        "D-052",
+        "D-054"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/authz/src/evaluator.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/authz/src/index.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/authz/src/integration-context-change.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_GOVERNANCE_OWNED_SHOPIFY_CONTEXT_INCIDENT_AND_EXISTING_RBAC_CONTRACT",
+      "authority_refs": [
+        "D-057",
+        "12",
+        "15",
+        "AC-ENG-046",
+        "AC-ENG-047",
+        "packages/authz/src/evaluator.ts",
+        "packages/authz/src/permissions.ts"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Owned Shopify connector-context transition incident — 2026-08-10; no external code copied"
+    },
+    {
+      "path": "packages/authz/src/permissions.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/authz/src/types.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/commerce-contract/src/connector.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/commerce-contract/src/index.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/commerce-contract/src/inventory.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/commerce-contract/src/order.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/commerce-contract/src/product.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/commerce-contract/src/provider-guard.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/commerce-contract/src/provider-reference.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC_AND_OFFICIAL_PROVIDER_REFERENCE",
+      "canonical_authority_refs": [
+        "D-046",
+        "10",
+        "24"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/brand.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/conversation.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/customer-identity.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/data-lifecycle.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/errors.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/evidence-maturity.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/handoff.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/ids.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/index.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/locale.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/money.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/network-safety.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/readiness.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/recovery.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/reference-learning.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/release-gate.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "24",
+        "D-046",
+        "15",
+        "D-052",
+        "D-054",
+        "19"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/support.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/tenancy.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/domain/src/time.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/events/src/async-envelope.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_ASYNC_TENANT_BINDING_HARDENING_FROM_CANONICAL_EVENT_AND_INTERFACE_CONTRACTS",
+      "canonical_authority_refs": [
+        "D-046",
+        "D-050",
+        "D-056",
+        "D-057",
+        "D-058",
+        "08",
+        "12",
+        "26",
+        "AC-ENG-055"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/events/src/budget.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/events/src/index.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/events/src/lineage.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/events/src/observability.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/events/src/operational.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC_AC_ENG_056",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15",
+        "20",
+        "26"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/events/src/retry-policy.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_ASYNC_TENANT_BINDING_HARDENING_FROM_CANONICAL_EVENT_AND_INTERFACE_CONTRACTS",
+      "canonical_authority_refs": [
+        "D-046",
+        "D-050",
+        "D-056",
+        "D-057",
+        "D-058",
+        "08",
+        "12",
+        "26",
+        "AC-ENG-055"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/events/src/usage.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/merchant-rules/src/index.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/merchant-rules/src/rules.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/truth-policy/src/index.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "packages/truth-policy/src/truth.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "release/COMMERCIAL_READY_E6_REVIEW_TEMPLATE_20260809.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "19",
+        "24",
+        "packages/domain/src/evidence-maturity.ts",
+        "packages/domain/src/release-gate.ts"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "release/CONNECTOR_ENTRY_PRIORITY_EVIDENCE_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "04",
+        "05",
+        "06",
+        "10",
+        "16",
+        "19",
+        "24"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Official current Ticimax/IdeaSoft/ikas/T-Soft reach and public developer/API evidence captured 2026-08-08"
+    },
+    {
+      "path": "release/CRV1_EVIDENCE_INDEX.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-042",
+        "D-046",
+        "D-050",
+        "D-051",
+        "10",
+        "15",
+        "19",
+        "D-052",
+        "D-054"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "release/DESIGN_PARTNER_E5_ADMISSION_TEMPLATE_20260809.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "19",
+        "24",
+        "packages/domain/src/evidence-maturity.ts",
+        "packages/domain/src/release-gate.ts"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "release/DOWNSTREAM_OWNER_FREE_READINESS_SWEEP_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_ROADMAP_AND_CURRENT_PREPARATION_STATE",
+      "canonical_authority_refs": [
+        "D-037",
+        "D-039",
+        "D-040",
+        "D-043",
+        "D-046",
+        "D-050",
+        "04",
+        "06",
+        "17",
+        "18"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "release/GATE_ACTIVATION_PATH_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC_AND_CURRENT_OFFICIAL_PROVIDER_POLICY_PLUS_EXECUTION_SURFACE_OBSERVATION",
+      "canonical_authority_refs": [
+        "D-046",
+        "D-050",
+        "10",
+        "08"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Meta official WhatsApp Business Platform Postman documentation + current WhatsApp Business Messaging Policy; current ChatGPT plugin/runtime surface observations"
+    },
+    {
+      "path": "release/IKAS_E2_ADMIN_API_REFERENCE_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "10",
+        "11",
+        "16",
+        "24"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Official current ikas Builders/Admin API documentation captured 2026-08-08"
+    },
+    {
+      "path": "release/IKAS_NORMALIZED_MAPPING_GAP_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "10",
+        "11",
+        "16",
+        "20",
+        "24"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Official current ikas Builders/Admin API documentation + current staged normalized contracts captured/compared 2026-08-08"
+    },
+    {
+      "path": "release/INTERNAL_DOGFOOD_AUTH_PERIMETER_ADMISSION_20260809.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "24",
+        "31",
+        "release/OWNED_DOGFOOD_E4_ADMISSION_TEMPLATE_20260809.json"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "release/LOCAL_RUNTIME_PROBE_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_EXECUTION_ENVIRONMENT_READ_ONLY_PROBE",
+      "canonical_authority_refs": [
+        "28",
+        "24",
+        "D-046",
+        "REQ-FND-009",
+        "REQ-FND-028"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "release/MARKET_ADOPTION_EVIDENCE_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_OFFICIAL_PUBLIC_EVIDENCE",
+      "canonical_authority_refs": [
+        "D-046",
+        "05",
+        "19",
+        "24"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Official platform app-store counters and vendor/public adoption signals captured 2026-08-08"
+    },
+    {
+      "path": "release/MARKET_ICP_PLATFORM_BASE_EVIDENCE_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "05",
+        "19",
+        "24",
+        "16"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Official Ticimax, IdeaSoft, ikas and T-Soft public vendor-reference scale claims refreshed 2026-08-08; preserves 50k broad vs 18k active IdeaSoft and 20k active vs 100k broad ikas definitions; T-Soft total remains unknown with 397+ e-export brands as subset only"
+    },
+    {
+      "path": "release/MARKET_PRICING_EVIDENCE_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_OFFICIAL_PUBLIC_EVIDENCE",
+      "canonical_authority_refs": [
+        "D-046",
+        "05",
+        "19",
+        "24"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Official competitor/platform public pricing and app-market evidence captured 2026-08-08"
+    },
+    {
+      "path": "release/META_E3_ACCEPTANCE_TEMPLATE_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-042",
+        "D-046",
+        "D-050",
+        "10",
+        "15",
+        "19"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "release/NORMALIZED_CONTRACT_CROSS_PROVIDER_PRESSURE_TEST_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "10",
+        "11",
+        "16",
+        "20",
+        "24",
+        "REQ-FND-012"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Official current T-Soft documentation + owned Shopify E2 + official current ikas documentation compared against staged normalized contracts 2026-08-08"
+    },
+    {
+      "path": "release/OPEN_GATES.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15",
+        "D-050",
+        "D-051",
+        "D-052",
+        "D-054",
+        "19"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "release/OWNED_DOGFOOD_E4_ADMISSION_TEMPLATE_20260809.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "19",
+        "24",
+        "31",
+        "packages/domain/src/evidence-maturity.ts",
+        "packages/domain/src/release-gate.ts"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "release/PHASE2A_CHECKOUT_RECOVERY_ADMISSION_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_OFFICIAL_PUBLIC_EVIDENCE",
+      "canonical_authority_refs": [
+        "D-037",
+        "D-046",
+        "D-050",
+        "05",
+        "06",
+        "10",
+        "19"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Official current Ticimax, ikas, IdeaSoft and T-Soft cart/recovery product/support evidence captured 2026-08-08"
+    },
+    {
+      "path": "release/PHASE2B_PRODUCT_INTELLIGENCE_ADMISSION_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_AND_OFFICIAL_PUBLIC_EVIDENCE",
+      "canonical_authority_refs": [
+        "D-037",
+        "D-041",
+        "D-046",
+        "D-050",
+        "05",
+        "06",
+        "10",
+        "16"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "BPC REFERENCE_LEARNING plus official current Shopify/Ticimax/IdeaSoft/T-Soft product-AI evidence captured 2026-08-08"
+    },
+    {
+      "path": "release/PHASE2C_CUSTOMER_INTELLIGENCE_ADMISSION_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_AND_OFFICIAL_PUBLIC_EVIDENCE",
+      "canonical_authority_refs": [
+        "D-037",
+        "D-042",
+        "D-046",
+        "D-050",
+        "05",
+        "06"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Official current Shopify/ikas/Ticimax/IdeaSoft/T-Soft/WooCommerce customer profile/segmentation/intelligence evidence captured 2026-08-08"
+    },
+    {
+      "path": "release/PROVIDER_PUBLIC_REFERENCE_PROFILE_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC_AND_OFFICIAL_PROVIDER_REFERENCE",
+      "canonical_authority_refs": [
+        "D-046",
+        "10",
+        "24"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "release/RELEASE_READINESS.md",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "release/SHOPIFY_E2_INVENTORY_REFERENCE_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC_AND_OWNED_READ_ONLY_PROVIDER_EVIDENCE",
+      "canonical_authority_refs": [
+        "24",
+        "10",
+        "11",
+        "RL-BPC-008",
+        "D-046"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "release/SHOPIFY_OWNED_READONLY_DOGFOOD_20260809.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "PROVIDER_AUTHENTIC_READONLY_EVIDENCE_CAPTURE",
+      "authority_refs": [
+        "D-046",
+        "D-050",
+        "D-056",
+        "10",
+        "11",
+        "24"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Shopify Admin API — owned AKILTA authenticated read-only session 2026-08-09"
+    },
+    {
+      "path": "release/SOURCE_TIMESTAMP_PROVENANCE_RESOLUTION_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "20",
+        "27",
+        "REQ-FND-012",
+        "cross-provider-E2"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "release/STAGING_TEST_REPORT.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15",
+        "D-052",
+        "D-054",
+        "19"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "release/TSOFT_E2_INVENTORY_REFERENCE_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "20",
+        "24",
+        "16",
+        "REQ-FND-012"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Official T-Soft inventory/stock policy documentation captured 2026-08-08"
+    },
+    {
+      "path": "release/TSOFT_NORMALIZED_MAPPING_GAP_20260808.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "10",
+        "11",
+        "16",
+        "20",
+        "24",
+        "REQ-FND-012"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Official current T-Soft documentation + owned Shopify E2 + official current ikas documentation compared against staged normalized contracts 2026-08-08"
+    },
+    {
+      "path": "scripts/provenance-check.mjs",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "scripts/run-staging-tests.mjs",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/commerce-contract.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/commercial-ready-e6-review-template.spec.mjs",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "19",
+        "24",
+        "release/COMMERCIAL_READY_E6_REVIEW_TEMPLATE_20260809.json"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/connector-stubs.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/control-center-state.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/control-center-ux-acceptance.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC_AND_D057_AUTHORITY_ALIGNMENT",
+      "canonical_authority_refs": [
+        "D-046",
+        "22",
+        "30",
+        "19",
+        "D-057",
+        "12",
+        "AC-ENG-049"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/design-partner-e5-admission-template.spec.mjs",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "19",
+        "24",
+        "release/DESIGN_PARTNER_E5_ADMISSION_TEMPLATE_20260809.json"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/domain-primitives.plain.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/domain-primitives.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/event-lineage.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/evidence-maturity.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/grounded-response.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/ikas-e2-admin-api-reference.spec.mjs",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "10",
+        "11",
+        "16",
+        "24"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Official current ikas Builders/Admin API documentation captured 2026-08-08"
+    },
+    {
+      "path": "tests/contract/ikas-normalized-mapping-gap.spec.mjs",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "10",
+        "11",
+        "16",
+        "20",
+        "24"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Official current ikas Builders/Admin API documentation + current staged normalized contracts captured/compared 2026-08-08"
+    },
+    {
+      "path": "tests/contract/internal-dogfood-auth-perimeter-admission.spec.mjs",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "24",
+        "31",
+        "release/INTERNAL_DOGFOOD_AUTH_PERIMETER_ADMISSION_20260809.json"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/language-equivalence.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/meta-e3-acceptance-template.spec.mjs",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-042",
+        "D-046",
+        "D-050",
+        "10",
+        "15",
+        "19"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/normalized-contract-cross-provider-pressure.spec.mjs",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "10",
+        "11",
+        "16",
+        "20",
+        "24",
+        "REQ-FND-012"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Official current T-Soft documentation + owned Shopify E2 + official current ikas documentation compared against staged normalized contracts 2026-08-08"
+    },
+    {
+      "path": "tests/contract/observability.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/owned-dogfood-e4-admission-template.spec.mjs",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "19",
+        "24",
+        "release/OWNED_DOGFOOD_E4_ADMISSION_TEMPLATE_20260809.json"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/phase1b-evidence-gated-connectors.spec.mjs",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-050",
+        "D-046",
+        "06",
+        "10",
+        "11",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/provenance.spec.mjs",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/provider-reference-profile.spec.mjs",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC_AND_OFFICIAL_PROVIDER_REFERENCE",
+      "canonical_authority_refs": [
+        "D-046",
+        "10",
+        "24"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/provider-reference.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC_AND_OFFICIAL_PROVIDER_REFERENCE",
+      "canonical_authority_refs": [
+        "D-046",
+        "10",
+        "24"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/readiness.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/reference-learning.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/release-gate.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "24",
+        "D-046",
+        "15",
+        "D-052",
+        "D-054",
+        "19"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/schema-migration.spec.mjs",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/shopify-e2-inventory-reference.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC_AND_OWNED_READ_ONLY_PROVIDER_EVIDENCE",
+      "canonical_authority_refs": [
+        "24",
+        "10",
+        "11",
+        "REQ-FND-012",
+        "D-046"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/source-timestamp-provenance.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "20",
+        "27",
+        "REQ-FND-012",
+        "cross-provider-E2"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/source-timestamp-schema.spec.mjs",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "20",
+        "27",
+        "REQ-FND-012",
+        "cross-provider-E2"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/transport-contracts.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_CONTRACT_REGRESSION_FROM_CANONICAL_EXTERNAL_API_CONTRACT",
+      "canonical_authority_refs": [
+        "D-046",
+        "D-057",
+        "D-058",
+        "26",
+        "apps/api/src/transport-contracts.ts"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/contract/truth-template-safety.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_PROVIDER_AUTHENTIC_EDGE_CASE_AND_CANONICAL_TRUTH_RULES",
+      "authority_refs": [
+        "D-056",
+        "11",
+        "packages/truth-policy/src/truth.ts"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Owned Shopify native Privacy Policy unresolved Liquid/template material — 2026-08-09"
+    },
+    {
+      "path": "tests/contract/tsoft-e2-inventory-reference.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "20",
+        "24",
+        "16",
+        "REQ-FND-012"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Official T-Soft inventory/stock policy documentation captured 2026-08-08"
+    },
+    {
+      "path": "tests/contract/tsoft-normalized-mapping-gap.spec.mjs",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "10",
+        "11",
+        "16",
+        "20",
+        "24",
+        "REQ-FND-012"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Official current T-Soft documentation + owned Shopify E2 + official current ikas documentation compared against staged normalized contracts 2026-08-08"
+    },
+    {
+      "path": "tests/runtime/worker-health.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/THREAT_MATRIX.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/action-engine.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/action-input-schema.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_SECURITY_TEST",
+      "canonical_authority_refs": [
+        "D-046",
+        "D-054",
+        "08",
+        "20",
+        "33",
+        "TM-05"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/action-registry.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/action-settlement.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-050",
+        "20",
+        "24",
+        "26",
+        "32"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/ai-routing.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/ai-tool-registry.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "33",
+        "20",
+        "P0-023"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/approval-surface.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/async-retry-dlq.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_ASYNC_TENANT_BINDING_HARDENING_FROM_CANONICAL_EVENT_AND_INTERFACE_CONTRACTS",
+      "canonical_authority_refs": [
+        "D-046",
+        "D-050",
+        "D-056",
+        "D-057",
+        "D-058",
+        "08",
+        "12",
+        "26",
+        "AC-ENG-055"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/auth-identity.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/break-glass.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "08",
+        "12",
+        "24",
+        "D-050",
+        "D-052",
+        "D-054"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/data-lifecycle.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/integration-context-change.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_SECURITY_REGRESSION_FROM_D057_CONTEXT_INCIDENT_AND_RBAC_COMPOSITION",
+      "authority_refs": [
+        "D-057",
+        "12",
+        "15",
+        "packages/authz/src/integration-context-change.ts",
+        "packages/authz/src/evaluator.ts",
+        "packages/authz/src/permissions.ts"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": "Owned Shopify connector-context transition incident — reusable platform-independent safety regression; no external code copied"
+    },
+    {
+      "path": "tests/security/interface-boundary.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/recovery.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/runtime-config.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/support-core.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/tenant-authz.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/tm-harness.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tests/security/webhook-ingress-boundary.spec.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_SECURITY_REGRESSION_FROM_CANONICAL_WEBHOOK_AND_TENANCY_CONTRACTS",
+      "canonical_authority_refs": [
+        "D-046",
+        "D-050",
+        "D-056",
+        "D-057",
+        "D-058",
+        "12",
+        "26",
+        "AC-ENG-054"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tsconfig.base.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tsconfig.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "tsconfig.plain-tests.json",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    },
+    {
+      "path": "vitest.worker.config.ts",
+      "origin_type": "PROJECT_GENERATED",
+      "generation_method": "AI_ASSISTED_FROM_CANONICAL_SPEC",
+      "canonical_authority_refs": [
+        "D-046",
+        "13",
+        "15"
+      ],
+      "third_party_code_copied": false,
+      "external_source_ref": null
+    }
+  ],
+  "direct_dependencies": [
+    {
+      "name": "@cloudflare/vitest-pool-workers",
+      "version": "0.18.8",
+      "license": "MIT",
+      "evidence": "https://www.npmjs.com/package/@cloudflare/vitest-pool-workers",
+      "production_admitted": false,
+      "admission_note": "Direct pin/license/evidence staged; install/transitive audit/security/license scan pending."
+    },
+    {
+      "name": "@types/pg",
+      "version": "8.20.0",
+      "license": "MIT",
+      "evidence": "https://www.npmjs.com/package/@types/pg",
+      "production_admitted": false,
+      "admission_note": "Direct pin/license/evidence staged; install/transitive audit/security/license scan pending."
+    },
+    {
+      "name": "drizzle-kit",
+      "version": "0.31.10",
+      "license": "MIT",
+      "evidence": "https://www.npmjs.com/package/drizzle-kit",
+      "production_admitted": false,
+      "admission_note": "Direct pin/license/evidence staged; install/transitive audit/security/license scan pending."
+    },
+    {
+      "name": "drizzle-orm",
+      "version": "0.45.2",
+      "license": "Apache-2.0",
+      "evidence": "https://www.npmjs.com/package/drizzle-orm",
+      "production_admitted": false,
+      "admission_note": "Direct pin/license/evidence staged; install/transitive audit/security/license scan pending."
+    },
+    {
+      "name": "eslint",
+      "version": "10.8.0",
+      "license": "MIT",
+      "evidence": "https://www.npmjs.com/package/eslint",
+      "production_admitted": false,
+      "admission_note": "Direct pin/license/evidence staged; install/transitive audit/security/license scan pending."
+    },
+    {
+      "name": "hono",
+      "version": "4.12.32",
+      "license": "MIT",
+      "evidence": "https://www.npmjs.com/package/hono",
+      "production_admitted": false,
+      "admission_note": "Direct pin/license/evidence staged; install/transitive audit/security/license scan pending."
+    },
+    {
+      "name": "pg",
+      "version": "8.22.0",
+      "license": "MIT",
+      "evidence": "https://www.npmjs.com/package/pg",
+      "production_admitted": false,
+      "admission_note": "Direct pin/license/evidence staged; install/transitive audit/security/license scan pending."
+    },
+    {
+      "name": "prettier",
+      "version": "3.9.6",
+      "license": "MIT",
+      "evidence": "https://www.npmjs.com/package/prettier",
+      "production_admitted": false,
+      "admission_note": "Direct pin/license/evidence staged; install/transitive audit/security/license scan pending."
+    },
+    {
+      "name": "typescript",
+      "version": "6.0.3",
+      "license": "Apache-2.0",
+      "evidence": "https://www.npmjs.com/package/typescript?activeTab=versions",
+      "production_admitted": false,
+      "admission_note": "Direct pin/license/evidence staged; install/transitive audit/security/license scan pending."
+    },
+    {
+      "name": "typescript-eslint",
+      "version": "8.65.0",
+      "license": "MIT",
+      "evidence": "https://www.npmjs.com/package/typescript-eslint",
+      "production_admitted": false,
+      "admission_note": "Direct pin/license/evidence staged; install/transitive audit/security/license scan pending."
+    },
+    {
+      "name": "vitest",
+      "version": "4.1.10",
+      "license": "MIT",
+      "evidence": "https://www.npmjs.com/package/vitest",
+      "production_admitted": false,
+      "admission_note": "Direct pin/license/evidence staged; install/transitive audit/security/license scan pending."
+    },
+    {
+      "name": "wrangler",
+      "version": "4.114.0",
+      "license": "MIT OR Apache-2.0",
+      "evidence": "https://www.npmjs.com/package/wrangler",
+      "production_admitted": false,
+      "admission_note": "Direct pin/license/evidence staged; install/transitive audit/security/license scan pending."
+    },
+    {
+      "name": "zod",
+      "version": "4.4.3",
+      "license": "MIT",
+      "evidence": "https://www.npmjs.com/package/zod",
+      "production_admitted": false,
+      "admission_note": "Direct pin/license/evidence staged; install/transitive audit/security/license scan pending."
+    },
+    {
+      "name": "pnpm",
+      "version": "11.17.0",
+      "license": "MIT",
+      "evidence": "https://www.npmjs.com/package/pnpm",
+      "production_admitted": false,
+      "admission_note": "Package-manager pin staged; install/runtime evidence pending."
+    }
+  ],
+  "production_admission_state": "PENDING_TRANSITIVE_INSTALL_AUDIT",
+  "production_admission_rules": {
+    "unknown_license_allowed": false,
+    "missing_license_evidence_allowed": false,
+    "exact_version_match_required": true,
+    "transitive_inventory_required": true,
+    "security_scan_required": true,
+    "license_scan_required": true,
+    "secret_scan_required": true,
+    "lockfile_required": true
+  },
+  "pending_evidence": [
+    "pnpm install + lockfile generation in this execution environment",
+    "exact transitive inventory/audit/license scan",
+    "Wrangler runtime dry-run / Workers Vitest execution",
+    "PostgreSQL/Hyperdrive connection",
+    "git/contributor provenance becomes available only after final transfer",
+    "Phase 1B ikas/T-Soft provider-authentic E3 execution remains pending; staged connector stubs are fail-closed E2 preparation only.",
+    "Meta provider-authentic execution remains pending; current tool discovery found no direct provider connector/plugin and the owner-safe activation path is recorded in release/GATE_ACTIVATION_PATH_20260808.json.",
+    "Meta M-01..M-08 provider-authentic E3 remains pending. The staged E3 registry/template/test is fail-closed preparation only and cannot promote any gate without real provider-authentic evidence.",
+    "Typed release-gate evidence binding is staged: provider/runtime/recovery/design-partner admission cannot be represented by boolean presence flags; real E3/E5 evidence remains pending.",
+    "TM-14 break-glass source contract is staged and source-level synthetic tests pass; persistent audit/event storage, alerting/notification and runtime enforcement remain pending.",
+    "IF-08/IF-09 / TM-15 bounded retry and dead-letter decision contract is staged with source-level synthetic evidence; real queue retry/DLQ, provider failure, partial-write and post-read runtime behavior remain pending.",
+    "TM-05 action input/schema-version and AI ToolRegistry exposure controls are staged with targeted source evidence; exact production per-action/per-tool runtime schemas/executors and real invocation proof remain pending.",
+    "Internal dogfood auth-perimeter admission template is staged and structurally validated; real perimeter configuration, session verification/revocation, assurance/step-up, outage behavior and audit evidence remain NOT_RUN.",
+    "Real IntegrationCapability resolution remains pending: capability authority is source-level bound to MerchantWorkspace + Integration, but tenant-bound lookup/persistence and provider-authentic E3 operation evidence are NOT_RUN.",
+    "Provider policy rendering/evaluation beyond unresolved-template rejection remains provider/runtime integration evidence; raw template source is not automatically final customer-visible truth.",
+    "Owned Shopify/BPC deeper mapping may use existing project evidence/readback without disturbing active BPC/Akilta execution. Any integration/account/store context mutation remains explicit-owner and non-interference gated; no active source-project connector switch is authorized by generic continuation."
+  ]
+}

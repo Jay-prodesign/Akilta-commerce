@@ -1,0 +1,78 @@
+{
+  "artifact_id": "CONNECTOR_ENTRY_PRIORITY_EVIDENCE_20260808",
+  "captured_at": "2026-08-08T11:48:00+03:00",
+  "evidence_maturity": "E2_PROVIDER_REFERENCE",
+  "purpose": "Separate commercial connector priority from engineering evidence/pressure-test priority without creating unsupported provider support claims.",
+  "rules": [
+    "Commercial priority and engineering evidence priority are separate axes.",
+    "Public technical documentation can accelerate contract pressure-testing but cannot satisfy E3 provider-authentic acceptance.",
+    "Platform reach alone cannot determine implementation order.",
+    "Existing CR-V1 broad Türkiye gate requiring a priority Ticimax/IdeaSoft connector remains unchanged.",
+    "A secondary provider may be used for normalized-contract pressure testing without becoming the first commercial launch connector.",
+    "Native/marketplace substitute intensity affects differentiation but does not eliminate connector demand."
+  ],
+  "providers": [
+    {
+      "provider": "TICIMAX",
+      "commercial_reach": "HIGH",
+      "reach_evidence": "30,000+ brands/businesses vendor-reference",
+      "public_technical_surface": "MEDIUM",
+      "public_evidence_summary": "Official web-service/product/variation/store-stock/order capability and package/webhook entitlement are visible; exact auth/schema/test payload still not admitted.",
+      "e3_state": "BLOCKED_BY_PROVIDER_ACCESS",
+      "commercial_launch_relevance": "PRIMARY",
+      "engineering_doc_pressure_test_rank": 4,
+      "reason": "High commercial priority/reach, but current public technical extraction is less exact than ikas/T-Soft."
+    },
+    {
+      "provider": "IDEASOFT",
+      "commercial_reach": "HIGH",
+      "reach_evidence": "18,000+ active e-commerce sites vendor-reference",
+      "public_technical_surface": "MEDIUM_HIGH",
+      "public_evidence_summary": "Official public developer portal exists; abandoned-cart Admin API read surface is visible at E2; auth/webhook documentation surfaces exist but exact endpoint/schema details were not fully extractable in this environment.",
+      "e3_state": "BLOCKED_BY_PROVIDER_ACCESS",
+      "commercial_launch_relevance": "PRIMARY",
+      "engineering_doc_pressure_test_rank": 3,
+      "reason": "Commercial launch priority remains high; public docs improved but provider-authentic mapping is still required."
+    },
+    {
+      "provider": "IKAS",
+      "commercial_reach": "HIGH",
+      "reach_evidence": "20,000+ active users in 2026; broader 100,000+ user metric kept separate",
+      "public_technical_surface": "HIGH",
+      "public_evidence_summary": "Official public GraphQL Admin API docs cover Product, Order, Customer, Inventory and Webhook; private apps use client_id/client_secret and documented admin GraphQL endpoint.",
+      "e3_state": "BLOCKED_BY_PROVIDER_ACCESS",
+      "commercial_launch_relevance": "SECONDARY_FOR_FROZEN_CRV1",
+      "engineering_doc_pressure_test_rank": 1,
+      "reason": "Strong reach plus the clearest current public developer surface makes it the best owner-free normalized-contract documentation pressure test."
+    },
+    {
+      "provider": "T_SOFT",
+      "commercial_reach": "MATERIAL",
+      "reach_evidence": "Thousands of projects/brands/customers vendor-reference; no exact current count admitted",
+      "public_technical_surface": "HIGH",
+      "public_evidence_summary": "Official public REST/web-service docs expose token flow, per-method permissions, API console/demo and exact order/cart methods; stock-policy docs expose availability semantics.",
+      "e3_state": "BLOCKED_BY_PROVIDER_ACCESS",
+      "commercial_launch_relevance": "SECONDARY_FOR_FROZEN_CRV1",
+      "engineering_doc_pressure_test_rank": 2,
+      "reason": "Very strong public technical evidence and explicit inventory semantics make it valuable for owner-free contract pressure testing."
+    }
+  ],
+  "recommended_sequences": {
+    "commercial_priority": [
+      "TICIMAX",
+      "IDEASOFT",
+      "IKAS",
+      "T_SOFT"
+    ],
+    "engineering_public_doc_pressure_test": [
+      "IKAS",
+      "T_SOFT",
+      "IDEASOFT",
+      "TICIMAX"
+    ],
+    "authenticated_e3_rule": "Use the first genuinely available authorized test environment for safe contract validation, but CR-V1 broad Türkiye launch still requires the binding priority-connector gate; a secondary-provider E3 PASS does not silently replace that launch requirement."
+  },
+  "decision": "NO_COMMERCIAL_REORDER_NOW",
+  "next_owner_free_implication": "Use ikas and T-Soft public docs to pressure-test normalized product/order/customer/inventory/webhook contracts where exact public evidence exists. Do not implement opaque fields or claim connector support.",
+  "next_owner_assisted_implication": "When authorized Ticimax/IdeaSoft test access becomes actionable, execute exact E3 acceptance. If ikas/T-Soft access becomes available earlier, use it for E3 contract validation without changing launch priority by assumption."
+}

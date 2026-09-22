@@ -1,0 +1,58 @@
+{
+  "artifact_id":"TSOFT_NORMALIZED_MAPPING_GAP_20260808",
+  "captured_at":"2026-08-08T11:58:00+03:00",
+  "provider":"TSOFT",
+  "evidence_maturity":"E2_PROVIDER_REFERENCE",
+  "provider_authentic_test":false,
+  "adapter_mapping_admitted":false,
+  "support_claim_admitted":false,
+  "source_summary":{
+    "auth":"Token required; API users are separately permissioned by module/method; IP restriction is available; API console exists.",
+    "order":"order2/createOrders + order query surface documents OrderId, OrderCode, OrderDate, OrderStatusId, OrderTotalPrice, Currency, customer and order-line fields.",
+    "inventory":"Merchant stock settings explicitly control negative-stock selling, real-stock sold-out behavior and payment-time stock decrement timing.",
+    "webhook":"POST webhook, JSON/form content, optional Secret Key sent through X-Hub-Signature; HTTP failures are queued for resend; exact signature algorithm not admitted."
+  },
+  "classification_values":["EXACT_DIRECT","DERIVED_WITH_RULE","UNRESOLVED","SENSITIVE_AUTHZ"],
+  "mappings":[
+    {"provider_field":"OrderId","normalized_target":"Order.providerOrderId","classification":"EXACT_DIRECT","note":"Provider numeric order ID preserved as provider-scoped string."},
+    {"provider_field":"OrderCode","normalized_target":"Order.displayOrderRef","classification":"EXACT_DIRECT","note":"Customer/operator-visible order reference."},
+    {"provider_field":"OrderDate","normalized_target":"Order.createdAtProvider","classification":"DERIVED_WITH_RULE","note":"Documented YYYY-MM-DD HH:MM:SS requires explicit timezone/source interpretation before UtcTimestamp."},
+    {"provider_field":"OrderStatusId","normalized_target":"Order.orderStatus","classification":"EXACT_DIRECT","note":"Preserve provider status identifier; do not invent generic lifecycle semantics."},
+    {"provider_field":"OrderTotalPrice+Currency","normalized_target":"Order.totalMoney","classification":"DERIVED_WITH_RULE","note":"Amount parsing/minor-unit conversion required; documented TL code must be explicitly mapped to ISO-style TRY rather than passed directly."},
+    {"provider_field":"CustomerUsername","normalized_target":"CustomerIdentity.normalizedIdentifierRef","classification":"SENSITIVE_AUTHZ","note":"Documented as customer email; provider readability does not grant disclosure or customer binding."},
+    {"provider_field":"CustomerName","normalized_target":"customer_context.display_name","classification":"SENSITIVE_AUTHZ","note":"PII display requires authorized tenant/customer context."},
+    {"provider_field":"ProductCode","normalized_target":"OrderLine.productId","classification":"DERIVED_WITH_RULE","note":"Order line uses T-Soft product stock/web-service code; adapter must resolve it to internal ProductId within the integration."},
+    {"provider_field":"Quantity","normalized_target":"OrderLine.quantity","classification":"EXACT_DIRECT","note":"Quantity requires integer/bigint parse only."},
+    {"provider_field":"SellingPrice","normalized_target":"OrderLine.lineTotalMoney","classification":"DERIVED_WITH_RULE","note":"Documented as unit selling price; lineTotalMoney requires unit price x quantity and currency evidence."},
+    {"provider_field":"Cargo","normalized_target":"Shipment.carrier","classification":"DERIVED_WITH_RULE","note":"Carrier assignment evidence is not equivalent to an actual shipment/tracking record; map only when shipment context exists."},
+
+    {"provider_field":"ProductWebServiceCode","normalized_target":"Product.providerProductId","classification":"UNRESOLVED","note":"Web-service code is unique but can be administratively changed; prefer immutable provider ID if exposed in the exact API. Do not silently treat mutable code as canonical provider identity."},
+    {"provider_field":"SubProductWebServiceCode","normalized_target":"Variant.providerVariantId","classification":"UNRESOLVED","note":"Sub-product code exists but exact immutable variant ID/read schema is not admitted in this bounded capture."},
+    {"provider_field":"stock.quantity","normalized_target":"InventoryObservation.rawQuantity","classification":"UNRESOLVED","note":"Stock behavior is documented, but an exact read-side stock API field/payload was not admitted in this bounded mapping evidence."},
+    {"provider_field":"EksiStokUygulamasi=enabled","normalized_target":"InventoryObservation.inventoryPolicy","classification":"DERIVED_WITH_RULE","note":"Maps to ALLOW_SELLING_WITHOUT_POSITIVE_QUANTITY when exact merchant setting evidence is current."},
+    {"provider_field":"EksiStokUygulamasi=disabled+ReelStok=enabled","normalized_target":"InventoryObservation.inventoryPolicy","classification":"DERIVED_WITH_RULE","note":"Maps to REQUIRE_POSITIVE_QUANTITY when exact merchant setting evidence is current."},
+    {"provider_field":"OdemeYapilincaStoktanDussun","normalized_target":"InventoryObservation.freshnessState","classification":"DERIVED_WITH_RULE","note":"Payment workflow affects when stock reflects pending orders; freshness/interpretation must account for payment/order state rather than treating quantity as immediate truth."},
+    {"provider_field":"inventory.sellability","normalized_target":"InventoryObservation.providerAvailability","classification":"DERIVED_WITH_RULE","note":"Can be derived only when relevant stock-policy settings and storefront/product state are known; numeric quantity alone is insufficient."},
+
+    {"provider_field":"X-Hub-Signature","normalized_target":"WebhookIngressContext.authenticity","classification":"UNRESOLVED","note":"Signature header and secret key are documented, but exact algorithm/canonicalization are not admitted. Fail closed until verified."},
+    {"provider_field":"webhook.HTTP_failure_resend","normalized_target":"async_delivery_policy","classification":"DERIVED_WITH_RULE","note":"Provider queues failed HTTP deliveries; internal idempotency/replay handling remains mandatory."},
+    {"provider_field":"webhook.PayloadURL","normalized_target":"WebhookIngressContext.integrationId","classification":"UNRESOLVED","note":"Tenant/integration authority must come from server-side registered endpoint/integration binding, never from arbitrary payload content."}
+  ],
+  "critical_findings":[
+    "Current Order model fits T-Soft order identity/reference/status/total semantics, but timestamp timezone and TL->TRY currency normalization require explicit adapter rules.",
+    "T-Soft stock settings independently validate the normalized contract's separation of quantity from inventory policy and customer-visible sellability.",
+    "Current customer-verification boundary is required because T-Soft order data exposes customer name/email fields but provider readability is not disclosure authority.",
+    "Current webhook ingress design is appropriately stricter than the public T-Soft docs: X-Hub-Signature existence is not enough to admit authenticity without the exact verification algorithm.",
+    "Product/variant identity remains a bounded mapping gap because mutable web-service codes should not be silently promoted to immutable provider IDs.",
+    "No core contract expansion is required by the bounded T-Soft E2 evidence. Adapter identity/currency/time/policy/signature rules remain the material gaps."
+  ],
+  "open_gates":[
+    "Exact read-side product/variant API schema with immutable IDs and option fields",
+    "Exact inventory read payload/location/stock fields",
+    "OrderDate timezone semantics and update timestamp fields",
+    "Exact webhook signature algorithm/canonicalization/replay semantics",
+    "Provider-authentic auth/token/error/rate-limit behavior",
+    "Authenticated readback and post-write reconciliation for any future mutation"
+  ],
+  "decision":"NORMALIZED_CONTRACT_HOLDS_AT_E2_NO_CORE_EXPANSION_E3_MAPPING_PENDING"
+}

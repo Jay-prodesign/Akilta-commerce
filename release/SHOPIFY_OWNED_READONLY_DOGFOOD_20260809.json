@@ -1,0 +1,161 @@
+{
+  "schema_version": "1.0",
+  "evidence_id": "E3-SHOPIFY-OWNED-READONLY-20260809-001",
+  "evidence_maturity": "E3_PROVIDER_AUTHENTIC_READONLY_PARTIAL",
+  "observed_at": "2026-08-09T20:30:00+03:00",
+  "provider": "SHOPIFY",
+  "store_role": "OWNED_DOGFOOD",
+  "mode": "READ_ONLY",
+  "connection": {
+    "authenticated": true,
+    "shop_name": "AKILTA",
+    "shop_gid": "gid://shopify/Shop/82236211424",
+    "currency": "TRY",
+    "iana_timezone": "Europe/Istanbul"
+  },
+  "validated_queries": [
+    {
+      "artifact_id": "akilta-owned-readonly-dogfood-20260809",
+      "schema_validation": "PASS",
+      "execution": "PASS",
+      "required_scope_classes": [
+        "products",
+        "orders",
+        "customers",
+        "locations",
+        "inventory",
+        "markets"
+      ]
+    },
+    {
+      "artifact_id": "akilta-owned-readonly-policy-webhook-20260809",
+      "schema_validation": "PASS",
+      "execution": "PASS",
+      "required_scope_classes": [
+        "legal_policies",
+        "locales",
+        "markets"
+      ]
+    },
+    {
+      "artifact_id": "akilta-owned-readonly-policy-body-20260809",
+      "schema_validation": "PASS",
+      "execution": "PASS",
+      "required_scope_classes": [
+        "legal_policies"
+      ]
+    }
+  ],
+  "observed_results": {
+    "products_count": {
+      "count": 0,
+      "precision": "EXACT"
+    },
+    "orders_count": {
+      "count": 0,
+      "precision": "EXACT"
+    },
+    "customers_count": {
+      "count": 0,
+      "precision": "EXACT"
+    },
+    "abandoned_checkouts_count": {
+      "count": 0,
+      "precision": "EXACT"
+    },
+    "locations": {
+      "observed_count": 1,
+      "sample": {
+        "provider_id": "gid://shopify/Location/91483472096",
+        "is_active": true,
+        "fulfills_online_orders": true,
+        "name_omitted_from_evidence": true
+      }
+    },
+    "shop_policy": {
+      "observed_count": 1,
+      "sample": {
+        "provider_id": "gid://shopify/ShopPolicy/43735122144",
+        "type": "PRIVACY_POLICY",
+        "title": "Privacy policy",
+        "updated_at": "2026-08-08T10:03:44+03:00",
+        "body_retrieval": "PASS",
+        "body_stored_in_evidence": false
+      }
+    },
+    "locales": [
+      {
+        "locale": "en",
+        "primary": true,
+        "published": true
+      },
+      {
+        "locale": "tr",
+        "primary": false,
+        "published": true
+      }
+    ],
+    "webhook_subscriptions": {
+      "observed_count": 0,
+      "has_next_page": false
+    },
+    "app_access_scope_observation": {
+      "read_scopes_present": true,
+      "write_scopes_present": true,
+      "selected_high_impact_write_scope_examples": [
+        "write_orders",
+        "write_customers",
+        "write_products",
+        "write_inventory",
+        "write_themes"
+      ],
+      "interpretation": "Provider-granted app scope is not AI Commerce action authority; deterministic internal tenant/authz/approval/safety gates remain mandatory."
+    }
+  },
+  "normalized_contract_implications": [
+    "Provider-authentic authenticated read surface is proven for shop identity/configuration and count queries.",
+    "A real Location entity can be read and mapped at minimum to providerId, active state and online-fulfillment capability.",
+    "A real shop policy body can be retrieved for policy-ingestion evaluation without storing the raw body in this evidence artifact.",
+    "TR/EN published locale state is provider-authentically observable.",
+    "Zero product/order/customer/checkouts means entity relationship and customer-context mapping cannot yet be validated on this store.",
+    "Broad provider app scopes must never be treated as authorization or execution approval."
+  ],
+  "claims_supported": [
+    "OWNED_SHOPIFY_AUTHENTICATED_READ_ACCESS",
+    "SHOP_IDENTITY_READ_SURFACE",
+    "SHOP_COUNTS_READ_SURFACE",
+    "LOCATION_READ_SURFACE_WITH_REAL_ENTITY",
+    "SHOP_POLICY_READ_SURFACE_WITH_REAL_BODY",
+    "LOCALE_READ_SURFACE",
+    "WEBHOOK_SUBSCRIPTION_LIST_READ_SURFACE"
+  ],
+  "claims_not_supported": [
+    "SHOPIFY_CONNECTOR_AVAILABLE",
+    "SHOPIFY_COMMERCIAL_SUPPORT_READY",
+    "PRODUCT_MAPPING_VALIDATED_WITH_REAL_ENTITY",
+    "ORDER_MAPPING_VALIDATED_WITH_REAL_ENTITY",
+    "CUSTOMER_MAPPING_VALIDATED_WITH_REAL_ENTITY",
+    "CUSTOMER_ORDER_RELATIONSHIP_VALIDATED",
+    "WEBHOOK_RECEIPT_OR_SIGNATURE_VALIDATED",
+    "ANY_EXTERNAL_MUTATION_VALIDATED",
+    "E4_DOGFOOD_PASS",
+    "E5_DESIGN_PARTNER_PASS",
+    "E6_COMMERCIAL_READY",
+    "PRODUCTION_READY"
+  ],
+  "safety": {
+    "mutation_performed": false,
+    "store_switch_performed": false,
+    "secrets_stored": false,
+    "customer_pii_stored": false,
+    "raw_policy_body_stored": false
+  },
+  "next_authentic_trigger": {
+    "owner_free": "No further real product/order/customer entity mapping is possible on the currently connected store while those counts remain zero.",
+    "owner_gated_options": [
+      "Explicitly authorize a bounded dogfood fixture/mutation in AKILTA Shopify.",
+      "Explicitly authorize switching the connected Shopify store to another owned store with real commerce data."
+    ],
+    "do_not_auto_execute": true
+  }
+}

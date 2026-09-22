@@ -1,0 +1,96 @@
+{
+  "schema_version": "1.0",
+  "authority": [
+    "19 — COMMERCIAL READY V1 SCOPE FREEZE & EXECUTION READINESS v1.0",
+    "24 — CR-V1 TEST, RELEASE, INCIDENT & EVIDENCE PLAN v0.1",
+    "packages/domain/src/evidence-maturity.ts",
+    "packages/domain/src/release-gate.ts"
+  ],
+  "purpose": "Fail-closed release-board review template for CR-V1 E6 Commercial Ready. This file cannot itself create E6 PASS.",
+  "overall_state": "NOT_RUN",
+  "target_maturity": "E6_COMMERCIAL_READY_PASS",
+  "release_target": "COMMERCIAL_READY",
+  "secrets_or_customer_pii_allowed": false,
+  "review_identity": {
+    "commercial_review_ref": null,
+    "frozen_core_version_ref": null,
+    "release_candidate_ref": null,
+    "review_timestamp": null,
+    "review_actor_ref": null
+  },
+  "prerequisite_evidence": [
+    {"id":"E6-PREREQ-01","criterion":"design_partner_e5_pass_evidence_bound","state":"NOT_RUN","required_maturity":"E5_DESIGN_PARTNER_PILOT_PASS","evidence_refs":[]},
+    {"id":"E6-PREREQ-02","criterion":"runtime_reliability_evidence_bound","state":"NOT_RUN","evidence_refs":[]},
+    {"id":"E6-PREREQ-03","criterion":"recovery_evidence_bound","state":"NOT_RUN","evidence_refs":[]},
+    {"id":"E6-PREREQ-04","criterion":"provider_claims_supported_by_provider_authentic_e3_evidence","state":"NOT_RUN","evidence_refs":[]},
+    {"id":"E6-PREREQ-05","criterion":"no_open_critical_or_high_release_defects","state":"NOT_RUN","evidence_refs":[]},
+    {"id":"E6-PREREQ-06","criterion":"no_open_sev0_or_sev1_incidents","state":"NOT_RUN","evidence_refs":[]},
+    {"id":"E6-PREREQ-07","criterion":"ux_language_browser_auth_accessibility_and_merchant_usability_evidence_reviewed","state":"NOT_RUN","evidence_refs":[]},
+    {"id":"E6-PREREQ-08","criterion":"security_privacy_recovery_compliance_evidence_reviewed","state":"NOT_RUN","evidence_refs":[]}
+  ],
+  "commercial_signals": [
+    {"id":"E6-SIGNAL-01","signal":"design_partner_willingness_to_pay","state":"NOT_RUN","evidence_refs":[]},
+    {"id":"E6-SIGNAL-02","signal":"real_active_use","state":"NOT_RUN","evidence_refs":[]},
+    {"id":"E6-SIGNAL-03","signal":"retention_or_continued_use_signal_appropriate_to_pilot","state":"NOT_RUN","evidence_refs":[]},
+    {"id":"E6-SIGNAL-04","signal":"measurable_business_or_support_outcome","state":"NOT_RUN","evidence_refs":[]},
+    {"id":"E6-SIGNAL-05","signal":"measured_provider_model_and_support_costs_sufficient_for_pricing_review","state":"NOT_RUN","evidence_refs":[]}
+  ],
+  "release_board_questions": [
+    {"id":"E6-REVIEW-01","question":"is_the_problem_solved_reliably","decision":"NOT_RUN","evidence_refs":[]},
+    {"id":"E6-REVIEW-02","question":"can_merchant_onboarding_be_supported_at_acceptable_burden","decision":"NOT_RUN","evidence_refs":[]},
+    {"id":"E6-REVIEW-03","question":"are_connector_claims_truthful","decision":"NOT_RUN","evidence_refs":[]},
+    {"id":"E6-REVIEW-04","question":"are_security_privacy_recovery_gates_satisfied","decision":"NOT_RUN","evidence_refs":[]},
+    {"id":"E6-REVIEW-05","question":"are_economics_understood_enough_for_pricing","decision":"NOT_RUN","evidence_refs":[]},
+    {"id":"E6-REVIEW-06","question":"are_known_limitations_sellable_and_supportable","decision":"NOT_RUN","evidence_refs":[]},
+    {"id":"E6-REVIEW-07","question":"is_rollback_and_incident_response_operational","decision":"NOT_RUN","evidence_refs":[]}
+  ],
+  "release_candidate_pack_refs": {
+    "requirements_coverage_ref": null,
+    "pass_fail_blocked_summary_ref": null,
+    "provider_capabilities_last_verified_ref": null,
+    "security_privacy_results_ref": null,
+    "migration_rollback_status_ref": null,
+    "known_issues_ref": null,
+    "incident_regression_ref": null,
+    "usage_cost_changes_ref": null,
+    "ux_language_evaluation_ref": null,
+    "owner_approvals_ref": null,
+    "release_rollback_steps_ref": null
+  },
+  "e6_evidence_record_projection": {
+    "testId":"CRV1-E6-COMMERCIAL-READY",
+    "requirementIds":["CRV1-COMMERCIAL-READY"],
+    "capability":"CR-V1 WhatsApp Support & Sales",
+    "resultState":"NOT_RUN",
+    "maturity":"E6_COMMERCIAL_READY_PASS",
+    "evidenceRefs":[],
+    "providerRef":null,
+    "exactOperationRef":null,
+    "authEvidenceRef":null,
+    "dogfoodRef":null,
+    "designPartnerRef":null,
+    "commercialGateRefs":[]
+  },
+  "promotion_rules": {
+    "e6_pass_requires_all_prerequisites_pass": true,
+    "e6_pass_requires_all_commercial_signals_pass": true,
+    "e6_pass_requires_all_release_board_questions_yes": true,
+    "e6_pass_requires_commercial_review_ref": true,
+    "e6_pass_requires_complete_release_candidate_pack_refs": true,
+    "e6_pass_requires_typed_evidence_record_valid": true,
+    "e6_pass_forbidden_if_open_critical_high_or_sev0_sev1": true,
+    "e6_pass_cannot_be_inferred_from_e5_or_ui": true
+  },
+  "current_blockers": [
+    "E3_PROVIDER_RUNTIME_RECOVERY_BROWSER_AUTH_LEGAL_EVIDENCE_PENDING",
+    "E4_OWNED_DOGFOOD_NOT_RUN",
+    "E5_DESIGN_PARTNER_PILOT_NOT_RUN",
+    "E6_COMMERCIAL_SIGNALS_NOT_MEASURED"
+  ],
+  "notes": [
+    "No commercial readiness by prose or template completion alone.",
+    "Commercial signals must come from AI Commerce's own measured pilot/use evidence; competitor listing/adoption evidence is not a substitute.",
+    "Pricing remains evidence-driven; unknown provider/model/support costs are not treated as zero.",
+    "No credentials, secrets or customer PII belong in this review file."
+  ]
+}

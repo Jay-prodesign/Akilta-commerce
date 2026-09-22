@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "evidence_id": "E2-SHOPIFY-INVENTORY-20260808-001",
+  "evidence_maturity": "E2_PROVIDER_REFERENCE_PASS",
+  "source": {
+    "provider": "SHOPIFY",
+    "shop_role": "OWNED_REFERENCE",
+    "read_mode": "READ_ONLY",
+    "product_gid": "gid://shopify/Product/4368098918480",
+    "validated_graphql_artifact_id": "aic-e2-inventory-001",
+    "required_scopes": ["read_products", "read_inventory"],
+    "observed_date": "2026-08-08"
+  },
+  "provider_semantics": {
+    "inventoryQuantity": 0,
+    "inventoryPolicy": "DENY",
+    "availableForSale": true,
+    "sellableOnlineQuantity": 0,
+    "inventoryItem.tracked": false
+  },
+  "variant_count_observed": 9,
+  "variant_refs": [
+    {"id":"gid://shopify/ProductVariant/31301556273232","sku":"PP.15150392"},
+    {"id":"gid://shopify/ProductVariant/31301556306000","sku":"PP.15150393"},
+    {"id":"gid://shopify/ProductVariant/31301556338768","sku":"PP.15150394"},
+    {"id":"gid://shopify/ProductVariant/31301556371536","sku":"PP.15150395"},
+    {"id":"gid://shopify/ProductVariant/31301556404304","sku":"PP.15150396"},
+    {"id":"gid://shopify/ProductVariant/31301556437072","sku":"PP.15150397"},
+    {"id":"gid://shopify/ProductVariant/31301556469840","sku":"PP.15150398"},
+    {"id":"gid://shopify/ProductVariant/31301556502608","sku":"PP.15150399"},
+    {"id":"gid://shopify/ProductVariant/31301556535376","sku":"PP.15150400"}
+  ],
+  "normalized_mapping": {
+    "trackingState": "UNTRACKED",
+    "rawQuantity": "0",
+    "sellableQuantity": "0",
+    "providerAvailability": "SELLABLE",
+    "inventoryPolicy": "REQUIRE_POSITIVE_QUANTITY",
+    "freshnessState": "FRESH",
+    "expectedDerivedAvailability": "AVAILABLE_TO_ORDER"
+  },
+  "finding": "Numeric zero is not sufficient to infer OUT_OF_STOCK. Provider sellability and tracking semantics must be preserved.",
+  "limitations": [
+    "E2 provider-reference evidence only; not target Türkiye connector support.",
+    "No Shopify write capability is claimed or tested.",
+    "Does not satisfy Ticimax/IdeaSoft E3 provider-authentic acceptance."
+  ],
+  "pii": "NONE",
+  "mutation_performed": false
+}

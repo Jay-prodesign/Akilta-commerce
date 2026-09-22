@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-08T13:01:00+03:00",
+  "purpose": "Record the current owner/provider/runtime activation path so scoped gates are not repeatedly rediscovered or misrepresented as global blockers.",
+  "governance": [
+    "D-046_DRIVE_FIRST_ENGINEERING_STAGING",
+    "D-050_GATE_ISOLATION"
+  ],
+  "current_claim": "NOT_PRODUCTION_READY",
+  "meta_activation": {
+    "state": "OWNER_ASSISTED_PROVIDER_TEST_ACCESS_REQUIRED",
+    "current_connected_tool_path": "NOT_AVAILABLE",
+    "plugin_discovery": {
+      "checked_at": "2026-08-08T13:01:00+03:00",
+      "queries": [
+        "WhatsApp",
+        "Meta Business",
+        "Ticimax OR IdeaSoft OR ikas OR T-Soft",
+        "Cloudflare"
+      ],
+      "result": "No matching WhatsApp/Meta Business, Türkiye-commerce provider, or Cloudflare connector/plugin was available through the current ChatGPT plugin discovery surface.",
+      "evidence_class": "CURRENT_EXECUTION_SURFACE_OBSERVATION"
+    },
+    "owner_safe_prerequisites": [
+      "Controlled Meta developer/test app",
+      "Test WhatsApp Business Account (WABA)",
+      "Test phone-number asset and approved test recipient path",
+      "HTTPS webhook callback endpoint when M-03/M-04 execution begins",
+      "Secrets/tokens stored outside Drive and model conversations"
+    ],
+    "official_platform_constraints": [
+      "Cloud API is the official WhatsApp Business Platform messaging API.",
+      "Embedded Signup is the Meta-hosted onboarding path for Solution Partners, Tech Providers and Tech Partners.",
+      "Released Embedded Signup apps require App Review and Advanced Access for business_management and whatsapp_business_management.",
+      "A WABA must be subscribed to receive webhook events; one subscription covers phone numbers under that WABA.",
+      "Webhook endpoint must be HTTPS/reachable.",
+      "Phone registration includes two-step verification; Embedded Signup phone registration has a documented 14-day window.",
+      "Outbound test messages use the phone-number messages surface and return a provider message identifier when successful.",
+      "Business-initiated conversations require approved templates; replies inside the 24-hour service window can be non-template.",
+      "Automation is permitted in the service window only with clear direct escalation paths; opt-in and opt-out requirements remain binding."
+    ],
+    "acceptance": "M-01..M-08 in document 10 remain authoritative; this artifact does not mark any item PASS."
+  },
+  "runtime_activation": {
+    "state": "BLOCKED_BY_CURRENT_EXECUTION_ENVIRONMENT",
+    "probe_at": "2026-08-08T13:01:00+03:00",
+    "observed": {
+      "node": "v22.16.0",
+      "npm": "10.9.2",
+      "pnpm": "NOT_INSTALLED",
+      "wrangler": "NOT_RESOLVABLE_FROM_CURRENT_INTERNAL_REGISTRY",
+      "package_registry_probe": "No usable versions returned for typescript/hono/vitest/wrangler through current internal npm registry surface.",
+      "public_npm_registry_dns": "FAILED — registry.npmjs.org could not be resolved from the current execution environment.",
+      "direct_npm_public_registry_probe": "TIMED_OUT / NO_USABLE_RESPONSE"
+    },
+    "interpretation": "Environment constraint only; do not infer product/runtime FAIL. Internal registry cannot resolve required packages and direct public npm registry access is unavailable from this execution environment. Dependency install, lockfile, transitive scans and Workers/PostgreSQL runtime evidence remain NOT_RUN."
+  },
+  "next_execution_behavior": {
+    "when_meta_assets_available": "Run M-01..M-08 provider-authentic validation fail-closed; record auth/onboarding/subscription/inbound/outbound/status/disconnect/secret-hygiene evidence.",
+    "when_runtime_surface_available": "Run pinned dependency install, generated lockfile, license/security/secret scans, Workers/workerd/Wrangler tests, Queue/DLQ and PostgreSQL migration/restore evidence.",
+    "otherwise": "Continue only material low-rework owner-free work under D-050; do not manufacture synthetic scope or repeat exhausted plugin/runtime probes without an event trigger."
+  },
+  "official_sources": [
+    "https://www.postman.com/meta/whatsapp-business-platform/documentation/wlk6lh4/whatsapp-cloud-api",
+    "https://www.postman.com/meta/whatsapp-business-platform/documentation/du6gzjv/embedded-signup",
+    "https://www.postman.com/meta/whatsapp-business-platform/folder/ypn8q0n/webhook-subscriptions",
+    "https://business.whatsapp.com/policy"
+  ]
+}

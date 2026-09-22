@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-08T22:28:00+03:00",
+  "authority": ["D-042", "D-046", "D-050", "10", "15", "19"],
+  "provider": "meta_whatsapp_business_platform",
+  "maturity_target": "E3_PROVIDER_AUTHENTIC_PASS",
+  "release_effect": "NO_RELEASE_PASS_BY_TEMPLATE",
+  "overall_state": "BLOCKED_BY_OWNER_ACCESS",
+  "secret_handling": {
+    "mode": "REFERENCE_ONLY_EXTERNAL_SECRET_STORE",
+    "raw_credentials_allowed_in_drive": false,
+    "raw_credentials_allowed_in_model_prompts": false,
+    "raw_credentials_allowed_in_fixtures": false,
+    "raw_credentials_allowed_in_logs": false
+  },
+  "required_owner_assets": [
+    "controlled_meta_developer_or_test_app",
+    "test_waba",
+    "test_phone_number_asset",
+    "safe_runtime_or_webhook_execution_surface"
+  ],
+  "gates": [
+    {"gate_id":"M-01","state":"BLOCKED_BY_OWNER_ACCESS","evidence_refs":[],"provider_readback_ref":null,"captured_at":null},
+    {"gate_id":"M-02","state":"BLOCKED_BY_OWNER_ACCESS","evidence_refs":[],"provider_readback_ref":null,"captured_at":null},
+    {"gate_id":"M-03","state":"BLOCKED_BY_OWNER_ACCESS","evidence_refs":[],"provider_readback_ref":null,"captured_at":null},
+    {"gate_id":"M-04","state":"BLOCKED_BY_OWNER_ACCESS","evidence_refs":[],"provider_readback_ref":null,"captured_at":null},
+    {"gate_id":"M-05","state":"BLOCKED_BY_OWNER_ACCESS","evidence_refs":[],"provider_readback_ref":null,"captured_at":null},
+    {"gate_id":"M-06","state":"BLOCKED_BY_OWNER_ACCESS","evidence_refs":[],"provider_readback_ref":null,"captured_at":null},
+    {"gate_id":"M-07","state":"BLOCKED_BY_OWNER_ACCESS","evidence_refs":[],"provider_readback_ref":null,"captured_at":null},
+    {"gate_id":"M-08","state":"BLOCKED_BY_OWNER_ACCESS","evidence_refs":[],"provider_readback_ref":null,"captured_at":null}
+  ],
+  "pass_rule": "A gate may become PASS only after exact provider-authentic evidence exists for that gate and all referenced evidence is non-secret or secret-redacted. Template presence, public documentation, synthetic fixtures or prose cannot satisfy E3.",
+  "fail_closed_rule": "Unknown, missing, stale, mismatched-tenant or unauthenticated evidence cannot be promoted to PASS.",
+  "production_claim": "NOT_PRODUCTION_READY"
+}
