@@ -1,4 +1,4 @@
-# AC-REPO-RECON-001 — Repo-Native Admission Plan (v6 — corrected)
+# AC-REPO-RECON-001 — Repo-Native Admission Plan (v7 — corrected)
 
 ## Revision note
 
@@ -29,9 +29,24 @@ actually 121; `tests/security/approval-surface.spec.ts` imports
 `apps/control-center/src/approval-state.ts` (A5/HOLD) and must move with it, not stay in
 A1. **F2** — v5's "Proposed next bounded unit" bundled both the PF-01 and G3 patch specs
 into one materialization step, violating the one-smallest-unit sequencing rule; only G3
-should be the actual next-unit proposal. This revision (v6) independently re-verifies F1
-against source and applies both corrections. Finding-to-change map at the bottom covers
-all rounds.
+should be the actual next-unit proposal. Revision v6 independently re-verified F1 against
+source and applied both corrections; Brain's v6 review (head `6200be8`, CI `35993066558`
+SUCCESS) returned `CHANGES_REQUIRED` again with five findings: **F1 closed** (121-path
+confirmed correct). **F2 still open** — v6's "materialize A1 with G3 applied" still
+coupled baseline reconstruction with hardening into one unit, and a fresh `main` read
+proved G3's/PF-01's target files don't exist on bootstrap `main` at all, so a three-unit
+sequence (A: A1 baseline materialization only; B: G3, after A is verified; C: PF-01,
+after B) is required instead of a single unit. **F3** — `#6` was still described as
+"whole PR"/"entirely inside A1," directly contradicting this plan's own
+`approval-state.ts` exclusion. **F4** — a required corpus-currentness statement
+(current total = 46, historical first-28 denominator unchanged) was missing. **F5** —
+stale v1-era head/CI references survived uncorrected through v2–v6 in two sections. Also
+important: **a chat-visible "PR #26 v6 — PASS/VERIFIED, G3 SELECTED" record was issued
+and then explicitly superseded/retracted** by Brain's own subsequent canonical-conflict
+reconciliation before any source work began — Claude never acted on it, correctly held
+per this task's own docs-only contract, and no source file was ever touched. This
+revision (v7) applies F2–F5 (F1 already closed). Finding-to-change map at the bottom
+covers all rounds.
 
 ## v5 independent verification (done before writing anything below)
 
@@ -96,18 +111,25 @@ merge/close/rebase, product/dependency/migration/test-runner/README/CLAUDE/AGENT
 mutation, provider/store/production action, or D-106/D-107 maturity promotion. State
 ceiling: `IMPLEMENTED / AWAITING BRAIN REVIEW` — never `VERIFIED`/`COMPLETED` (self-declared).
 
-## Fresh-read baseline for this revision
+## Fresh-read baseline (current as of v7 — F5 correction)
 
-- `main` re-verified via `git fetch origin main`: still `8dd7343255c2ab037771d33f1f2c04ddbb84407f`, unchanged since v1.
-- Task branch/PR unchanged before this revision: `claude/github-branch-protection-access-o1g5m7`, PR #26, prior head `661da61c8f492ca1d9f55e70b35f49189e304dc4`.
-- All 15 relevant branches (`eng/rb-09-staged-transfer`, `eng/p0-024a-runtime-baseline`,
-  `eng/p0-026-job-run-safety-invariants`, and the twelve branches for PRs #5/#8–#18) were
-  re-fetched fresh from `origin` for this revision. No PR in #4–#18 has merged, closed, or
-  changed base since v1.
-- **Method change from v1**: v1's PR classifications were built from PR titles/bodies
-  (explicitly flagged as a limitation in v1). This revision replaces every classification
-  with a direct `git diff`/`git merge-base` read against the actual branch content —
-  titles and bodies are no longer treated as evidence of file-level content.
+- `main` re-verified: still `8dd7343255c2ab037771d33f1f2c04ddbb84407f`, unchanged since v1.
+  Confirmed bootstrap/toolchain-only — it does **not** contain
+  `migrations/0001_foundation.sql`, `tests/contract/schema-migration.spec.mjs`,
+  `apps/api/src/action-settlement.ts`, or `tests/security/action-settlement.spec.ts`. Those
+  only exist in the staged A1 source lineage (`#4`/`#6`), which is why neither G3 nor
+  PF-01 can be patched directly against `main` today — they first require Unit A (A1
+  baseline materialization) to exist as a substrate.
+- **v7's own immediate prior head is `36a26153e9d194c2f83af5bc75c8609cf3dd7a46` (v5)**,
+  reviewed `CHANGES_REQUIRED`; v6 (`6200be87acb5231e7b562130b091b0edb1cad0fd`, exact-head
+  CI run `35993066558` SUCCESS) closed F1 (121-path manifest) but was itself reviewed
+  `CHANGES_REQUIRED` again on F2 (next-unit still bundled A1 materialization with G3),
+  F3 (`#6` still described as "whole PR"/"entirely inside A1", contradicting its own
+  `approval-state.ts` exclusion), F4 (missing corpus=46 currentness statement), and F5
+  (this section and the "Unresolved evidence limitations" section still referenced v1's
+  original prior-head/CI values instead of v6's). This revision (v7) fixes all four.
+  (The correction below labeled "v1's method change from titles/bodies to git diff" is
+  preserved as historical context, not repeated here — see the Revision History at top.)
 
 ## The six outcomes (verbatim from the FINAL CLAUDE EXECUTION CONTRACT)
 
@@ -158,9 +180,11 @@ lint → test → test:vitest → test:worker → audit → license scan, replac
 placeholder), dependency pin bump (`hono` 4.12.32→4.12.34), `pnpm-lock.yaml` (+3,194
 lines, first real lockfile), branded-primitive narrowing hardening across
 `packages/{domain,authz,commerce-contract,ai-gateway,events}/src`, and a new
-`tests/contract/branded-primitive-narrowing.spec.ts` (156 lines). All of #6's content is
-inside the A1 boundary as narrowed below (toolchain/CI + the same package set as #4).
-**Classification: `ADMIT_BY_SLICE` (A1, whole PR).**
+`tests/contract/branded-primitive-narrowing.spec.ts` (156 lines). **Correction (v7,
+F3)**: #6 is **not** "whole-PR A1" — its diff also includes
+`apps/control-center/src/approval-state.ts`, which is explicitly excluded (A5/HOLD, see
+below). **Classification: `ADMIT_BY_SLICE`, path-bounded** — every #6 path except
+`apps/control-center/src/approval-state.ts` is A1; that one file is A5/HOLD.
 
 **PR #7 `eng/p0-026-job-run-safety-invariants`** (base #6) — 62 files, +4,213/−227 lines.
 Confirmed: `tests/security/dispatch-safety.spec.ts` (203 lines, new), Job/Run
@@ -193,7 +217,7 @@ that exclusion literally to #4's actual diff:
 | #4c | same commit, path subset | — | `apps/control-center/src/{index,state,routes,api-client-contract,ux-presentation,approval-state}.ts` + `tests/security/approval-surface.spec.ts` (v6, F1) | `REBASE_AND_ADAPT` | A5 (HOLD) | Reclassified out of A1; folds into the same D-106-Control-Center-scope HOLD as #8/#9. |
 | #4d | same commit, path subset | — | `connectors/meta-whatsapp/src/{e3-acceptance,index}.ts` | `ADMIT_BY_SLICE` (source only, see A2/A6 mechanics) | A6 | Initial stub baseline; extends via commits `d9dfe0e`/`5222b03`/`07c132b` inside #7 (see below). |
 | #4e | same commit, path subset | — | `connectors/{ideasoft,ikas,ticimax,tsoft}/src/index.ts` | `KEEP_AS_EVIDENCE` | none (`POST_REFERENCE_EXPANSION` / Phase 1B+ per D-099) | No named A-slice covers these providers, but per D-099 (verified directly from doc 07) they are explicitly non-blocking for Shopify-reference AC v1.0 progression — not a dependency, not a pending scope decision. Preserved as provenance only. |
-| #6 | `eng/p0-024a-runtime-baseline` @ `dded3dcff391dd75b23bb05e2efa4d2ad041456a` | — (base #4) | 47 files, entirely inside the A1 boundary (CI pipeline, dependency pin, branded-primitive hardening across the A1 package set) | `ADMIT_BY_SLICE` | A1 | Depends on #4a. |
+| #6 | `eng/p0-024a-runtime-baseline` @ `dded3dcff391dd75b23bb05e2efa4d2ad041456a` | — (base #4) | 47 files (CI pipeline, dependency pin, branded-primitive hardening) **minus** `apps/control-center/src/approval-state.ts` (A5/HOLD, v7 F3 correction) | `ADMIT_BY_SLICE`, path-bounded (not "whole PR") | A1 (except the one A5 file) | Depends on #4a. |
 | #7 | `eng/p0-026-job-run-safety-invariants` @ `7a108d83a69e3f3d7ef9f774e42724c54c99b3f4` | — (base #6) | `packages/events/src` Job/Run/outbox/quota extensions, `tests/security/dispatch-safety.spec.ts`, worker-runtime smoke test — **excluding** `connectors/shopify/*` (→A4 row below), `apps/control-center/*` (→A5), `connectors/meta-whatsapp/*` (→A6, commits `d9dfe0e`/`5222b03`/`07c132b`) | `ADMIT_BY_SLICE` | A2 | Depends on #4a→#6. See "A2/A6 exact separation mechanics" below for how the excluded paths are extracted rather than assumed inseparable. |
 | #8 | `feat/control-center-route-matcher` @ `f1d448cf7477b8b58aba71f124ed35ad92816767` | `0969728b` (stale — predates #19–#25 merge into #7) | `apps/control-center/src/App.tsx` (new), `route-matcher.ts` (new), `main.tsx` (mod), `FRONTEND_STAGING_STATUS.json` (mod), `tests/contract/control-center-route-matcher.spec.ts` (new) | `REBASE_AND_ADAPT` | A5 (HOLD) | Router mechanics reusable; must rebase onto current #7 tip (missing 6 later commits) **and** wait for D-106 Control-Center scope to reach `SPECIFIED` before IA fit review — two independent blockers, not one. |
 | #9 | `feat/control-center-operation-path` @ `2edadfe1c0ca59a06afb4c7f10b4db4776b19e8a` | `0969728b` (stale, same as #8) | `apps/control-center/src/operation-path.ts` (new), `tests/contract/control-center-operation-path.spec.ts` (new) | `REBASE_AND_ADAPT` | A5 (HOLD) | Transport-contract path mechanics reusable; same two blockers as #8. |
@@ -386,20 +410,57 @@ AC-TEST-GAP-001 `.mjs`-allowlist gap). Application-level conflict re-read/reconc
 `AC-XCID-107`/runtime scope — this patch claims persistence-level duplicate prevention
 only.
 
-## Proposed next bounded unit (ONE, not started — corrected in v6, F2)
+## Proposed next operations — Unit A / B / C (v7 sequencing correction, F2)
 
-**Materialize A1 with only patch spec B (G3) applied**: base `main`, overlay the 121-path
-`#4`+`#6` A1 manifest above (excluding `approval-state.ts` and
-`approval-surface.spec.ts`), apply the #10/#1/#18 line-level overlays, apply **only** the
-G3/BF-CHATWOOT-04 schema-uniqueness patch (spec B) to `migrations/0001_foundation.sql` +
-`tests/contract/schema-migration.spec.mjs`, run the full A1 CI pipeline, and return the
-real diff for Brain review. Spec A (PF-01) is **not** part of this unit — per Brain's F2
-finding, bundling both patches into one materialization violates the one-smallest-unit
-sequencing this plan has followed since v1; PF-01 remains a separately ready, later
-candidate. This is a fully-specified, verified-path, single-patch unit with zero
-remaining unresolved boundary ambiguity — **but it requires product-source mutation,
-which is outside this task's own docs-only contract** (see "v5 scope boundary held").
-**This plan proposes it as the next unit; it does not start it.**
+**v7 correction**: v6 proposed "materialize A1 with G3 applied" as one bundled unit.
+Brain's re-review found this still couples two independent review surfaces — "did we
+reconstruct A1 faithfully?" vs. "does that verified baseline need this hardening
+delta?" — and, separately, that `main` does not yet contain the files G3 or PF-01 would
+touch (`migrations/0001_foundation.sql`, `tests/contract/schema-migration.spec.mjs`,
+`apps/api/src/action-settlement.ts`, `tests/security/action-settlement.spec.ts` all only
+exist in the staged `#4`/`#6` lineage). Neither patch is a literal edit against current
+`main` today. Corrected structure — three ordered units, none started, none selected
+except as noted:
+
+**Unit A — next repository operation once this plan itself is verified. A1 baseline
+materialization only, no hardening.** Base `main@8dd7343`; materialize the verified
+121-path candidate using the `#4`/`#6`/`#10` + `#1`/`#18` overlay mechanics above;
+exclude `approval-state.ts` + `approval-surface.spec.ts` and every A4/A5/A6/post-
+reference/release-evidence path; preserve every `main`-only path unchanged. Apply **no**
+G3, **no** PF-01, no other change. Additionally apply three narrow, same-path
+**truth-preserving adaptations** (not new paths, not hardening — required so the
+candidate isn't internally self-contradictory the moment it's materialized):
+  - `DEPENDENCY_BASELINE.json`: reconcile declared versions against the materialized
+    `package.json`/`pnpm-lock.yaml` (at minimum `hono` must read `4.12.34`, not the stale
+    `4.12.32`); replace `PINNED_MANIFEST_INSTALL_PENDING` with a status the actual
+    Unit-A install/check evidence supports.
+  - `THIRD_PARTY_NOTICES.md`: remove/replace its reference to
+    `docs/exec-plans/active/AC-ENG-TASK-001-P0-024A.md` (absent from the candidate tree —
+    a broken link); re-run `pnpm audit`/`pnpm licenses` and use the real current results,
+    not the stale August-era counts.
+  - `tests/security/THREAT_MATRIX.json` (TM-12 row): reconcile from blanket `PENDING` to
+    a truthful state the candidate's actual checks support (`tests/security/tm-harness.spec.ts`
+    doesn't read this file, so this is metadata-truth only, not a behavior change).
+  Return exact base/source SHA provenance, the 121-path manifest, overwritten-vs-preserved
+  path lists, install/typecheck/lint/test/audit/license evidence, and a diff proving no
+  G3/PF-01/A4/A5/A6 leakage. **No merge/admission/maturity promotion.**
+
+**Unit B — first hardening candidate, after Unit A is independently Brain-verified. G3
+only, `NOT_SELECTED`.** Exactly `migrations/0001_foundation.sql` +
+`tests/contract/schema-migration.spec.mjs`; add a `UNIQUE` constraint/index on
+`(merchant_workspace_id, channel_type, normalized_identifier_ref)`; prove it with both a
+static schema assertion and (per the G3 preflight recorded in the source handoff)
+ephemeral-PostgreSQL execution evidence — reject-on-duplicate within the same
+workspace+channel, allow across different workspace/channel/identifier. Applied as a
+distinct diff on top of the Unit-A substrate, never folded into Unit A.
+
+**Unit C — second, later hardening candidate. PF-01, `NOT_SELECTED`.** Exactly
+`apps/api/src/action-settlement.ts` + `tests/security/action-settlement.spec.ts`, after
+Unit B is separately selected — not concurrently.
+
+All three units require product-source mutation and are therefore **outside this task's
+own docs-only contract** (see "v5 scope boundary held") — none are started here. This
+plan proposes the sequence; it does not execute any part of it.
 
 ## Unresolved evidence limitations (honest gaps, not resolved in this revision)
 
@@ -411,8 +472,22 @@ which is outside this task's own docs-only contract** (see "v5 scope boundary he
   executable") rather than a citation from the contract text itself — Brain should
   confirm that reasoning is accepted, or state where the line actually falls, before
   actual admission.
-- CI status was checked for this artifact's own prior head (`35895122756` = SUCCESS) but
-  not re-run for this revision's new head at time of writing this file (CI runs on push).
+- CI status confirmed for v6's actual head (`6200be87acb5231e7b562130b091b0edb1cad0fd`,
+  run `35993066558` = SUCCESS, per Brain's own v6 review); this revision's new head has
+  not yet had its own CI result observed at time of writing (CI runs on push) — v7
+  corrects the stale v1-era CI reference this section previously carried (F5).
+
+## v7 currentness statement (F4)
+
+Per the canonical overlay recorded in the source handoff: **current total failure corpus
+= 46.** The historical first-28 A1/A2 applicability denominator this plan already uses
+(2 `COVERED` / 9 `PARTIAL` / 13 `GAP` / 4 `NOT_APPLICABLE_TO_SLICE`, in the "G1–G8 /
+BF-corpus" section above) is unchanged and remains the basis for this plan's own A1
+disposition — the additional 18 fixtures belong to separate governed-learning/provider-
+ordering, billing/entitlement, identity/session, and Shopify-lifecycle-closure work
+streams outside AC-REPO-RECON-001's scope, and are not reproduced line-by-line here.
+Superseded intermediate totals (28, 32, 35, 39, 42) that appeared in this plan's own
+prior revisions or in the source handoff's earlier drafts are historical only.
 
 ## Finding-to-change map (for Brain review)
 
@@ -460,18 +535,36 @@ and returned two narrow findings, both applied here:
 | F1: 122-path manifest is actually 121 — `tests/security/approval-surface.spec.ts` imports `apps/control-center/src/approval-state.ts` (A5/HOLD) and must move with it | Independently confirmed via `git show`: line 1 of that spec file imports directly from `approval-state.ts`. Manifest corrected to 121 paths; the spec file added to the A5/HOLD exclusion list everywhere it's referenced (manifest steps, A5 per-slice detail, #4c disposition row). |
 | F2: v5's "Proposed next bounded unit" bundled both PF-01 and G3 patches into one materialization, violating one-smallest-unit sequencing; only G3 should be proposed | "Proposed next bounded unit" rewritten to propose only spec B (G3) as the single next unit; spec A (PF-01) explicitly retained as a separate, later-selectable spec, not bundled into the same unit. |
 
+**Round 6 (v6 head `6200be8`, `CHANGES_REQUIRED` → this revision, v7):**
+
+A chat-visible "PASS/VERIFIED, G3 SELECTED" record briefly existed for this head and was
+explicitly superseded by Brain's own subsequent canonical-conflict reconciliation before
+any source action was taken — Claude held per contract and did not act on it. Applying
+the actual controlling review below:
+
+| Finding | Change made |
+|---|---|
+| F1 (121-path manifest) | Already closed in v6; unchanged in v7. |
+| F2: next-unit still bundled A1 materialization with G3; `main` fresh-read proves G3's/PF-01's target files don't exist on bootstrap `main` at all | "Proposed next operations" section replaced with an ordered three-unit sequence: Unit A (A1 baseline materialization only, no hardening, plus three named truth-preserving adaptations to `DEPENDENCY_BASELINE.json`/`THIRD_PARTY_NOTICES.md`/`THREAT_MATRIX.json` TM-12) → Unit B (G3 only, `NOT_SELECTED`, after Unit A is Brain-verified) → Unit C (PF-01, `NOT_SELECTED`, after Unit B). |
+| F3: `#6` still described as "whole PR"/"entirely inside A1," contradicting its own `approval-state.ts` exclusion | Corrected to path-bounded wording in both the foundation-spine narrative and the disposition-table row for `#6`. |
+| F4: missing corpus-currentness statement (current total=46) | New "v7 currentness statement" section added, preserving the existing first-28 denominator (2/9/13/4) this plan's own A1 disposition already relies on. |
+| F5: stale v1-era head/CI references survived through v2–v6 | "Fresh-read baseline" and "Unresolved evidence limitations" sections rewritten with v6/v7's actual head and CI values. |
+
 ## Return to Brain
 
 Task branch: `claude/github-branch-protection-access-o1g5m7`. PR: #26 (updated in place
 across all revisions, not a new PR). Head history: `661da61` (v1) → `b12aafd` (v2, CI
 `35928653822` SUCCESS) → `026793c` (v3, CI `35933742993` SUCCESS) → `aa9dd42` (v4, CI
 `35938340668` SUCCESS, PASS/VERIFIED) → `36a2615` (v5, CI `35986885345` SUCCESS,
-`CHANGES_REQUIRED` — scope-boundary stance affirmed, F1/F2 found) → this revision (v6,
-new head recorded in the accompanying commit). Files changed by this revision:
-`docs/exec-plans/active/AC-REPO-RECON-001-admission-plan.md` only — no product-source
-file was created, modified, or staged. Checks performed this round: direct read of doc
-00/21/25/write-lock for the v5 review verdict and its exact F1/F2 text; independent `git
-show` verification that `tests/security/approval-surface.spec.ts` imports
-`approval-state.ts`. State ceiling: `IMPLEMENTED / AWAITING BRAIN REVIEW`. Two exact patch
-specs (PF-01, G3) remain recorded; only G3 is proposed as the actual next unit; neither is
-applied — that authorization was explicitly not exercised by this task.
+`CHANGES_REQUIRED` — scope-boundary stance affirmed, F1/F2 found) → `6200be8` (v6, CI
+`35993066558` SUCCESS, `CHANGES_REQUIRED` — F1 closed, F2–F5 found; a transient
+PASS/VERIFIED+G3-SELECTED record for this same head was later superseded before any
+action) → this revision (v7, new head recorded in the accompanying commit). Files changed
+by this revision: `docs/exec-plans/active/AC-REPO-RECON-001-admission-plan.md` only — no
+product-source file was created, modified, or staged, and no Unit A/B/C work was started.
+Checks performed this round: direct read of the full controlling doc 25 text for this
+review cycle (not summarized secondhand) — the v6 review, the G3 and PF-01 pre-selection
+preflights, the canonical-conflict-reconciliation supersession note, the Unit-A sequencing
+correction, and the TM-12 truth-preflight addendum. State ceiling:
+`IMPLEMENTED / AWAITING BRAIN REVIEW`. Source hardening remains `NOT_SELECTED`; no
+Founder/scope authorization beyond this docs-only task was exercised.
