@@ -1,4 +1,4 @@
-# AC-REPO-RECON-001 — Repo-Native Admission Plan (v5 — corrected)
+# AC-REPO-RECON-001 — Repo-Native Admission Plan (v6 — corrected)
 
 ## Revision note
 
@@ -21,7 +21,17 @@ fully-derived exact 122-path A1 materialization manifest plus a G1–G8 gap disp
 claims directly against source (not taken on the relayed document's word — see "v5
 independent verification" below) before recording any of it, and explicitly declines the
 portion of the same handoff that asked for actual source-code changes (see "v5 scope
-boundary held"). Finding-to-change map at the bottom covers all rounds.
+boundary held"). Brain's review of v5 (`36a2615`, CI `35986885345` SUCCESS) explicitly
+**affirmed** the scope-boundary stance ("v5 correctly keeps source mutation outside the
+current docs-only task... positive evidence") and returned `CHANGES_REQUIRED` on two
+narrow, independently-checkable defects instead: **F1** — the 122-path manifest is
+actually 121; `tests/security/approval-surface.spec.ts` imports
+`apps/control-center/src/approval-state.ts` (A5/HOLD) and must move with it, not stay in
+A1. **F2** — v5's "Proposed next bounded unit" bundled both the PF-01 and G3 patch specs
+into one materialization step, violating the one-smallest-unit sequencing rule; only G3
+should be the actual next-unit proposal. This revision (v6) independently re-verifies F1
+against source and applies both corrections. Finding-to-change map at the bottom covers
+all rounds.
 
 ## v5 independent verification (done before writing anything below)
 
@@ -48,6 +58,17 @@ boundary held"). Finding-to-change map at the bottom covers all rounds.
   derived analysis — not re-derived line-by-line by Claude in this revision, but backed
   by a demonstrated accuracy track record on the checkable parts, and labeled as such
   below rather than silently re-attributed as independently Claude-verified.
+
+## v6 independent verification (F1 — the 121-path correction)
+
+- **`tests/security/approval-surface.spec.ts` imports `apps/control-center/src/approval-state.ts`**:
+  confirmed directly — `git show origin/eng/p0-024a-runtime-baseline:tests/security/approval-surface.spec.ts`
+  line 1 reads `import { approvalClientCommand, selectApprovalSurface } from
+  '../../apps/control-center/src/approval-state';`. The file exists in both `#4` and `#6`.
+  Since `approval-state.ts` is excluded from A1 (A5/HOLD), a test file that only exercises
+  that excluded module cannot meaningfully remain in an A1 admission — F1 is accurate.
+  Manifest corrected from 122 to **121 paths**; the 122nd path (`approval-surface.spec.ts`)
+  moves to the A5/HOLD file list alongside `approval-state.ts` itself.
 
 ## v5 scope boundary held
 
@@ -159,7 +180,7 @@ that exclusion literally to #4's actual diff:
 
 - **In A1**: `packages/{domain,authz,commerce-contract,ai-gateway,events,merchant-rules,truth-policy}/src` (the domain/authz/commerce/AI primitives named explicitly), `apps/api/src` (the Worker runtime entrypoint + action-engine/settlement/transport-contracts that those packages require to be executable — without it nothing in A1 can run, so it is foundation, not product feature surface), `migrations/`, `scripts/`, `tests/contract/*` and `tests/security/*` that exercise only the above paths, plus toolchain/config (`tsconfig*.json`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.github/workflows/ci.yml`, `.gitignore`, `.prettierignore`, `.prettierrc.json`, `eslint.config.mjs`, `THIRD_PARTY_NOTICES.md`, `DEPENDENCY_BASELINE.json`).
 - **Excluded from A1 — this is exactly the "release authority" the contract says to exclude**: `release/{OPEN_GATES.json,CRV1_EVIDENCE_INDEX.json,STAGING_TEST_REPORT.json,PROVENANCE_REGISTER.json,STAGING_README.md}`, `apps/api/RUNTIME_BINDING_PLAN.json`, `apps/api/RUNTIME_SPIKE_STATUS.json`, `apps/control-center/FRONTEND_STAGING_STATUS.json` — these are historical evidence/assertion documents about test runs and release-gate status, not foundation code. New row, own outcome: see disposition table (`KEEP_AS_EVIDENCE`, tagged `release-evidence`, not part of any A-slice).
-- **Excluded from A1, reclassified to A5**: `apps/control-center/src/{index,state,routes,api-client-contract,ux-presentation,approval-state}.ts` — Control-Center-specific, same family as #8/#9's router/operation-path; folds into the A5 HOLD, not A1.
+- **Excluded from A1, reclassified to A5**: `apps/control-center/src/{index,state,routes,api-client-contract,ux-presentation,approval-state}.ts` **and `tests/security/approval-surface.spec.ts`** (imports `approval-state.ts` directly — added in v6, F1) — Control-Center-specific, same family as #8/#9's router/operation-path; folds into the A5 HOLD, not A1.
 - **Excluded from A1, reclassified to A6**: `connectors/meta-whatsapp/src/{e3-acceptance,index}.ts` (the initial stub baseline, later built on by PR #19/21/24).
 - **Excluded from A1, non-blocking deferred evidence**: `connectors/{ideasoft,ikas,ticimax,tsoft}/src/index.ts` — evidence-gated stubs (no live provider logic). Per **D-099** ("SHOPIFY-FIRST REFERENCE V1 / CONNECTOR SEQUENCING & CR-V1 BLOCKER RECLASSIFICATION," verified directly from doc 07 this revision): "Ticimax, IdeaSoft, ikas and T-Soft no longer block Shopify-reference AC v1.0 progression... reclassified to `POST_REFERENCE_EXPANSION` / Phase 1B+." These stubs are therefore **not** a dependency this admission chain is blocked on, and their absence from the A0–A6 model does not require a new Founder/scope decision — D-099 already settled that. Preserved as provenance/evidence only.
 
@@ -169,7 +190,7 @@ that exclusion literally to #4's actual diff:
 |---|---|---|---|---|---|---|
 | #4a | `eng/rb-09-staged-transfer` @ `831abb78004b8beb417a99725c9ec13ab753cbc6` | — (base `main`) | `packages/{domain,authz,commerce-contract,ai-gateway,events,merchant-rules,truth-policy}/src`, `apps/api/src`, `migrations/`, `scripts/`, toolchain/config, matching `tests/contract`+`tests/security` — see "A1 narrowed" above | `ADMIT_BY_SLICE` | A1 | First in dependency order. |
 | #4b | same commit, path subset | — | `release/*.json`, `apps/api/{RUNTIME_BINDING_PLAN,RUNTIME_SPIKE_STATUS}.json`, `apps/control-center/FRONTEND_STAGING_STATUS.json` | `KEEP_AS_EVIDENCE` | — (release-evidence) | Excluded from A1 per the contract's own "excluding stale current-looking product/release authority" clause. Needs a separate future admission decision, not bundled with foundation code. |
-| #4c | same commit, path subset | — | `apps/control-center/src/{index,state,routes,api-client-contract,ux-presentation,approval-state}.ts` | `REBASE_AND_ADAPT` | A5 (HOLD) | Reclassified out of A1; folds into the same D-106-Control-Center-scope HOLD as #8/#9. |
+| #4c | same commit, path subset | — | `apps/control-center/src/{index,state,routes,api-client-contract,ux-presentation,approval-state}.ts` + `tests/security/approval-surface.spec.ts` (v6, F1) | `REBASE_AND_ADAPT` | A5 (HOLD) | Reclassified out of A1; folds into the same D-106-Control-Center-scope HOLD as #8/#9. |
 | #4d | same commit, path subset | — | `connectors/meta-whatsapp/src/{e3-acceptance,index}.ts` | `ADMIT_BY_SLICE` (source only, see A2/A6 mechanics) | A6 | Initial stub baseline; extends via commits `d9dfe0e`/`5222b03`/`07c132b` inside #7 (see below). |
 | #4e | same commit, path subset | — | `connectors/{ideasoft,ikas,ticimax,tsoft}/src/index.ts` | `KEEP_AS_EVIDENCE` | none (`POST_REFERENCE_EXPANSION` / Phase 1B+ per D-099) | No named A-slice covers these providers, but per D-099 (verified directly from doc 07) they are explicitly non-blocking for Shopify-reference AC v1.0 progression — not a dependency, not a pending scope decision. Preserved as provenance only. |
 | #6 | `eng/p0-024a-runtime-baseline` @ `dded3dcff391dd75b23bb05e2efa4d2ad041456a` | — (base #4) | 47 files, entirely inside the A1 boundary (CI pipeline, dependency pin, branded-primitive hardening across the A1 package set) | `ADMIT_BY_SLICE` | A1 | Depends on #4a. |
@@ -263,7 +284,7 @@ cause, in different files, with different fixes:**
 - Verification: `meta-whatsapp-port: 10/10`, `meta-whatsapp-dispatch: 10/10`, `meta-whatsapp-conversation-projection: 14/14` (already run and reported in PRs #19/#21/#24/#25).
 - Rollback: path-filter is reversible in both directions (add the paths back in a follow-up commit/PR); a *product-scope* rollback (deciding not to expose WhatsApp as a channel after A6 is source-admitted) is a separate D-106 product decision, not a code revert.
 
-## A1 exact materialization manifest (122 paths, verified)
+## A1 exact materialization manifest (121 paths, corrected in v6 — F1)
 
 Base: fresh `main@8dd7343255c2ab037771d33f1f2c04ddbb84407f`. Not a wholesale merge of #4
 or #6 — a bounded path/file overlay, since `main↔#4` is diverged.
@@ -275,9 +296,10 @@ or #6 — a bounded path/file overlay, since `main↔#4` is diverged.
    `pnpm-workspace.yaml`, `.prettierignore`, `.prettierrc.json`, `eslint.config.mjs`,
    `THIRD_PARTY_NOTICES.md`, `DEPENDENCY_BASELINE.json`).
 2. Overlay A1-valid `#6@dded3dc...` deltas onto those same paths. **Explicitly exclude**
-   `apps/control-center/src/approval-state.ts` (A5/HOLD — this is the one defect the v4
-   PASS/VERIFIED checkpoint missed, per this round's Brain re-review, independently
-   confirmed above).
+   `apps/control-center/src/approval-state.ts` (A5/HOLD — the defect the v4 PASS/VERIFIED
+   checkpoint missed) **and `tests/security/approval-surface.spec.ts`** (v6, F1 — this
+   test imports `approval-state.ts` directly, confirmed above, so it cannot stay in A1
+   once the module it tests is excluded).
 3. Additional exact exclusions (all present in the real #4 diff, confirmed above):
    `PROVENANCE_REGISTER.json`, `STAGING_README.md`,
    `tests/contract/internal-dogfood-auth-perimeter-admission.spec.mjs` — current-looking
@@ -285,8 +307,8 @@ or #6 — a bounded path/file overlay, since `main↔#4` is diverged.
    / #4b from v2-v4 above).
 4. PR #10 (`docs/git-workflow-policy`): apply only its two-path governance patch —
    `AGENTS.md` two-line addendum + new `docs/engineering/GIT_WORKFLOW.md` — **not** its
-   own historical adoption exec-plan doc. This is what brings the manifest from 120 to
-   122 paths.
+   own historical adoption exec-plan doc. This is what brings the manifest from 119 to
+   121 paths.
 5. PR #1 (dependabot): apply only the `actions/checkout@v4 → @v7` line as an overlay onto
    the A1 `#6` CI workflow — do not replace the whole workflow with PR #1's older
    bootstrap-stage blob.
@@ -302,7 +324,8 @@ or #6 — a bounded path/file overlay, since `main↔#4` is diverged.
 **Claim ceiling**: this manifest is a verified, ready-to-execute *specification* — path
 selection and exclusions are confirmed against real git history, but no tree was actually
 built, tested, or committed by this revision. Materializing it (checking out the paths,
-applying the two correction patches below, running the A1 CI pipeline, and returning a
+applying the correction patch(es) selected for the actual next unit — see "Proposed next
+bounded unit" below, F2 corrected in v6 — running the A1 CI pipeline, and returning a
 real diff) is future work, explicitly not performed here per this task's own contract.
 
 ## G1–G8 / BF-corpus / BH / PF gap disposition (Brain-authored source analysis — see verification note above)
@@ -336,6 +359,13 @@ lifecycle state machine exists yet, and none is claimed here).
 
 ### Two ready-to-apply patch specs (recorded, not applied — see "v5 scope boundary held")
 
+**v6 correction (F2)**: v5 proposed materializing A1 with *both* patches A and B applied
+together as one bundled "next unit," which Brain's re-review flagged as violating the
+one-smallest-hardening-unit sequencing rule this plan itself has followed since v1. Both
+specs remain recorded below, but only **spec B (G3)** is the actual proposed next unit —
+see "Proposed next bounded unit" below. Spec A (PF-01) is retained as a ready, independent
+spec for a later selection, not bundled into the same unit as B.
+
 **A. PF-01 — `apps/api/src/action-settlement.ts` + `tests/security/action-settlement.spec.ts`.**
 Remove `COMPENSATION_REQUIRED` from `ActionSettlementStatus`; keep coarse
 `SUCCEEDED`/`FAILED`/`BLOCKED`-equivalent outcome status separate from a recovery
@@ -356,12 +386,17 @@ AC-TEST-GAP-001 `.mjs`-allowlist gap). Application-level conflict re-read/reconc
 `AC-XCID-107`/runtime scope — this patch claims persistence-level duplicate prevention
 only.
 
-## Proposed next bounded unit (ONE, not started)
+## Proposed next bounded unit (ONE, not started — corrected in v6, F2)
 
-**Materialize A1** using the exact 122-path manifest above (base `main`, overlay `#4` A1
-paths + A1-valid `#6` deltas excluding `approval-state.ts`, apply the #10/#1/#18
-overlays, apply patch specs A and B), run the full A1 CI pipeline, and return the real
-diff for Brain review. This is now a fully-specified, verified-path unit with zero
+**Materialize A1 with only patch spec B (G3) applied**: base `main`, overlay the 121-path
+`#4`+`#6` A1 manifest above (excluding `approval-state.ts` and
+`approval-surface.spec.ts`), apply the #10/#1/#18 line-level overlays, apply **only** the
+G3/BF-CHATWOOT-04 schema-uniqueness patch (spec B) to `migrations/0001_foundation.sql` +
+`tests/contract/schema-migration.spec.mjs`, run the full A1 CI pipeline, and return the
+real diff for Brain review. Spec A (PF-01) is **not** part of this unit — per Brain's F2
+finding, bundling both patches into one materialization violates the one-smallest-unit
+sequencing this plan has followed since v1; PF-01 remains a separately ready, later
+candidate. This is a fully-specified, verified-path, single-patch unit with zero
 remaining unresolved boundary ambiguity — **but it requires product-source mutation,
 which is outside this task's own docs-only contract** (see "v5 scope boundary held").
 **This plan proposes it as the next unit; it does not start it.**
@@ -415,19 +450,28 @@ which is outside this task's own docs-only contract** (see "v5 scope boundary he
 | G1–G8 / 28-item BF corpus / BH-01..06 / PF-01..06 gap disposition (handoff-supplied) | Spot-verified the two claims backing the only two "A1-owned, fixable now" items (PF-01 against `action-settlement.ts`; G3/BF-CHATWOOT-04 against `migrations/0001_foundation.sql`) directly against source — both accurate. Recorded the full disposition as Brain-authored analysis, explicitly labeled as such, not silently re-attributed as independently re-derived by Claude line-by-line. |
 | Handoff's request to apply the two source-code patch specs (PF-01, G3) directly | **Declined in this revision** — recorded both as exact, ready-to-apply patch specs instead of applying them, since this task's own `FINAL CLAUDE EXECUTION CONTRACT` (read directly, not secondhand) authorizes only this one docs artifact and explicitly excludes product-source mutation. A separate chat-level Founder confirmation of *Brain's* own repo-write authority does not itself re-scope this task's contract. |
 
+**Round 5 (v5 head `36a2615`, `CHANGES_REQUIRED` → this revision, v6):**
+
+Brain's re-review explicitly affirmed the v5 scope-boundary stance as "positive evidence"
+and returned two narrow findings, both applied here:
+
+| Finding | Change made |
+|---|---|
+| F1: 122-path manifest is actually 121 — `tests/security/approval-surface.spec.ts` imports `apps/control-center/src/approval-state.ts` (A5/HOLD) and must move with it | Independently confirmed via `git show`: line 1 of that spec file imports directly from `approval-state.ts`. Manifest corrected to 121 paths; the spec file added to the A5/HOLD exclusion list everywhere it's referenced (manifest steps, A5 per-slice detail, #4c disposition row). |
+| F2: v5's "Proposed next bounded unit" bundled both PF-01 and G3 patches into one materialization, violating one-smallest-unit sequencing; only G3 should be proposed | "Proposed next bounded unit" rewritten to propose only spec B (G3) as the single next unit; spec A (PF-01) explicitly retained as a separate, later-selectable spec, not bundled into the same unit. |
+
 ## Return to Brain
 
 Task branch: `claude/github-branch-protection-access-o1g5m7`. PR: #26 (updated in place
 across all revisions, not a new PR). Head history: `661da61` (v1) → `b12aafd` (v2, CI
 `35928653822` SUCCESS) → `026793c` (v3, CI `35933742993` SUCCESS) → `aa9dd42` (v4, CI
-`35938340668` SUCCESS, PASS/VERIFIED) → this revision (v5, new head recorded in the
-accompanying commit). Files changed by this revision:
+`35938340668` SUCCESS, PASS/VERIFIED) → `36a2615` (v5, CI `35986885345` SUCCESS,
+`CHANGES_REQUIRED` — scope-boundary stance affirmed, F1/F2 found) → this revision (v6,
+new head recorded in the accompanying commit). Files changed by this revision:
 `docs/exec-plans/active/AC-REPO-RECON-001-admission-plan.md` only — no product-source
-file was created, modified, or staged. Checks performed this round: direct read of the
-full Drive handoff payload (not summarized secondhand); independent `git diff`
-verification of all 122 manifest paths and the sole `#4→#6` Control-Center delta;
-independent source reads of `apps/api/src/action-settlement.ts` and
-`migrations/0001_foundation.sql` to verify the two claims underpinning the only two
-A1-owned correction candidates. State ceiling: `IMPLEMENTED / AWAITING BRAIN REVIEW`. Two
-exact patch specs (PF-01, G3) are recorded and ready for whoever is authorized to execute
-product-source changes — that authorization was explicitly not exercised by this task.
+file was created, modified, or staged. Checks performed this round: direct read of doc
+00/21/25/write-lock for the v5 review verdict and its exact F1/F2 text; independent `git
+show` verification that `tests/security/approval-surface.spec.ts` imports
+`approval-state.ts`. State ceiling: `IMPLEMENTED / AWAITING BRAIN REVIEW`. Two exact patch
+specs (PF-01, G3) remain recorded; only G3 is proposed as the actual next unit; neither is
+applied — that authorization was explicitly not exercised by this task.
