@@ -1,15 +1,17 @@
-# AC-REPO-RECON-001 — Repo-Native Admission Plan (v3 — corrected)
+# AC-REPO-RECON-001 — Repo-Native Admission Plan (v4 — corrected)
 
 ## Revision note
 
-v1 (commit `661da61c8f492ca1d9f55e70b35f49189e304dc4`, CI run `35895122756` = SUCCESS)
-received `BRAIN REVIEW — AC-REPO-RECON-001 — CHANGES_REQUIRED` (doc 25) with 5 findings;
-v2 (commit `b12aafd`, CI run `35928653822` = SUCCESS) addressed all 5 but received a
-second `CHANGES_REQUIRED` verdict on the same head with 3 remaining defects: (1) manifest
-still not exact-head-SHA reproducible for #4/#6/#7/#8–#18; (2) A1 still over-broad, not
-narrowed from source; (3) A2/A6 separation wording ("rides with A2") still ambiguous. This
-revision (v3) addresses all three in the same task/PR/branch. Finding-to-change map at the
-bottom covers both rounds.
+v1 (`661da61`, CI `35895122756` SUCCESS) received 5 findings (doc 25 `CHANGES_REQUIRED`).
+v2 (`b12aafd`, CI `35928653822` SUCCESS) addressed all 5, received 3 remaining defects on
+re-review. v3 (`026793c`, CI `35933742993` SUCCESS) closed all 3, but the same re-review
+found one new conflict: row #4e classified the IdeaSoft/ikas/Ticimax/T-Soft connector
+stubs as `STILL_REQUIRED_DEPENDENCY` blocked on "a future scope decision" — this
+contradicts **D-099** (verified directly from doc 07 this revision), which already
+reclassified those four providers as `POST_REFERENCE_EXPANSION` / Phase 1B+, explicitly
+non-blocking for Shopify-reference AC v1.0 progression. This revision (v4) reclassifies
+#4e to `KEEP_AS_EVIDENCE` per D-099 and removes the "future scope decision" framing.
+Finding-to-change map at the bottom covers all rounds.
 
 ## Task identity and authority
 
@@ -107,7 +109,7 @@ that exclusion literally to #4's actual diff:
 - **Excluded from A1 — this is exactly the "release authority" the contract says to exclude**: `release/{OPEN_GATES.json,CRV1_EVIDENCE_INDEX.json,STAGING_TEST_REPORT.json,PROVENANCE_REGISTER.json,STAGING_README.md}`, `apps/api/RUNTIME_BINDING_PLAN.json`, `apps/api/RUNTIME_SPIKE_STATUS.json`, `apps/control-center/FRONTEND_STAGING_STATUS.json` — these are historical evidence/assertion documents about test runs and release-gate status, not foundation code. New row, own outcome: see disposition table (`KEEP_AS_EVIDENCE`, tagged `release-evidence`, not part of any A-slice).
 - **Excluded from A1, reclassified to A5**: `apps/control-center/src/{index,state,routes,api-client-contract,ux-presentation,approval-state}.ts` — Control-Center-specific, same family as #8/#9's router/operation-path; folds into the A5 HOLD, not A1.
 - **Excluded from A1, reclassified to A6**: `connectors/meta-whatsapp/src/{e3-acceptance,index}.ts` (the initial stub baseline, later built on by PR #19/21/24).
-- **Excluded from A1, no existing A-slice fits**: `connectors/{ideasoft,ikas,ticimax,tsoft}/src/index.ts` — evidence-gated stubs (no live provider logic; same `BLOCKED_BY_ACCESS` shape as the Meta stub) for providers the current A0–A6 model does not name at all. This is a genuine gap in the slice model, not something this plan can resolve by itself — flagged as its own row, outcome `STILL_REQUIRED_DEPENDENCY` (blocked on a future scope decision naming these providers, analogous to how A4 names Shopify and A6 names Meta).
+- **Excluded from A1, non-blocking deferred evidence**: `connectors/{ideasoft,ikas,ticimax,tsoft}/src/index.ts` — evidence-gated stubs (no live provider logic). Per **D-099** ("SHOPIFY-FIRST REFERENCE V1 / CONNECTOR SEQUENCING & CR-V1 BLOCKER RECLASSIFICATION," verified directly from doc 07 this revision): "Ticimax, IdeaSoft, ikas and T-Soft no longer block Shopify-reference AC v1.0 progression... reclassified to `POST_REFERENCE_EXPANSION` / Phase 1B+." These stubs are therefore **not** a dependency this admission chain is blocked on, and their absence from the A0–A6 model does not require a new Founder/scope decision — D-099 already settled that. Preserved as provenance/evidence only.
 
 ## Required PR disposition table — all of #4–#18, diff-verified, exact head SHAs
 
@@ -117,7 +119,7 @@ that exclusion literally to #4's actual diff:
 | #4b | same commit, path subset | — | `release/*.json`, `apps/api/{RUNTIME_BINDING_PLAN,RUNTIME_SPIKE_STATUS}.json`, `apps/control-center/FRONTEND_STAGING_STATUS.json` | `KEEP_AS_EVIDENCE` | — (release-evidence) | Excluded from A1 per the contract's own "excluding stale current-looking product/release authority" clause. Needs a separate future admission decision, not bundled with foundation code. |
 | #4c | same commit, path subset | — | `apps/control-center/src/{index,state,routes,api-client-contract,ux-presentation,approval-state}.ts` | `REBASE_AND_ADAPT` | A5 (HOLD) | Reclassified out of A1; folds into the same D-106-Control-Center-scope HOLD as #8/#9. |
 | #4d | same commit, path subset | — | `connectors/meta-whatsapp/src/{e3-acceptance,index}.ts` | `ADMIT_BY_SLICE` (source only, see A2/A6 mechanics) | A6 | Initial stub baseline; extends via commits `d9dfe0e`/`5222b03`/`07c132b` inside #7 (see below). |
-| #4e | same commit, path subset | — | `connectors/{ideasoft,ikas,ticimax,tsoft}/src/index.ts` | `STILL_REQUIRED_DEPENDENCY` | none (model gap) | No named A-slice covers these providers; blocked on a future scope decision, not on any code dependency. |
+| #4e | same commit, path subset | — | `connectors/{ideasoft,ikas,ticimax,tsoft}/src/index.ts` | `KEEP_AS_EVIDENCE` | none (`POST_REFERENCE_EXPANSION` / Phase 1B+ per D-099) | No named A-slice covers these providers, but per D-099 (verified directly from doc 07) they are explicitly non-blocking for Shopify-reference AC v1.0 progression — not a dependency, not a pending scope decision. Preserved as provenance only. |
 | #6 | `eng/p0-024a-runtime-baseline` @ `dded3dcff391dd75b23bb05e2efa4d2ad041456a` | — (base #4) | 47 files, entirely inside the A1 boundary (CI pipeline, dependency pin, branded-primitive hardening across the A1 package set) | `ADMIT_BY_SLICE` | A1 | Depends on #4a. |
 | #7 | `eng/p0-026-job-run-safety-invariants` @ `7a108d83a69e3f3d7ef9f774e42724c54c99b3f4` | — (base #6) | `packages/events/src` Job/Run/outbox/quota extensions, `tests/security/dispatch-safety.spec.ts`, worker-runtime smoke test — **excluding** `connectors/shopify/*` (→A4 row below), `apps/control-center/*` (→A5), `connectors/meta-whatsapp/*` (→A6, commits `d9dfe0e`/`5222b03`/`07c132b`) | `ADMIT_BY_SLICE` | A2 | Depends on #4a→#6. See "A2/A6 exact separation mechanics" below for how the excluded paths are extracted rather than assumed inseparable. |
 | #8 | `feat/control-center-route-matcher` @ `f1d448cf7477b8b58aba71f124ed35ad92816767` | `0969728b` (stale — predates #19–#25 merge into #7) | `apps/control-center/src/App.tsx` (new), `route-matcher.ts` (new), `main.tsx` (mod), `FRONTEND_STAGING_STATUS.json` (mod), `tests/contract/control-center-route-matcher.spec.ts` (new) | `REBASE_AND_ADAPT` | A5 (HOLD) | Router mechanics reusable; must rebase onto current #7 tip (missing 6 later commits) **and** wait for D-106 Control-Center scope to reach `SPECIFIED` before IA fit review — two independent blockers, not one. |
@@ -163,7 +165,7 @@ cause, in different files, with different fixes:**
 **A1 (PR #4a → #6, folding in #10/#15/#18/#1 governance/CI items — narrowed per defect-2)**
 - Inputs: `packages/{domain,authz,commerce-contract,ai-gateway,events,merchant-rules,truth-policy}/src`, `apps/api/src`, `migrations/`, `scripts/`, toolchain/config files, matching `tests/contract`/`tests/security`, `AGENTS.md` git-workflow addendum, `docs/engineering/{GIT_WORKFLOW.md,ACCEPTANCE_CRITERIA.md}`, `.gitignore` fix (see "A1 narrowed" section above for the exact-path derivation).
 - Dependencies: none (first slice onto `main`); #6 depends on #4a internally.
-- Excluded paths (all reclassified to their own rows/slices, not silently dropped): `release/*.json` + `apps/api/{RUNTIME_BINDING_PLAN,RUNTIME_SPIKE_STATUS}.json` + `apps/control-center/FRONTEND_STAGING_STATUS.json` (#4b, `KEEP_AS_EVIDENCE`), `apps/control-center/src/*` base scaffolding (#4c, A5), `connectors/meta-whatsapp/src/*` (#4d, A6), `connectors/{ideasoft,ikas,ticimax,tsoft}/src/*` (#4e, `STILL_REQUIRED_DEPENDENCY`), `apps/control-center/src/{route-matcher,operation-path}.ts` (#8/#9, A5), `connectors/shopify/src/*` (A4), `packages/merchant-rules/src/rules.ts` fix (#16, A3).
+- Excluded paths (all reclassified to their own rows/slices, not silently dropped): `release/*.json` + `apps/api/{RUNTIME_BINDING_PLAN,RUNTIME_SPIKE_STATUS}.json` + `apps/control-center/FRONTEND_STAGING_STATUS.json` (#4b, `KEEP_AS_EVIDENCE`), `apps/control-center/src/*` base scaffolding (#4c, A5), `connectors/meta-whatsapp/src/*` (#4d, A6), `connectors/{ideasoft,ikas,ticimax,tsoft}/src/*` (#4e, `KEEP_AS_EVIDENCE`, non-blocking per D-099), `apps/control-center/src/{route-matcher,operation-path}.ts` (#8/#9, A5), `connectors/shopify/src/*` (A4), `packages/merchant-rules/src/rules.ts` fix (#16, A3).
 - Verification after admission: `pnpm install --frozen-lockfile && pnpm run typecheck && pnpm run typecheck:staging && pnpm run lint && pnpm run test && pnpm run test:vitest && pnpm run test:worker && pnpm audit` — this is the exact CI pipeline #6 itself introduces; should be exercised by CI on the admission PR before merge.
 - Rollback/recovery: single squash-mergeable slice onto `main`; revert is one `git revert` of the merge commit, no other slice depends on partial A1 state (A2–A6 are not yet admitted at this point).
 
@@ -243,22 +245,27 @@ or product-source mutation is performed by this task or this artifact.**
 | 4. AC-TEST-GAP-001 ↔ #16 relationship, runner lineage, not fixed here | Dedicated section added, sourced from the actual AC-TEST-GAP-001 record on `main`. |
 | 5. Per-slice inputs/dependencies/excluded paths/verification/rollback; ONE next unit | "Per-slice detail" section for A1–A6; single "Proposed next bounded unit" naming A1. |
 
-**Round 2 (v2 head `b12aafd` → this revision, v3):**
+**Round 2 (v2 head `b12aafd` → v3 head `026793c`):**
 
 | Defect | Change made |
 |---|---|
 | 1. Manifest not exact-head-SHA reproducible for #4/#6/#7/#8–#18 | Added a head-SHA table for the foundation spine and a "Branch @ exact head SHA" column to every row of the disposition table, all freshly re-fetched via `git fetch`/`git rev-parse` this revision. |
-| 2. A1 still over-broad, not narrowed from source | New "A1 narrowed" section applies the contract's own "excluding stale current-looking product/release authority" clause literally to #4's diff; splits #4 into 5 path-level rows (#4a foundation / #4b release-evidence / #4c Control-Center / #4d Meta stub / #4e unmodeled-provider-stubs) instead of one blanket `ADMIT_BY_SLICE`. |
+| 2. A1 still over-broad, not narrowed from source | New "A1 narrowed" section applies the contract's own "excluding stale current-looking product/release authority" clause literally to #4's diff; splits #4 into 5 path-level rows (#4a foundation / #4b release-evidence / #4c Control-Center / #4d Meta stub / #4e provider stubs) instead of one blanket `ADMIT_BY_SLICE`. |
 | 3. A2/A6 separation wording ("rides with A2") still ambiguous | Replaced with exact commit-SHA provenance (`19225c1`/`d9dfe0e`/`5222b03`/`07c132b`) and a concrete, reversible path-filter mechanic (exclude `connectors/meta-whatsapp/**` + its spec glob) for admitting A2 without A6, or vice versa. |
+
+**Round 3 (v3 head `026793c` → this revision, v4):**
+
+| Defect | Change made |
+|---|---|
+| 1. Row #4e (`STILL_REQUIRED_DEPENDENCY`, "future scope decision") conflicts with D-099 | D-099 read directly from doc 07 this revision (verbatim: "Ticimax, IdeaSoft, ikas and T-Soft no longer block Shopify-reference AC v1.0 progression... reclassified to `POST_REFERENCE_EXPANSION` / Phase 1B+"). #4e reclassified to `KEEP_AS_EVIDENCE`; "A1 narrowed" and A1 per-slice-detail text updated to cite D-099 and drop the "future scope decision"/model-gap framing. |
 
 ## Return to Brain
 
 Task branch: `claude/github-branch-protection-access-o1g5m7`. PR: #26 (updated in place
-across all three revisions, not a new PR). Head history: `661da61` (v1) → `b12aafd` (v2,
-CI run `35928653822` = SUCCESS) → this revision (v3, new head recorded in the accompanying
-commit). Files changed by this revision: `docs/exec-plans/active/AC-REPO-RECON-001-admission-plan.md`
-only. Checks performed this round: fresh `git fetch`+`git rev-parse` for all 16 relevant
-branches plus `main` (all unchanged since v2 except this artifact); `git log --oneline -- connectors/meta-whatsapp/`
-against #7 for exact A6 commit provenance; re-derivation of A1's boundary directly from
-the contract's own exclusion clause applied to #4's real diff. State ceiling:
-`IMPLEMENTED / AWAITING BRAIN REVIEW`.
+across all revisions, not a new PR). Head history: `661da61` (v1) → `b12aafd` (v2, CI
+`35928653822` SUCCESS) → `026793c` (v3, CI `35933742993` SUCCESS) → this revision (v4, new
+head recorded in the accompanying commit). Files changed by this revision:
+`docs/exec-plans/active/AC-REPO-RECON-001-admission-plan.md` only. Checks performed this
+round: direct read of doc 07's D-099 entry in full (not relayed secondhand) to verify the
+cited conflict before acting on it; #4e and its two dependent references updated
+accordingly. State ceiling: `IMPLEMENTED / AWAITING BRAIN REVIEW`.
