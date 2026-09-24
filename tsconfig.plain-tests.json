@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "ignoreDeprecations": "6.0",
+    "noEmit": false,
+    "outDir": ".staging-build",
+    "isolatedModules": false,
+    "verbatimModuleSyntax": false
+  },
+  "include": [
+    "apps/**/*.ts",
+    "packages/**/*.ts",
+    "connectors/**/*.ts",
+    "tests/contract/**/*.ts",
+    "tests/security/**/*.ts"
+  ],
+  "exclude": [
+    "tests/contract/domain-primitives.spec.ts",
+    "node_modules",
+    ".staging-build",
+    "apps/api/src/worker.ts",
+    "tests/runtime/**/*.ts"
+  ]
+}
