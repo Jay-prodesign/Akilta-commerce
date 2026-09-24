@@ -1,0 +1,40 @@
+{
+  "evidence_date": "2026-08-07",
+  "status": "INSTALL_TYPECHECK_LINT_TEST_VERIFIED_UNIT_A_CANDIDATE",
+  "selection_rule": "Current stable and mutually compatible; TypeScript held on 6.0.3 because typescript-eslint 8.65.0 officially supports TypeScript >=4.8.4 <6.1.0.",
+  "packages": [
+    {"name":"pnpm","version":"11.17.0","role":"package manager","license":"MIT","evidence":"https://www.npmjs.com/package/pnpm"},
+    {"name":"typescript","version":"6.0.3","role":"compiler compatible with current lint stack","license":"Apache-2.0","evidence":"https://www.npmjs.com/package/typescript?activeTab=versions"},
+    {"name":"hono","version":"4.12.34","role":"thin HTTP routing adapter","license":"MIT","evidence":"https://www.npmjs.com/package/hono"},
+    {"name":"zod","version":"4.4.3","role":"untrusted boundary validation","license":"MIT","evidence":"https://www.npmjs.com/package/zod"},
+    {"name":"pg","version":"8.22.0","role":"PostgreSQL driver / Hyperdrive","license":"MIT","evidence":"https://www.npmjs.com/package/pg"},
+    {"name":"drizzle-orm","version":"0.45.2","role":"typed persistence layer","license":"Apache-2.0","evidence":"https://www.npmjs.com/package/drizzle-orm"},
+    {"name":"drizzle-kit","version":"0.31.10","role":"migration tooling","license":"MIT","evidence":"https://www.npmjs.com/package/drizzle-kit"},
+    {"name":"vitest","version":"4.1.10","role":"test runner","license":"MIT","evidence":"https://www.npmjs.com/package/vitest"},
+    {"name":"@cloudflare/vitest-pool-workers","version":"0.18.8","role":"Workers runtime test integration","license":"MIT","evidence":"https://www.npmjs.com/package/@cloudflare/vitest-pool-workers"},
+    {"name":"wrangler","version":"4.114.0","role":"Cloudflare CLI/runtime config","license":"MIT OR Apache-2.0","evidence":"https://www.npmjs.com/package/wrangler"},
+    {"name":"eslint","version":"10.8.0","role":"static lint","license":"MIT","evidence":"https://www.npmjs.com/package/eslint"},
+    {"name":"typescript-eslint","version":"8.65.0","role":"TypeScript-aware lint","license":"MIT","evidence":"https://www.npmjs.com/package/typescript-eslint"},
+    {"name":"prettier","version":"3.9.6","role":"formatter","license":"MIT","evidence":"https://www.npmjs.com/package/prettier"},
+    {"name":"@types/pg","version":"8.20.0","role":"pg development types","license":"MIT","evidence":"https://www.npmjs.com/package/@types/pg"}
+  ],
+  "external_compatibility_evidence": [
+    "Cloudflare Hyperdrive recommends node-postgres and documents Drizzle ORM + pg.",
+    "Cloudflare Workers Vitest integration requires Vitest 4.1 or later.",
+    "typescript-eslint 8.65 supports ESLint 8/9/10 and TypeScript >=4.8.4 <6.1.0."
+  ],
+  "proven_2026-09-24_unit_a_materialization": [
+    "pnpm install --frozen-lockfile against this candidate tree: PASS (325-entry supply-chain policy check, see pnpm-lock.yaml)",
+    "pnpm run typecheck / typecheck:staging: PASS, zero errors",
+    "pnpm run lint: PASS, zero errors",
+    "pnpm run test (dependency-free staging suite): PASS 35/35",
+    "pnpm run test:vitest (domain-primitives contract suite): PASS 6/6",
+    "pnpm run test:worker (Cloudflare Workers vitest-pool-workers smoke, via apps/api/wrangler.jsonc + vitest.worker.config.ts): PASS 1/1",
+    "pnpm audit: ran, real results recorded in THIRD_PARTY_NOTICES.md (6 findings, none blocking install/test)",
+    "pnpm licenses list: ran, real results recorded in THIRD_PARTY_NOTICES.md (189 resolved packages)"
+  ],
+  "not_yet_proven": [
+    "Real Wrangler deploy / production Cloudflare runtime (only the local vitest-pool-workers/miniflare smoke test ran)",
+    "Real PostgreSQL/Hyperdrive connection (no live database in this environment)"
+  ]
+}

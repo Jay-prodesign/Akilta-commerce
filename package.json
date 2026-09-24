@@ -1,6 +1,37 @@
 {
   "name": "akilta-commerce",
-  "version": "0.0.0",
+  "version": "0.0.0-private",
   "private": true,
-  "description": "AI Commerce engineering repository (RB-08 bootstrap scaffold, no product source admitted yet)"
+  "type": "module",
+  "packageManager": "pnpm@11.17.0",
+  "engines": {
+    "node": ">=22.13.0 <27"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node scripts/run-staging-tests.mjs",
+    "test:vitest": "vitest run tests/contract/domain-primitives.spec.ts",
+    "lint": "eslint \"{apps,packages,connectors,tests}/**/*.ts\"",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "test:worker": "vitest run --config vitest.worker.config.ts tests/runtime/worker-health.spec.ts",
+    "typecheck:staging": "tsc -p tsconfig.plain-tests.json --noEmit"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.2",
+    "hono": "4.12.34",
+    "pg": "8.22.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.18.8",
+    "@types/pg": "8.20.0",
+    "drizzle-kit": "0.31.10",
+    "eslint": "10.8.0",
+    "prettier": "3.9.6",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.65.0",
+    "vitest": "4.1.10",
+    "wrangler": "4.114.0"
+  }
 }

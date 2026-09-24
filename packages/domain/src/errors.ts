@@ -1,0 +1,42 @@
+export const ERROR_CODES = [
+  'AUTH_TENANT_MISMATCH',
+  'AUTH_PERMISSION_DENIED',
+  'AUTH_APPROVAL_REQUIRED',
+  'AUTH_APPROVAL_INVALID',
+  'AUTH_APPROVAL_EXPIRED',
+  'IDENTITY_UNRESOLVED',
+  'IDENTITY_AMBIGUOUS',
+  'CUSTOMER_VERIFICATION_INSUFFICIENT',
+  'PROVIDER_ACCESS_BLOCKED',
+  'PROVIDER_AUTH_REVOKED',
+  'PROVIDER_RATE_LIMITED',
+  'PROVIDER_TIMEOUT',
+  'PROVIDER_SCHEMA_MISMATCH',
+  'PROVIDER_UNSUPPORTED',
+  'PROVIDER_STALE_DATA',
+  'TRUTH_MISSING',
+  'TRUTH_CONFLICT',
+  'RULE_CONFLICT',
+  'WEBHOOK_INVALID',
+  'EVENT_DUPLICATE',
+  'EVENT_OUT_OF_ORDER',
+  'ACTION_IDEMPOTENT_REPLAY',
+  'ACTION_POSTREAD_MISMATCH',
+  'HANDOFF_OWNERSHIP_CONFLICT',
+  'AI_OUTPUT_POLICY_FAIL',
+  'AI_OUTPUT_GROUNDEDNESS_FAIL',
+  'USAGE_COST_UNKNOWN',
+  'INTERNAL_UNEXPECTED',
+] as const;
+
+export type ErrorCode = (typeof ERROR_CODES)[number];
+
+export interface ErrorDescriptor {
+  readonly code: ErrorCode;
+  readonly retryable: boolean | 'UNKNOWN';
+  readonly customerSafeHandling: 'HIDE_DETAIL' | 'SAFE_MESSAGE' | 'HANDOFF' | 'UNKNOWN';
+  readonly operatorVisibility: 'NORMAL' | 'ELEVATED' | 'SECURITY' | 'UNKNOWN';
+  readonly securitySeverity: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'UNKNOWN';
+  readonly createsEvaluationEvidence: boolean | 'UNKNOWN';
+  readonly createsIncidentEvidence: boolean | 'UNKNOWN';
+}
