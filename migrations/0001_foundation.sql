@@ -161,7 +161,7 @@ CREATE TABLE customer_identities (
   FOREIGN KEY (customer_id, merchant_workspace_id)
     REFERENCES customers(customer_id, merchant_workspace_id) ON DELETE RESTRICT
 );
-CREATE INDEX customer_identity_lookup_idx ON customer_identities(merchant_workspace_id, channel_type, normalized_identifier_ref);
+CREATE UNIQUE INDEX customer_identity_lookup_idx ON customer_identities(merchant_workspace_id, channel_type, normalized_identifier_ref);
 
 CREATE TABLE customer_verification_events (
   verification_event_id TEXT PRIMARY KEY,
