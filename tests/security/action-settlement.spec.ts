@@ -1,4 +1,4 @@
-import { settleActionExecution } from '../../apps/api/src/action-settlement';
+import { settleActionExecution, ACTION_SETTLEMENT_STATUSES } from '../../apps/api/src/action-settlement';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -22,7 +22,7 @@ const cases: Array<{ id: string; run: () => void }> = [
     id: 'SETTLE-02-SEND-SUCCESS-REQUIRES-POSTREAD',
     run: () => {
       const result = settleActionExecution({ actionName: 'conversation.reply.send', evidence: { providerState: 'CONFIRMED_SUCCESS', providerResultRef: 'safe:send' } });
-      assert(result.status === 'BLOCKED' && result.reason === 'POST_READ_REQUIRED', 'send must wait for post-read');
+      assert(result.status === 'UNVERIFIED' && result.reason === 'POST_READ_REQUIRED' && result.nextSafeAction === 'RUN_POST_READ', 'send must wait for post-read');
     },
   },
   {
@@ -36,35 +36,35 @@ const cases: Array<{ id: string; run: () => void }> = [
     id: 'SETTLE-04-REVERSIBLE-MISMATCH-COMPENSATES',
     run: () => {
       const result = settleActionExecution({ actionName: 'merchant_rule.activate', evidence: { providerState: 'CONFIRMED_SUCCESS', providerResultRef: 'safe:rule', postReadState: 'VERIFIED_MISMATCH', postReadEvidenceRef: 'safe:mismatch' } });
-      assert(result.status === 'COMPENSATION_REQUIRED' && result.nextSafeAction === 'COMPENSATE_OR_ROLLBACK', 'reversible mismatch should require compensation');
+      assert(result.status === 'UNVERIFIED' && result.nextSafeAction === 'COMPENSATE_OR_ROLLBACK', 'reversible mismatch should preserve unverified outcome and recommend compensation');
     },
   },
   {
     id: 'SETTLE-05-IRREVERSIBLE-MISMATCH-BLOCKS',
     run: () => {
       const result = settleActionExecution({ actionName: 'conversation.reply.send', evidence: { providerState: 'CONFIRMED_SUCCESS', providerResultRef: 'safe:send', postReadState: 'VERIFIED_MISMATCH', postReadEvidenceRef: 'safe:mismatch' } });
-      assert(result.status === 'BLOCKED' && result.nextSafeAction === 'MANUAL_REVIEW', 'irreversible mismatch must not pretend rollback');
+      assert(result.status === 'UNVERIFIED' && result.nextSafeAction === 'MANUAL_REVIEW', 'irreversible mismatch must not pretend rollback');
     },
   },
   {
     id: 'SETTLE-06-UNKNOWN-OUTCOME-RECONCILES',
     run: () => {
       const result = settleActionExecution({ actionName: 'conversation.reply.send', evidence: { providerState: 'OUTCOME_UNKNOWN' } });
-      assert(result.status === 'BLOCKED' && result.nextSafeAction === 'RECONCILE_PROVIDER_RESULT', 'unknown outcome must reconcile before retry');
+      assert(result.status === 'UNKNOWN' && result.nextSafeAction === 'RECONCILE_PROVIDER_RESULT', 'unknown outcome must reconcile before retry');
     },
   },
   {
     id: 'SETTLE-07-REVERSIBLE-PARTIAL-REQUIRES-COMPENSATION',
     run: () => {
       const result = settleActionExecution({ actionName: 'merchant_rule.activate', evidence: { providerState: 'PARTIAL_EFFECT', providerResultRef: 'safe:partial' } });
-      assert(result.status === 'COMPENSATION_REQUIRED', 'reversible partial effect should compensate');
+      assert(result.status === 'PARTIAL_EFFECT' && result.nextSafeAction === 'COMPENSATE_OR_ROLLBACK', 'reversible partial effect should preserve partial-effect outcome and recommend compensation');
     },
   },
   {
     id: 'SETTLE-08-IRREVERSIBLE-PARTIAL-BLOCKS',
     run: () => {
       const result = settleActionExecution({ actionName: 'conversation.reply.send', evidence: { providerState: 'PARTIAL_EFFECT', providerResultRef: 'safe:partial' } });
-      assert(result.status === 'BLOCKED' && result.nextSafeAction === 'MANUAL_REVIEW', 'irreversible partial effect needs manual review');
+      assert(result.status === 'PARTIAL_EFFECT' && result.nextSafeAction === 'MANUAL_REVIEW', 'irreversible partial effect needs manual review');
     },
   },
   {
@@ -78,7 +78,7 @@ const cases: Array<{ id: string; run: () => void }> = [
     id: 'SETTLE-10-POSTREAD-UNAVAILABLE-BLOCKS',
     run: () => {
       const result = settleActionExecution({ actionName: 'merchant_rule.activate', evidence: { providerState: 'CONFIRMED_SUCCESS', providerResultRef: 'safe:rule', postReadState: 'UNAVAILABLE' } });
-      assert(result.status === 'BLOCKED' && result.reason === 'POST_READ_UNAVAILABLE', 'unavailable post-read cannot be success');
+      assert(result.status === 'UNVERIFIED' && result.reason === 'POST_READ_UNAVAILABLE', 'unavailable post-read cannot be success');
     },
   },
   {
@@ -98,6 +98,20 @@ const cases: Array<{ id: string; run: () => void }> = [
     run: () => {
       const result = settleActionExecution({ actionName: 'merchant_rule.activate', evidence: { providerState: 'CONFIRMED_SUCCESS', providerResultRef: 'safe:rule', postReadState: 'VERIFIED_MISMATCH', postReadEvidenceRef: 'safe:mismatch' } });
       assert(result.errorCode === 'ACTION_POSTREAD_MISMATCH', 'canonical mismatch code required');
+    },
+  },
+  {
+    id: 'SETTLE-15-NO-COMPENSATION-REQUIRED-OUTCOME-LABEL',
+    run: () => {
+      assert(
+        !(ACTION_SETTLEMENT_STATUSES as readonly string[]).includes('COMPENSATION_REQUIRED'),
+        'settlement outcome must never conflate recovery disposition with status',
+      );
+      assert(
+        (ACTION_SETTLEMENT_STATUSES as readonly string[]).includes('PARTIAL_EFFECT') &&
+          (ACTION_SETTLEMENT_STATUSES as readonly string[]).includes('UNKNOWN'),
+        'PARTIAL_EFFECT and UNKNOWN must remain first-class settlement outcomes',
+      );
     },
   },
 ];
