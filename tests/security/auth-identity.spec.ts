@@ -238,6 +238,136 @@ const cases: Array<{ id: string; run: () => void }> = [
       assert(decision.decision === 'DENY', 'client-selected workspace must not bypass server context');
     },
   },
+  {
+    id: 'IDTEN-WIN-01-IN-RANGE-OPEN-MEMBERSHIP-ALLOW',
+    run: () => {
+      const decision = evaluateAuthorization({
+        executionContext: baseContext({ membershipValidFrom: utcTimestamp('2026-08-01T00:00:00Z') }),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+      });
+      assert(decision.decision === 'ALLOW', 'in-range membership with an open upper bound should allow');
+    },
+  },
+  {
+    id: 'IDTEN-WIN-02-FUTURE-MEMBERSHIP-DENY',
+    run: () => {
+      const decision = evaluateAuthorization({
+        executionContext: baseContext({ membershipValidFrom: utcTimestamp('2026-08-08T00:00:00Z') }),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+      });
+      assert(decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_NOT_YET_VALID', 'future membership must deny');
+    },
+  },
+  {
+    id: 'IDTEN-WIN-03-EXPIRED-MEMBERSHIP-DENY',
+    run: () => {
+      const decision = evaluateAuthorization({
+        executionContext: baseContext({ membershipValidTo: utcTimestamp('2026-08-07T12:00:00Z') }),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+      });
+      assert(decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_EXPIRED', 'expired membership must deny');
+    },
+  },
+  {
+    id: 'IDTEN-WIN-04-IN-RANGE-OPEN-AGENCY-ASSIGNMENT-ALLOW',
+    run: () => {
+      const decision = evaluateAuthorization({
+        executionContext: baseContext({
+          actorOrganizationId: agencyOrg,
+          actorOrganizationType: 'AGENCY',
+          activeMerchantWorkspaceId: workspaceA,
+        }),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        module: 'commerce',
+        agencyAssignment: { ...agencyAssignment, validFrom: utcTimestamp('2026-08-01T00:00:00Z') },
+      });
+      assert(decision.decision === 'ALLOW', 'in-range agency assignment with an open upper bound should allow');
+    },
+  },
+  {
+    id: 'IDTEN-WIN-05-FUTURE-AGENCY-ASSIGNMENT-DENY',
+    run: () => {
+      const decision = evaluateAuthorization({
+        executionContext: baseContext({
+          actorOrganizationId: agencyOrg,
+          actorOrganizationType: 'AGENCY',
+          activeMerchantWorkspaceId: workspaceA,
+        }),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        module: 'commerce',
+        agencyAssignment: { ...agencyAssignment, validFrom: utcTimestamp('2026-08-08T00:00:00Z') },
+      });
+      assert(
+        decision.decision === 'DENY' && decision.reason === 'AGENCY_ASSIGNMENT_NOT_YET_VALID',
+        'future agency assignment must deny',
+      );
+    },
+  },
+  {
+    id: 'IDTEN-WIN-06-EXPIRED-AGENCY-ASSIGNMENT-DENY',
+    run: () => {
+      const decision = evaluateAuthorization({
+        executionContext: baseContext({
+          actorOrganizationId: agencyOrg,
+          actorOrganizationType: 'AGENCY',
+          activeMerchantWorkspaceId: workspaceA,
+        }),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        module: 'commerce',
+        agencyAssignment: { ...agencyAssignment, validTo: utcTimestamp('2026-08-07T12:00:00Z') },
+      });
+      assert(
+        decision.decision === 'DENY' && decision.reason === 'AGENCY_ASSIGNMENT_EXPIRED',
+        'expired agency assignment must deny',
+      );
+    },
+  },
+  {
+    id: 'IDTEN-WIN-07-NOW-EQUALS-VALID-FROM-ACTIVE',
+    run: () => {
+      const decision = evaluateAuthorization({
+        executionContext: baseContext({ membershipValidFrom: now }),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+      });
+      assert(decision.decision === 'ALLOW', 'validFrom boundary is inclusive');
+    },
+  },
+  {
+    id: 'IDTEN-WIN-08-NOW-EQUALS-VALID-TO-EXPIRED',
+    run: () => {
+      const decision = evaluateAuthorization({
+        executionContext: baseContext({ membershipValidTo: now }),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+      });
+      assert(decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_EXPIRED', 'validTo boundary is exclusive');
+    },
+  },
+  {
+    id: 'IDTEN-WIN-09-STALE-ACTIVE-CONTEXT-AFTER-WINDOW-CLOSE-DENY',
+    run: () => {
+      const decision = evaluateAuthorization({
+        executionContext: baseContext({
+          membershipStatus: operationalStatus('ACTIVE'),
+          membershipValidFrom: utcTimestamp('2026-08-01T00:00:00Z'),
+          membershipValidTo: utcTimestamp('2026-08-07T17:00:00Z'),
+        }),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+      });
+      assert(
+        decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_EXPIRED',
+        'an ACTIVE status field alone must not override an already-closed validity window',
+      );
+    },
+  },
 ];
 
 for (const testCase of cases) {

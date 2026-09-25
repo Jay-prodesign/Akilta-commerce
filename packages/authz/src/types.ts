@@ -46,6 +46,8 @@ export interface ExecutionContext {
   readonly actorOrganizationType: OrganizationType;
   readonly membershipId: MembershipId;
   readonly membershipStatus: OperationalStatus;
+  readonly membershipValidFrom?: UtcTimestamp;
+  readonly membershipValidTo?: UtcTimestamp;
   readonly activeMerchantWorkspaceId: MerchantWorkspaceId | null;
   readonly agencyClientAssignmentId?: AgencyClientAssignmentId;
   readonly permissionSnapshotRef: string;
@@ -88,10 +90,14 @@ export type AuthorizationDecision =
       readonly code: Extract<ErrorCode, 'AUTH_TENANT_MISMATCH' | 'AUTH_PERMISSION_DENIED'>;
       readonly reason:
         | 'MEMBERSHIP_INACTIVE'
+        | 'MEMBERSHIP_NOT_YET_VALID'
+        | 'MEMBERSHIP_EXPIRED'
         | 'ACTIVE_WORKSPACE_MISMATCH'
         | 'STANDALONE_ORGANIZATION_MISMATCH'
         | 'AGENCY_ASSIGNMENT_REQUIRED'
         | 'AGENCY_ASSIGNMENT_INACTIVE'
+        | 'AGENCY_ASSIGNMENT_NOT_YET_VALID'
+        | 'AGENCY_ASSIGNMENT_EXPIRED'
         | 'AGENCY_ASSIGNMENT_ORGANIZATION_MISMATCH'
         | 'AGENCY_ASSIGNMENT_WORKSPACE_MISMATCH'
         | 'AGENCY_MODULE_NOT_ALLOWED'
