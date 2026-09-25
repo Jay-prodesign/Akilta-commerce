@@ -1,4 +1,4 @@
-import { isOperationallyActive } from '../../domain/src/tenancy';
+import { isOperationallyActive, validityWindowViolation } from '../../domain/src/tenancy';
 import type { ResourceScope, AuthorizationDecision, AuthorizationRequest, PermissionGrant } from './types';
 
 function deny(
@@ -34,6 +34,18 @@ export function evaluateAuthorization(request: AuthorizationRequest): Authorizat
     return deny('AUTH_PERMISSION_DENIED', 'MEMBERSHIP_INACTIVE');
   }
 
+  const membershipViolation = validityWindowViolation(
+    context.occurredAt,
+    context.membershipValidFrom,
+    context.membershipValidTo,
+  );
+  if (membershipViolation === 'NOT_YET_VALID') {
+    return deny('AUTH_PERMISSION_DENIED', 'MEMBERSHIP_NOT_YET_VALID');
+  }
+  if (membershipViolation === 'EXPIRED') {
+    return deny('AUTH_PERMISSION_DENIED', 'MEMBERSHIP_EXPIRED');
+  }
+
   if (
     context.activeMerchantWorkspaceId === null ||
     context.activeMerchantWorkspaceId !== target.merchantWorkspaceId
@@ -52,6 +64,17 @@ export function evaluateAuthorization(request: AuthorizationRequest): Authorizat
     }
     if (!isOperationallyActive(assignment.status)) {
       return deny('AUTH_TENANT_MISMATCH', 'AGENCY_ASSIGNMENT_INACTIVE');
+    }
+    const assignmentViolation = validityWindowViolation(
+      context.occurredAt,
+      assignment.validFrom,
+      assignment.validTo,
+    );
+    if (assignmentViolation === 'NOT_YET_VALID') {
+      return deny('AUTH_TENANT_MISMATCH', 'AGENCY_ASSIGNMENT_NOT_YET_VALID');
+    }
+    if (assignmentViolation === 'EXPIRED') {
+      return deny('AUTH_TENANT_MISMATCH', 'AGENCY_ASSIGNMENT_EXPIRED');
     }
     if (assignment.agencyOrganizationId !== context.actorOrganizationId) {
       return deny('AUTH_TENANT_MISMATCH', 'AGENCY_ASSIGNMENT_ORGANIZATION_MISMATCH');

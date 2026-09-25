@@ -137,3 +137,21 @@ export function assertAgencyAssignmentInvariant(
 export function isOperationallyActive(status: OperationalStatus): boolean {
   return status === 'ACTIVE';
 }
+
+export type ValidityWindowViolation = 'NOT_YET_VALID' | 'EXPIRED';
+
+/** Window is [validFrom, validTo): lower bound inclusive, upper bound exclusive; an omitted bound is open. */
+export function validityWindowViolation(
+  occurredAt: UtcTimestamp,
+  validFrom?: UtcTimestamp,
+  validTo?: UtcTimestamp,
+): ValidityWindowViolation | null {
+  const at = new Date(occurredAt).getTime();
+  if (validFrom && at < new Date(validFrom).getTime()) {
+    return 'NOT_YET_VALID';
+  }
+  if (validTo && at >= new Date(validTo).getTime()) {
+    return 'EXPIRED';
+  }
+  return null;
+}
