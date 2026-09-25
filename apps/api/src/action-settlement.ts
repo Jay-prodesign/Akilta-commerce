@@ -3,8 +3,9 @@ import { getActionDefinition } from '../../../packages/authz/src';
 export const ACTION_SETTLEMENT_STATUSES = [
   'SUCCEEDED',
   'FAILED',
-  'COMPENSATION_REQUIRED',
-  'BLOCKED',
+  'PARTIAL_EFFECT',
+  'UNKNOWN',
+  'UNVERIFIED',
 ] as const;
 export type ActionSettlementStatus = (typeof ACTION_SETTLEMENT_STATUSES)[number];
 
@@ -124,7 +125,7 @@ export function settleActionExecution(input: {
   if (evidence.providerState === 'OUTCOME_UNKNOWN') {
     return {
       ...base,
-      status: 'BLOCKED',
+      status: 'UNKNOWN',
       reason: 'PROVIDER_OUTCOME_UNCERTAIN',
       nextSafeAction: 'RECONCILE_PROVIDER_RESULT',
     };
@@ -134,13 +135,13 @@ export function settleActionExecution(input: {
     return definition.reversible
       ? {
           ...base,
-          status: 'COMPENSATION_REQUIRED',
+          status: 'PARTIAL_EFFECT',
           reason: 'PROVIDER_PARTIAL_EFFECT',
           nextSafeAction: 'COMPENSATE_OR_ROLLBACK',
         }
       : {
           ...base,
-          status: 'BLOCKED',
+          status: 'PARTIAL_EFFECT',
           reason: 'PROVIDER_PARTIAL_EFFECT',
           nextSafeAction: 'MANUAL_REVIEW',
         };
@@ -160,7 +161,7 @@ export function settleActionExecution(input: {
   if (postRead === 'NOT_RUN') {
     return {
       ...base,
-      status: 'BLOCKED',
+      status: 'UNVERIFIED',
       reason: 'POST_READ_REQUIRED',
       nextSafeAction: 'RUN_POST_READ',
     };
@@ -169,7 +170,7 @@ export function settleActionExecution(input: {
   if (postRead === 'UNAVAILABLE') {
     return {
       ...base,
-      status: 'BLOCKED',
+      status: 'UNVERIFIED',
       reason: 'POST_READ_UNAVAILABLE',
       nextSafeAction: 'RECONCILE_PROVIDER_RESULT',
     };
@@ -179,14 +180,14 @@ export function settleActionExecution(input: {
     return definition.reversible
       ? {
           ...base,
-          status: 'COMPENSATION_REQUIRED',
+          status: 'UNVERIFIED',
           reason: 'ACTION_POSTREAD_MISMATCH',
           nextSafeAction: 'COMPENSATE_OR_ROLLBACK',
           errorCode: 'ACTION_POSTREAD_MISMATCH',
         }
       : {
           ...base,
-          status: 'BLOCKED',
+          status: 'UNVERIFIED',
           reason: 'ACTION_POSTREAD_MISMATCH',
           nextSafeAction: 'MANUAL_REVIEW',
           errorCode: 'ACTION_POSTREAD_MISMATCH',
