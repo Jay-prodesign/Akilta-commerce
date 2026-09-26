@@ -155,3 +155,65 @@ export function validityWindowViolation(
   }
   return null;
 }
+
+/**
+ * A CONFLICT carries every effective candidate (never a chosen winner) so the caller has full
+ * evidence for audit/reconciliation; resolution must never fall back to list order, latest row,
+ * id order or first match.
+ */
+export type CurrentAuthorityResolution<T> =
+  | { readonly outcome: 'NONE' }
+  | { readonly outcome: 'RESOLVED'; readonly record: T }
+  | { readonly outcome: 'CONFLICT'; readonly candidates: readonly T[] };
+
+interface EffectiveWindow {
+  readonly status: OperationalStatus;
+  readonly validFrom?: UtcTimestamp;
+  readonly validTo?: UtcTimestamp;
+}
+
+function isEffectiveNow<T extends EffectiveWindow>(candidate: T, occurredAt: UtcTimestamp): boolean {
+  return (
+    isOperationallyActive(candidate.status) &&
+    validityWindowViolation(occurredAt, candidate.validFrom, candidate.validTo) === null
+  );
+}
+
+function resolveCurrentAuthority<T extends EffectiveWindow>(
+  scopedCandidates: readonly T[],
+  occurredAt: UtcTimestamp,
+): CurrentAuthorityResolution<T> {
+  const effective = scopedCandidates.filter((candidate) => isEffectiveNow(candidate, occurredAt));
+  const [record] = effective;
+  if (record === undefined) return { outcome: 'NONE' };
+  if (effective.length === 1) return { outcome: 'RESOLVED', record };
+  return { outcome: 'CONFLICT', candidates: effective };
+}
+
+/** Deterministically resolves the current membership for an exact userId + organizationId scope; never mutates candidates. */
+export function resolveCurrentMembership(
+  candidates: readonly Membership[],
+  userId: UserId,
+  organizationId: OrganizationId,
+  occurredAt: UtcTimestamp,
+): CurrentAuthorityResolution<Membership> {
+  const scoped = candidates.filter(
+    (candidate) => candidate.userId === userId && candidate.organizationId === organizationId,
+  );
+  return resolveCurrentAuthority(scoped, occurredAt);
+}
+
+/** Deterministically resolves the current agency assignment for an exact agencyOrganizationId + merchantWorkspaceId scope; never mutates candidates. */
+export function resolveCurrentAgencyAssignment(
+  candidates: readonly AgencyClientAssignment[],
+  agencyOrganizationId: OrganizationId,
+  merchantWorkspaceId: MerchantWorkspaceId,
+  occurredAt: UtcTimestamp,
+): CurrentAuthorityResolution<AgencyClientAssignment> {
+  const scoped = candidates.filter(
+    (candidate) =>
+      candidate.agencyOrganizationId === agencyOrganizationId &&
+      candidate.merchantWorkspaceId === merchantWorkspaceId,
+  );
+  return resolveCurrentAuthority(scoped, occurredAt);
+}

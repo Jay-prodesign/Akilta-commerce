@@ -17,8 +17,11 @@ import {
   localeTag,
   moduleKey,
   operationalStatus,
+  resolveCurrentAgencyAssignment,
+  resolveCurrentMembership,
   utcTimestamp,
   type AgencyClientAssignment,
+  type Membership,
   type MerchantWorkspaceId,
   type OrganizationId,
 } from '../../packages/domain/src';
@@ -109,6 +112,30 @@ const agencyAssignment: AgencyClientAssignment = {
   approvalAuthorityRefs: [],
   status: operationalStatus('ACTIVE'),
 };
+
+function membershipCandidate(id: string, overrides: Partial<Membership> = {}): Membership {
+  return {
+    membershipId: internalId(id, 'Membership'),
+    userId,
+    organizationId: merchantOrg,
+    roleRefs: [],
+    status: operationalStatus('ACTIVE'),
+    ...overrides,
+  };
+}
+
+function assignmentCandidate(id: string, overrides: Partial<AgencyClientAssignment> = {}): AgencyClientAssignment {
+  return {
+    assignmentId: agencyClientAssignmentId(id),
+    agencyOrganizationId: agencyOrg,
+    merchantWorkspaceId: workspaceA,
+    allowedModules: [],
+    permissionOverrideRefs: [],
+    approvalAuthorityRefs: [],
+    status: operationalStatus('ACTIVE'),
+    ...overrides,
+  };
+}
 
 const cases: Array<{ id: string; run: () => void }> = [
   {
@@ -365,6 +392,150 @@ const cases: Array<{ id: string; run: () => void }> = [
       assert(
         decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_EXPIRED',
         'an ACTIVE status field alone must not override an already-closed validity window',
+      );
+    },
+  },
+  {
+    id: 'IDTEN-RES-01-ZERO-CURRENT-MEMBERSHIP-NONE',
+    run: () => {
+      const result = resolveCurrentMembership([], userId, merchantOrg, now);
+      assert(result.outcome === 'NONE', 'no candidates must resolve to NONE');
+    },
+  },
+  {
+    id: 'IDTEN-RES-02-ONE-CURRENT-MEMBERSHIP-RESOLVED',
+    run: () => {
+      const current = membershipCandidate('m-current');
+      const result = resolveCurrentMembership([current], userId, merchantOrg, now);
+      assert(result.outcome === 'RESOLVED' && result.record === current, 'single effective candidate must resolve exactly');
+    },
+  },
+  {
+    id: 'IDTEN-RES-03-OVERLAPPING-CURRENT-MEMBERSHIPS-CONFLICT',
+    run: () => {
+      const a = membershipCandidate('m-a');
+      const b = membershipCandidate('m-b');
+      const result = resolveCurrentMembership([a, b], userId, merchantOrg, now);
+      assert(result.outcome === 'CONFLICT' && result.candidates.length === 2, 'two effective candidates must conflict, never pick a winner');
+    },
+  },
+  {
+    id: 'IDTEN-RES-04-EXPIRED-HISTORY-PLUS-ONE-CURRENT-RESOLVED',
+    run: () => {
+      const expired = membershipCandidate('m-expired', { validTo: utcTimestamp('2026-08-01T00:00:00Z') });
+      const current = membershipCandidate('m-current');
+      const result = resolveCurrentMembership([expired, current], userId, merchantOrg, now);
+      assert(result.outcome === 'RESOLVED' && result.record === current, 'expired history must not count toward conflict');
+    },
+  },
+  {
+    id: 'IDTEN-RES-05-FUTURE-ROW-PLUS-ONE-CURRENT-RESOLVED',
+    run: () => {
+      const future = membershipCandidate('m-future', { validFrom: utcTimestamp('2026-09-01T00:00:00Z') });
+      const current = membershipCandidate('m-current');
+      const result = resolveCurrentMembership([future, current], userId, merchantOrg, now);
+      assert(result.outcome === 'RESOLVED' && result.record === current, 'a not-yet-valid row must not count toward conflict');
+    },
+  },
+  {
+    id: 'IDTEN-RES-06-INACTIVE-ROW-PLUS-ONE-CURRENT-RESOLVED',
+    run: () => {
+      const revoked = membershipCandidate('m-revoked', { status: operationalStatus('REVOKED') });
+      const current = membershipCandidate('m-current');
+      const result = resolveCurrentMembership([revoked, current], userId, merchantOrg, now);
+      assert(result.outcome === 'RESOLVED' && result.record === current, 'a revoked row must not count toward conflict');
+    },
+  },
+  {
+    id: 'IDTEN-RES-07-MEMBERSHIP-CANDIDATE-ORDER-PERMUTATION-INVARIANT',
+    run: () => {
+      const a = membershipCandidate('m-a');
+      const b = membershipCandidate('m-b');
+      const forward = resolveCurrentMembership([a, b], userId, merchantOrg, now);
+      const reversed = resolveCurrentMembership([b, a], userId, merchantOrg, now);
+      assert(
+        forward.outcome === 'CONFLICT' &&
+          reversed.outcome === 'CONFLICT' &&
+          forward.candidates.length === reversed.candidates.length &&
+          new Set(forward.candidates.map((c) => c.membershipId)).size ===
+            new Set(reversed.candidates.map((c) => c.membershipId)).size,
+        'candidate order must never change the resolution outcome or the effective set',
+      );
+    },
+  },
+  {
+    id: 'IDTEN-RES-08-ZERO-CURRENT-ASSIGNMENT-NONE',
+    run: () => {
+      const result = resolveCurrentAgencyAssignment([], agencyOrg, workspaceA, now);
+      assert(result.outcome === 'NONE', 'no candidates must resolve to NONE');
+    },
+  },
+  {
+    id: 'IDTEN-RES-09-ONE-CURRENT-ASSIGNMENT-RESOLVED',
+    run: () => {
+      const current = assignmentCandidate('a-current');
+      const result = resolveCurrentAgencyAssignment([current], agencyOrg, workspaceA, now);
+      assert(result.outcome === 'RESOLVED' && result.record === current, 'single effective candidate must resolve exactly');
+    },
+  },
+  {
+    id: 'IDTEN-RES-10-OVERLAPPING-CURRENT-ASSIGNMENTS-CONFLICT',
+    run: () => {
+      const a = assignmentCandidate('a-a');
+      const b = assignmentCandidate('a-b');
+      const result = resolveCurrentAgencyAssignment([a, b], agencyOrg, workspaceA, now);
+      assert(result.outcome === 'CONFLICT' && result.candidates.length === 2, 'two effective candidates must conflict, never pick a winner');
+    },
+  },
+  {
+    id: 'IDTEN-RES-11-ASSIGNMENT-NOISE-DOES-NOT-CREATE-CONFLICT',
+    run: () => {
+      const expired = assignmentCandidate('a-expired', { validTo: utcTimestamp('2026-08-01T00:00:00Z') });
+      const future = assignmentCandidate('a-future', { validFrom: utcTimestamp('2026-09-01T00:00:00Z') });
+      const inactive = assignmentCandidate('a-inactive', { status: operationalStatus('REVOKED') });
+      const current = assignmentCandidate('a-current');
+      const result = resolveCurrentAgencyAssignment([expired, future, inactive, current], agencyOrg, workspaceA, now);
+      assert(result.outcome === 'RESOLVED' && result.record === current, 'expired/future/inactive noise must not create a conflict');
+    },
+  },
+  {
+    id: 'IDTEN-RES-12-WRONG-ORGANIZATION-WORKSPACE-NEVER-SATISFIES-SCOPE',
+    run: () => {
+      const wrongOrgMembership = membershipCandidate('m-wrong-org', { organizationId: otherOrg });
+      const membershipResult = resolveCurrentMembership([wrongOrgMembership], userId, merchantOrg, now);
+      assert(membershipResult.outcome === 'NONE', 'a membership scoped to a different organization must never satisfy the target scope');
+
+      const wrongWorkspaceAssignment = assignmentCandidate('a-wrong-ws', { merchantWorkspaceId: workspaceB });
+      const assignmentResult = resolveCurrentAgencyAssignment([wrongWorkspaceAssignment], agencyOrg, workspaceA, now);
+      assert(assignmentResult.outcome === 'NONE', 'an assignment scoped to a different workspace must never satisfy the target scope');
+    },
+  },
+  {
+    id: 'IDTEN-RES-13-ASSIGNMENT-CANDIDATE-ORDER-PERMUTATION-INVARIANT',
+    run: () => {
+      const a = assignmentCandidate('a-a');
+      const b = assignmentCandidate('a-b');
+      const forward = resolveCurrentAgencyAssignment([a, b], agencyOrg, workspaceA, now);
+      const reversed = resolveCurrentAgencyAssignment([b, a], agencyOrg, workspaceA, now);
+      assert(
+        forward.outcome === 'CONFLICT' &&
+          reversed.outcome === 'CONFLICT' &&
+          forward.candidates.length === reversed.candidates.length &&
+          new Set(forward.candidates.map((c) => c.assignmentId)).size ===
+            new Set(reversed.candidates.map((c) => c.assignmentId)).size,
+        'candidate order must never change the resolution outcome or the effective set',
+      );
+    },
+  },
+  {
+    id: 'IDTEN-RES-14-VALID-FROM-INCLUSIVE-VALID-TO-EXCLUSIVE-BOUNDARY-EXACT',
+    run: () => {
+      const closingOut = membershipCandidate('m-closing', { validTo: now });
+      const openingIn = membershipCandidate('m-opening', { validFrom: now });
+      const result = resolveCurrentMembership([closingOut, openingIn], userId, merchantOrg, now);
+      assert(
+        result.outcome === 'RESOLVED' && result.record === openingIn,
+        'at the exact shared boundary instant only the validFrom-inclusive row is effective, never both',
       );
     },
   },
