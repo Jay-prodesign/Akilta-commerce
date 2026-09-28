@@ -14,6 +14,7 @@ import type {
 import type {
   AgencyClientAssignment,
   Conversation,
+  Membership,
   MerchantWorkspaceId,
 } from '../../../packages/domain/src';
 import type { ErrorCode } from '../../../packages/domain/src/errors';
@@ -74,7 +75,10 @@ export interface GroundedResponseInput {
   readonly inboundEvent: OperationalEvent;
   readonly executionContext: ExecutionContext;
   readonly target: ServerResolvedResourceContext;
-  readonly agencyAssignment?: AgencyClientAssignment;
+  /** Server-resolved current-authority evidence; this seam can never grant authority without it. */
+  readonly membershipCandidates: readonly Membership[];
+  /** Non-AGENCY callers pass an explicit empty array — omission does not compile. */
+  readonly agencyAssignmentCandidates: readonly AgencyClientAssignment[];
   readonly requiredPermission: Permission;
   readonly module: string;
   readonly conversation: Conversation;
@@ -211,7 +215,8 @@ export async function orchestrateGroundedResponse(
     requiredPermission: input.requiredPermission,
     target: input.target,
     module: input.module,
-    ...(input.agencyAssignment ? { agencyAssignment: input.agencyAssignment } : {}),
+    membershipCandidates: input.membershipCandidates,
+    agencyAssignmentCandidates: input.agencyAssignmentCandidates,
   });
   if (authorization.decision === 'DENY') {
     await deps.auditWriter.append(

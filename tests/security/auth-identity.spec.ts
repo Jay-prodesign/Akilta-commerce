@@ -210,7 +210,7 @@ const cases: Array<{ id: string; run: () => void }> = [
       const auth = resolveAuthenticatedPrincipal(verifiedAttempt(), [identity], now);
       assert(auth.status === 'AUTHENTICATED', 'session should authenticate first');
       const decision = evaluateAuthorization({
-        executionContext: baseContext({ membershipStatus: operationalStatus('REVOKED') }),
+        executionContext: baseContext(),
         requiredPermission: permission('commerce.product:read'),
         target: {
           owningOrganizationId: merchantOrg,
@@ -218,6 +218,8 @@ const cases: Array<{ id: string; run: () => void }> = [
           resourceType: 'Product',
           resourceId: 'p1',
         },
+        membershipCandidates: [membershipCandidate('membership-1', { status: operationalStatus('REVOKED') })],
+        agencyAssignmentCandidates: [],
       });
       assert(decision.decision === 'DENY', 'revoked membership must deny despite valid vendor session');
     },
@@ -239,6 +241,8 @@ const cases: Array<{ id: string; run: () => void }> = [
           resourceId: 'p1',
         },
         module: 'commerce',
+        membershipCandidates: [membershipCandidate('membership-1', { organizationId: agencyOrg })],
+        agencyAssignmentCandidates: [],
       });
       assert(decision.decision === 'DENY', 'agency membership alone must not grant client access');
     },
@@ -251,6 +255,7 @@ const cases: Array<{ id: string; run: () => void }> = [
           actorOrganizationId: agencyOrg,
           actorOrganizationType: 'AGENCY',
           activeMerchantWorkspaceId: workspaceA,
+          agencyClientAssignmentId: agencyAssignment.assignmentId,
         }),
         requiredPermission: permission('commerce.product:read'),
         target: {
@@ -260,7 +265,8 @@ const cases: Array<{ id: string; run: () => void }> = [
           resourceId: 'p1',
         },
         module: 'commerce',
-        agencyAssignment,
+        membershipCandidates: [membershipCandidate('membership-1', { organizationId: agencyOrg })],
+        agencyAssignmentCandidates: [agencyAssignment],
       });
       assert(decision.decision === 'ALLOW', 'valid assignment + permission should allow');
     },
@@ -295,6 +301,8 @@ const cases: Array<{ id: string; run: () => void }> = [
           resourceType: 'Product',
           resourceId: 'p-b',
         },
+        membershipCandidates: [membershipCandidate('membership-1')],
+        agencyAssignmentCandidates: [],
       });
       assert(decision.decision === 'DENY', 'client-selected workspace must not bypass server context');
     },
@@ -303,9 +311,11 @@ const cases: Array<{ id: string; run: () => void }> = [
     id: 'IDTEN-WIN-01-IN-RANGE-OPEN-MEMBERSHIP-ALLOW',
     run: () => {
       const decision = evaluateAuthorization({
-        executionContext: baseContext({ membershipValidFrom: utcTimestamp('2026-08-01T00:00:00Z') }),
+        executionContext: baseContext(),
         requiredPermission: permission('commerce.product:read'),
         target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        membershipCandidates: [membershipCandidate('membership-1', { validFrom: utcTimestamp('2026-08-01T00:00:00Z') })],
+        agencyAssignmentCandidates: [],
       });
       assert(decision.decision === 'ALLOW', 'in-range membership with an open upper bound should allow');
     },
@@ -314,22 +324,26 @@ const cases: Array<{ id: string; run: () => void }> = [
     id: 'IDTEN-WIN-02-FUTURE-MEMBERSHIP-DENY',
     run: () => {
       const decision = evaluateAuthorization({
-        executionContext: baseContext({ membershipValidFrom: utcTimestamp('2026-08-08T00:00:00Z') }),
+        executionContext: baseContext(),
         requiredPermission: permission('commerce.product:read'),
         target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        membershipCandidates: [membershipCandidate('membership-1', { validFrom: utcTimestamp('2026-08-08T00:00:00Z') })],
+        agencyAssignmentCandidates: [],
       });
-      assert(decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_NOT_YET_VALID', 'future membership must deny');
+      assert(decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_NOT_CURRENT', 'future membership must deny');
     },
   },
   {
     id: 'IDTEN-WIN-03-EXPIRED-MEMBERSHIP-DENY',
     run: () => {
       const decision = evaluateAuthorization({
-        executionContext: baseContext({ membershipValidTo: utcTimestamp('2026-08-07T12:00:00Z') }),
+        executionContext: baseContext(),
         requiredPermission: permission('commerce.product:read'),
         target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        membershipCandidates: [membershipCandidate('membership-1', { validTo: utcTimestamp('2026-08-07T12:00:00Z') })],
+        agencyAssignmentCandidates: [],
       });
-      assert(decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_EXPIRED', 'expired membership must deny');
+      assert(decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_NOT_CURRENT', 'expired membership must deny');
     },
   },
   {
@@ -340,11 +354,13 @@ const cases: Array<{ id: string; run: () => void }> = [
           actorOrganizationId: agencyOrg,
           actorOrganizationType: 'AGENCY',
           activeMerchantWorkspaceId: workspaceA,
+          agencyClientAssignmentId: agencyAssignment.assignmentId,
         }),
         requiredPermission: permission('commerce.product:read'),
         target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
         module: 'commerce',
-        agencyAssignment: { ...agencyAssignment, validFrom: utcTimestamp('2026-08-01T00:00:00Z') },
+        membershipCandidates: [membershipCandidate('membership-1', { organizationId: agencyOrg })],
+        agencyAssignmentCandidates: [{ ...agencyAssignment, validFrom: utcTimestamp('2026-08-01T00:00:00Z') }],
       });
       assert(decision.decision === 'ALLOW', 'in-range agency assignment with an open upper bound should allow');
     },
@@ -357,14 +373,16 @@ const cases: Array<{ id: string; run: () => void }> = [
           actorOrganizationId: agencyOrg,
           actorOrganizationType: 'AGENCY',
           activeMerchantWorkspaceId: workspaceA,
+          agencyClientAssignmentId: agencyAssignment.assignmentId,
         }),
         requiredPermission: permission('commerce.product:read'),
         target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
         module: 'commerce',
-        agencyAssignment: { ...agencyAssignment, validFrom: utcTimestamp('2026-08-08T00:00:00Z') },
+        membershipCandidates: [membershipCandidate('membership-1', { organizationId: agencyOrg })],
+        agencyAssignmentCandidates: [{ ...agencyAssignment, validFrom: utcTimestamp('2026-08-08T00:00:00Z') }],
       });
       assert(
-        decision.decision === 'DENY' && decision.reason === 'AGENCY_ASSIGNMENT_NOT_YET_VALID',
+        decision.decision === 'DENY' && decision.reason === 'AGENCY_ASSIGNMENT_NOT_CURRENT',
         'future agency assignment must deny',
       );
     },
@@ -377,14 +395,16 @@ const cases: Array<{ id: string; run: () => void }> = [
           actorOrganizationId: agencyOrg,
           actorOrganizationType: 'AGENCY',
           activeMerchantWorkspaceId: workspaceA,
+          agencyClientAssignmentId: agencyAssignment.assignmentId,
         }),
         requiredPermission: permission('commerce.product:read'),
         target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
         module: 'commerce',
-        agencyAssignment: { ...agencyAssignment, validTo: utcTimestamp('2026-08-07T12:00:00Z') },
+        membershipCandidates: [membershipCandidate('membership-1', { organizationId: agencyOrg })],
+        agencyAssignmentCandidates: [{ ...agencyAssignment, validTo: utcTimestamp('2026-08-07T12:00:00Z') }],
       });
       assert(
-        decision.decision === 'DENY' && decision.reason === 'AGENCY_ASSIGNMENT_EXPIRED',
+        decision.decision === 'DENY' && decision.reason === 'AGENCY_ASSIGNMENT_NOT_CURRENT',
         'expired agency assignment must deny',
       );
     },
@@ -393,9 +413,11 @@ const cases: Array<{ id: string; run: () => void }> = [
     id: 'IDTEN-WIN-07-NOW-EQUALS-VALID-FROM-ACTIVE',
     run: () => {
       const decision = evaluateAuthorization({
-        executionContext: baseContext({ membershipValidFrom: now }),
+        executionContext: baseContext(),
         requiredPermission: permission('commerce.product:read'),
         target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        membershipCandidates: [membershipCandidate('membership-1', { validFrom: now })],
+        agencyAssignmentCandidates: [],
       });
       assert(decision.decision === 'ALLOW', 'validFrom boundary is inclusive');
     },
@@ -404,28 +426,168 @@ const cases: Array<{ id: string; run: () => void }> = [
     id: 'IDTEN-WIN-08-NOW-EQUALS-VALID-TO-EXPIRED',
     run: () => {
       const decision = evaluateAuthorization({
-        executionContext: baseContext({ membershipValidTo: now }),
+        executionContext: baseContext(),
         requiredPermission: permission('commerce.product:read'),
         target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        membershipCandidates: [membershipCandidate('membership-1', { validTo: now })],
+        agencyAssignmentCandidates: [],
       });
-      assert(decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_EXPIRED', 'validTo boundary is exclusive');
+      assert(decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_NOT_CURRENT', 'validTo boundary is exclusive');
     },
   },
   {
     id: 'IDTEN-WIN-09-STALE-ACTIVE-CONTEXT-AFTER-WINDOW-CLOSE-DENY',
     run: () => {
       const decision = evaluateAuthorization({
+        executionContext: baseContext({ membershipStatus: operationalStatus('ACTIVE') }),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        membershipCandidates: [
+          membershipCandidate('membership-1', {
+            validFrom: utcTimestamp('2026-08-01T00:00:00Z'),
+            validTo: utcTimestamp('2026-08-07T17:00:00Z'),
+          }),
+        ],
+        agencyAssignmentCandidates: [],
+      });
+      assert(
+        decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_NOT_CURRENT',
+        'a copied ACTIVE status field alone must never override a real candidate whose window has already closed',
+      );
+    },
+  },
+  {
+    id: 'IDTEN-BIND-01-EXACT-CURRENT-MEMBERSHIP-MATCHING-CONTEXT-ALLOWS',
+    run: () => {
+      const decision = evaluateAuthorization({
+        executionContext: baseContext(),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        membershipCandidates: [membershipCandidate('membership-1')],
+        agencyAssignmentCandidates: [],
+      });
+      assert(decision.decision === 'ALLOW', 'exact current membership matching the context binding must permit existing downstream gates');
+    },
+  },
+  {
+    id: 'IDTEN-BIND-02-MEMBERSHIP-NONE-DENIES',
+    run: () => {
+      const decision = evaluateAuthorization({
+        executionContext: baseContext(),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        membershipCandidates: [],
+        agencyAssignmentCandidates: [],
+      });
+      assert(decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_NOT_CURRENT', 'no effective current membership must deny');
+    },
+  },
+  {
+    id: 'IDTEN-BIND-03-MEMBERSHIP-CONFLICT-DENIES-WITH-NO-WINNER',
+    run: () => {
+      const decision = evaluateAuthorization({
+        executionContext: baseContext(),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        membershipCandidates: [membershipCandidate('membership-1'), membershipCandidate('membership-2')],
+        agencyAssignmentCandidates: [],
+      });
+      assert(
+        decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_CURRENT_CONFLICT',
+        'two effective current memberships must deny, never pick a winner',
+      );
+    },
+  },
+  {
+    id: 'IDTEN-BIND-04-CONTEXT-MEMBERSHIP-ID-MISMATCH-DENIES-EVEN-IF-COPIED-FIELDS-LOOK-CURRENT',
+    run: () => {
+      const decision = evaluateAuthorization({
+        executionContext: baseContext({ membershipStatus: operationalStatus('ACTIVE') }),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        // The only effective candidate carries a different membershipId than the context claims to be bound to.
+        membershipCandidates: [membershipCandidate('membership-stale-caller-selection')],
+        agencyAssignmentCandidates: [],
+      });
+      assert(
+        decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_IDENTITY_MISMATCH',
+        'a resolved current membership that does not match the execution context binding must deny even when copied status/window fields look current',
+      );
+    },
+  },
+  {
+    id: 'IDTEN-BIND-05-AGENCY-ASSIGNMENT-NONE-AND-CONFLICT-DENY',
+    run: () => {
+      const noneDecision = evaluateAuthorization({
+        executionContext: baseContext({ actorOrganizationId: agencyOrg, actorOrganizationType: 'AGENCY', activeMerchantWorkspaceId: workspaceA }),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        module: 'commerce',
+        membershipCandidates: [membershipCandidate('membership-1', { organizationId: agencyOrg })],
+        agencyAssignmentCandidates: [],
+      });
+      assert(
+        noneDecision.decision === 'DENY' && noneDecision.reason === 'AGENCY_ASSIGNMENT_NOT_CURRENT',
+        'no effective current assignment must deny',
+      );
+
+      const conflictDecision = evaluateAuthorization({
+        executionContext: baseContext({ actorOrganizationId: agencyOrg, actorOrganizationType: 'AGENCY', activeMerchantWorkspaceId: workspaceA }),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        module: 'commerce',
+        membershipCandidates: [membershipCandidate('membership-1', { organizationId: agencyOrg })],
+        agencyAssignmentCandidates: [assignmentCandidate('a-1'), assignmentCandidate('a-2')],
+      });
+      assert(
+        conflictDecision.decision === 'DENY' && conflictDecision.reason === 'AGENCY_ASSIGNMENT_CURRENT_CONFLICT',
+        'two effective current assignments must deny, never pick a winner',
+      );
+    },
+  },
+  {
+    id: 'IDTEN-BIND-06-STALE-CALLER-SELECTED-ASSIGNMENT-DENIES',
+    run: () => {
+      const decision = evaluateAuthorization({
         executionContext: baseContext({
-          membershipStatus: operationalStatus('ACTIVE'),
-          membershipValidFrom: utcTimestamp('2026-08-01T00:00:00Z'),
-          membershipValidTo: utcTimestamp('2026-08-07T17:00:00Z'),
+          actorOrganizationId: agencyOrg,
+          actorOrganizationType: 'AGENCY',
+          activeMerchantWorkspaceId: workspaceA,
+          agencyClientAssignmentId: agencyClientAssignmentId('assignment-not-the-resolved-one'),
         }),
         requiredPermission: permission('commerce.product:read'),
         target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        module: 'commerce',
+        membershipCandidates: [membershipCandidate('membership-1', { organizationId: agencyOrg })],
+        agencyAssignmentCandidates: [agencyAssignment],
       });
       assert(
-        decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_EXPIRED',
-        'an ACTIVE status field alone must not override an already-closed validity window',
+        decision.decision === 'DENY' && decision.reason === 'AGENCY_ASSIGNMENT_IDENTITY_MISMATCH',
+        'a resolved current assignment that does not match the caller-claimed assignment binding must deny',
+      );
+    },
+  },
+  {
+    id: 'IDTEN-BIND-07-WORKSPACE-SWITCH-CANNOT-REUSE-OLD-WORKSPACE-AUTHORITY',
+    run: () => {
+      // agencyAssignment is only effective for workspaceA; switching the active/target workspace to
+      // workspaceB must re-resolve current authority scoped to workspaceB, never reuse the old resolution.
+      const decision = evaluateAuthorization({
+        executionContext: baseContext({
+          actorOrganizationId: agencyOrg,
+          actorOrganizationType: 'AGENCY',
+          activeMerchantWorkspaceId: workspaceB,
+          agencyClientAssignmentId: agencyAssignment.assignmentId,
+        }),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceB, resourceType: 'Product', resourceId: 'p1' },
+        module: 'commerce',
+        membershipCandidates: [membershipCandidate('membership-1', { organizationId: agencyOrg })],
+        agencyAssignmentCandidates: [agencyAssignment],
+      });
+      assert(
+        decision.decision === 'DENY' && decision.reason === 'AGENCY_ASSIGNMENT_NOT_CURRENT',
+        'an assignment scoped to a different workspace must never authorize the switched-to workspace',
       );
     },
   },

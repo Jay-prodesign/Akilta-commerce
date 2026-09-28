@@ -1,4 +1,4 @@
-import type { AgencyClientAssignment, MerchantWorkspaceId, UtcTimestamp } from '../../domain/src';
+import type { AgencyClientAssignment, Membership, MerchantWorkspaceId, UtcTimestamp } from '../../domain/src';
 import { evaluateAuthorization } from './evaluator';
 import type { Permission } from './permissions';
 import type { ExecutionContext, ServerResolvedResourceContext } from './types';
@@ -134,7 +134,10 @@ export function resolveIntegrationContextChangeAuthority(input: {
   readonly plan: IntegrationContextChangePlan;
   readonly executionContext: ExecutionContext;
   readonly target: ServerResolvedResourceContext;
-  readonly agencyAssignment?: AgencyClientAssignment;
+  /** Server-resolved current-authority evidence; this seam can never grant authority without it. */
+  readonly membershipCandidates: readonly Membership[];
+  /** Non-AGENCY callers pass an explicit empty array — omission does not compile. */
+  readonly agencyAssignmentCandidates: readonly AgencyClientAssignment[];
 }): IntegrationContextChangeAuthorityDecision {
   const prepared = prepareIntegrationContextChange(input.plan);
   if (prepared.decision === 'DENY') return prepared;
@@ -149,7 +152,8 @@ export function resolveIntegrationContextChangeAuthority(input: {
       executionContext: input.executionContext,
       requiredPermission,
       target: input.target,
-      ...(input.agencyAssignment ? { agencyAssignment: input.agencyAssignment } : {}),
+      membershipCandidates: input.membershipCandidates,
+      agencyAssignmentCandidates: input.agencyAssignmentCandidates,
     });
     if (authz.decision === 'DENY') {
       return {

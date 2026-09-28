@@ -1,4 +1,10 @@
-import type { AgencyClientAssignment, IntegrationId, MerchantWorkspaceId, SupportState } from '../../domain/src';
+import type {
+  AgencyClientAssignment,
+  IntegrationId,
+  Membership,
+  MerchantWorkspaceId,
+  SupportState,
+} from '../../domain/src';
 import { evaluateAuthorization } from './evaluator';
 import type { Permission } from './permissions';
 import type { ExecutionContext, ServerResolvedResourceContext } from './types';
@@ -165,7 +171,10 @@ export function resolveActionAuthority(input: {
   readonly requestedMaturity: ExecutionMaturityLevel;
   readonly executionContext: ExecutionContext;
   readonly target: ServerResolvedResourceContext;
-  readonly agencyAssignment?: AgencyClientAssignment;
+  /** Server-resolved current-authority evidence; the privileged action path can never omit this. */
+  readonly membershipCandidates: readonly Membership[];
+  /** Non-AGENCY callers pass an explicit empty array — omission does not compile. */
+  readonly agencyAssignmentCandidates: readonly AgencyClientAssignment[];
   readonly capability?: CapabilityAuthoritySnapshot;
   readonly integrationId?: IntegrationId;
   readonly policyApprovalRequired?: boolean;
@@ -184,7 +193,8 @@ export function resolveActionAuthority(input: {
     requiredPermission: definition.requiredPermission,
     target: input.target,
     module: definition.module,
-    ...(input.agencyAssignment ? { agencyAssignment: input.agencyAssignment } : {}),
+    membershipCandidates: input.membershipCandidates,
+    agencyAssignmentCandidates: input.agencyAssignmentCandidates,
   });
   if (authz.decision === 'DENY') {
     return { decision: 'DENY', reason: 'AUTHORIZATION_DENIED', detail: authz.reason };

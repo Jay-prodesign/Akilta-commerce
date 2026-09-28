@@ -4,6 +4,7 @@ import {
   localeTag,
   operationalStatus,
   utcTimestamp,
+  type Membership,
 } from '../../packages/domain/src';
 import type { ExecutionContext, PermissionGrant } from '../../packages/authz/src';
 import { stagedActionPlan, prepareActionExecution } from '../../apps/api/src/action-engine';
@@ -26,12 +27,14 @@ const target = { owningOrganizationId: organization, merchantWorkspaceId: worksp
 function grant(permission: PermissionGrant['permission']): PermissionGrant {
   return { permission, scope: { kind: 'MERCHANT_WORKSPACE', merchantWorkspaceId: workspace }, sourceRef: `grant:${permission}` };
 }
+const actorUserId = internalId('user_engine_001', 'User');
+const membershipId = internalId('membership_engine_001', 'Membership');
 function context(grants: readonly PermissionGrant[]): ExecutionContext {
   return {
-    actorUserId: internalId('user_engine_001', 'User'),
+    actorUserId,
     actorOrganizationId: organization,
     actorOrganizationType: 'STANDALONE_MERCHANT',
-    membershipId: internalId('membership_engine_001', 'Membership'),
+    membershipId,
     membershipStatus: operationalStatus('ACTIVE'),
     activeMerchantWorkspaceId: workspace,
     permissionSnapshotRef: 'perm-snapshot-engine',
@@ -42,6 +45,10 @@ function context(grants: readonly PermissionGrant[]): ExecutionContext {
     locale: localeTag('tr-TR'), occurredAt: now,
   };
 }
+/** The one currently-effective membership candidate matching context()'s default binding. */
+const membershipCandidates: readonly Membership[] = [
+  { membershipId, userId: actorUserId, organizationId: organization, roleRefs: [], status: operationalStatus('ACTIVE') },
+];
 function allowSwitch(key: SafetySwitchSnapshot['key'], operation: string): SafetySwitchSnapshot {
   return {
     key,
@@ -82,53 +89,68 @@ const cases: Array<[string, () => void]> = [
   }), 'stale input schema version accepted')],
   ['EXECUTION-STALE-SCHEMA-VERSION-DENY', () => {
     const stalePlan = { ...sendPlan(), inputSchemaVersion: '999' };
-    const result = prepareActionExecution({ plan: stalePlan, executionContext: context([grant('conversation:respond')]), target, capability: sendCapability, integrationId: integration, policyApprovalRequired: false, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send')] });
+    const result = prepareActionExecution({ plan: stalePlan, executionContext: context([grant('conversation:respond')]), target, membershipCandidates, agencyAssignmentCandidates: [], capability: sendCapability, integrationId: integration, policyApprovalRequired: false, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send')] });
     assert(result.decision === 'DENY' && result.reason === 'ACTION_INPUT_SCHEMA_VERSION_STALE', 'stale planned schema reached execution');
   }],
   ['R3-WITHOUT-APPROVAL-RETURNS-APPROVAL-REQUIRED', () => {
-    const result = prepareActionExecution({ plan: sendPlan(), executionContext: context([grant('conversation:respond')]), target, capability: sendCapability, integrationId: integration, policyApprovalRequired: true, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send')] });
+    const result = prepareActionExecution({ plan: sendPlan(), executionContext: context([grant('conversation:respond')]), target, membershipCandidates, agencyAssignmentCandidates: [], capability: sendCapability, integrationId: integration, policyApprovalRequired: true, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send')] });
     assert(result.decision === 'APPROVAL_REQUIRED', 'approval requirement bypassed');
   }],
   ['APPROVAL-MUTATED-PAYLOAD-DENY', () => {
-    const result = prepareActionExecution({ plan: sendPlan('sha256:mutated'), executionContext: context([grant('conversation:respond')]), target, capability: sendCapability, integrationId: integration, policyApprovalRequired: true, approval: validApproval, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send')] });
+    const result = prepareActionExecution({ plan: sendPlan('sha256:mutated'), executionContext: context([grant('conversation:respond')]), target, membershipCandidates, agencyAssignmentCandidates: [], capability: sendCapability, integrationId: integration, policyApprovalRequired: true, approval: validApproval, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send')] });
     assert(result.decision === 'DENY' && result.reason.includes('PAYLOAD_HASH_MISMATCH'), 'mutated approval payload accepted');
   }],
   ['VALID-APPROVAL-AND-SAFETY-GATE-EXECUTION-READY', () => {
-    const result = prepareActionExecution({ plan: sendPlan(), executionContext: context([grant('conversation:respond')]), target, capability: sendCapability, integrationId: integration, policyApprovalRequired: true, approval: validApproval, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send')] });
+    const result = prepareActionExecution({ plan: sendPlan(), executionContext: context([grant('conversation:respond')]), target, membershipCandidates, agencyAssignmentCandidates: [], capability: sendCapability, integrationId: integration, policyApprovalRequired: true, approval: validApproval, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send')] });
     assert(result.decision === 'EXECUTION_READY' && result.postReadRequired, 'valid governed action not ready');
   }],
   ['KILL-SWITCH-STOP-DENY', () => {
     const stopped = { ...allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send'), state: 'STOP' as const };
-    const result = prepareActionExecution({ plan: sendPlan(), executionContext: context([grant('conversation:respond')]), target, capability: sendCapability, integrationId: integration, policyApprovalRequired: false, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [stopped] });
+    const result = prepareActionExecution({ plan: sendPlan(), executionContext: context([grant('conversation:respond')]), target, membershipCandidates, agencyAssignmentCandidates: [], capability: sendCapability, integrationId: integration, policyApprovalRequired: false, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [stopped] });
     assert(result.decision === 'DENY' && result.reason.includes('KILL_SWITCH_ACTIVE'), 'kill switch ignored');
   }],
   ['MISSING-KILL-SWITCH-DENY', () => {
-    const result = prepareActionExecution({ plan: sendPlan(), executionContext: context([grant('conversation:respond')]), target, capability: sendCapability, integrationId: integration, policyApprovalRequired: false, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [] });
+    const result = prepareActionExecution({ plan: sendPlan(), executionContext: context([grant('conversation:respond')]), target, membershipCandidates, agencyAssignmentCandidates: [], capability: sendCapability, integrationId: integration, policyApprovalRequired: false, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [] });
     assert(result.decision === 'DENY' && result.reason.includes('KILL_SWITCH_UNVERIFIED'), 'missing kill switch default-allowed');
   }],
   ['UNKNOWN-CAPABILITY-DENY-BEFORE-READY', () => {
-    const result = prepareActionExecution({ plan: sendPlan(), executionContext: context([grant('conversation:respond')]), target, capability: { merchantWorkspaceId: workspace, integrationId: integration, capabilityKey: 'whatsapp.send_message', supportState: 'UNKNOWN' }, integrationId: integration, policyApprovalRequired: false, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send')] });
+    const result = prepareActionExecution({ plan: sendPlan(), executionContext: context([grant('conversation:respond')]), target, membershipCandidates, agencyAssignmentCandidates: [], capability: { merchantWorkspaceId: workspace, integrationId: integration, capabilityKey: 'whatsapp.send_message', supportState: 'UNKNOWN' }, integrationId: integration, policyApprovalRequired: false, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send')] });
     assert(result.decision === 'DENY' && result.reason.includes('CAPABILITY_NOT_AVAILABLE'), 'unknown capability reached ready state');
   }],
   ['CAPABILITY-WRONG-WORKSPACE-DENY', () => {
-    const result = prepareActionExecution({ plan: sendPlan(), executionContext: context([grant('conversation:respond')]), target, capability: { ...sendCapability, merchantWorkspaceId: internalId('mw_cap_other', 'MerchantWorkspace') }, integrationId: integration, policyApprovalRequired: false, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send')] });
+    const result = prepareActionExecution({ plan: sendPlan(), executionContext: context([grant('conversation:respond')]), target, membershipCandidates, agencyAssignmentCandidates: [], capability: { ...sendCapability, merchantWorkspaceId: internalId('mw_cap_other', 'MerchantWorkspace') }, integrationId: integration, policyApprovalRequired: false, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send')] });
     assert(result.decision === 'DENY' && result.reason.includes('CAPABILITY_WORKSPACE_MISMATCH'), 'cross-workspace capability reached execution');
   }],
   ['CAPABILITY-WRONG-INTEGRATION-DENY', () => {
-    const result = prepareActionExecution({ plan: sendPlan(), executionContext: context([grant('conversation:respond')]), target, capability: { ...sendCapability, integrationId: internalId('integration_cap_other', 'Integration') }, integrationId: integration, policyApprovalRequired: false, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send')] });
+    const result = prepareActionExecution({ plan: sendPlan(), executionContext: context([grant('conversation:respond')]), target, membershipCandidates, agencyAssignmentCandidates: [], capability: { ...sendCapability, integrationId: internalId('integration_cap_other', 'Integration') }, integrationId: integration, policyApprovalRequired: false, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send')] });
     assert(result.decision === 'DENY' && result.reason.includes('CAPABILITY_INTEGRATION_MISMATCH'), 'cross-integration capability reached execution');
   }],
   ['WRONG-WORKSPACE-APPROVAL-DENY', () => {
     const wrong = { ...validApproval, merchantWorkspaceId: internalId('mw_other', 'MerchantWorkspace') };
-    const result = prepareActionExecution({ plan: sendPlan(), executionContext: context([grant('conversation:respond')]), target, capability: sendCapability, integrationId: integration, policyApprovalRequired: true, approval: wrong, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send')] });
+    const result = prepareActionExecution({ plan: sendPlan(), executionContext: context([grant('conversation:respond')]), target, membershipCandidates, agencyAssignmentCandidates: [], capability: sendCapability, integrationId: integration, policyApprovalRequired: true, approval: wrong, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send')] });
     assert(result.decision === 'DENY' && result.reason.includes('APPROVAL_WORKSPACE_MISMATCH'), 'wrong-workspace approval accepted');
   }],
   ['R4-EXPORT-UNMAPPED-EXTERNAL-EFFECT-DENY', () => {
     const exportPlanId = internalId('plan_export_001', 'ActionPlan');
     const plan = stagedActionPlan({ actionPlanId: exportPlanId, merchantWorkspaceId: workspace, actionName: 'customer.export', requestedMaturity: 'APPLY_GOVERNED', inputSchemaVersion: '1', payloadHash: 'sha256:export', exactPayloadRef: 'export:scope:customer-001', evidenceRefs: ['verification:cv3'], idempotencyKey: idempotencyKey('mw:customer.export:001'), createdAt: now });
     const approval = { approvalRequestId: internalId('approval_export_001', 'ApprovalRequest'), actionPlanId: exportPlanId, merchantWorkspaceId: workspace, payloadHash: 'sha256:export', status: 'APPROVED' as const, expiresAt: utcTimestamp('2026-08-07T21:00:00Z') };
-    const result = prepareActionExecution({ plan, executionContext: context([grant('customer:export')]), target, policyApprovalRequired: false, approval, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [] });
+    const result = prepareActionExecution({ plan, executionContext: context([grant('customer:export')]), target, membershipCandidates, agencyAssignmentCandidates: [], policyApprovalRequired: false, approval, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [] });
     assert(result.decision === 'DENY' && result.reason === 'UNMAPPED_EXTERNAL_EFFECT', 'unmapped external effect bypassed safety layer');
+  }],
+  ['IDTEN-BIND-08-NO-CURRENT-MEMBERSHIP-NEVER-REACHES-APPROVAL-OR-READY', () => {
+    const result = prepareActionExecution({ plan: sendPlan(), executionContext: context([grant('conversation:respond')]), target, membershipCandidates: [], agencyAssignmentCandidates: [], capability: sendCapability, integrationId: integration, policyApprovalRequired: true, approval: validApproval, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send')] });
+    assert(
+      result.decision === 'DENY' && result.reason.includes('AUTHORIZATION_DENIED'),
+      'missing current-authority binding reached APPROVAL_REQUIRED or EXECUTION_READY',
+    );
+  }],
+  ['IDTEN-BIND-08-CONFLICTING-MEMBERSHIP-NEVER-REACHES-APPROVAL-OR-READY', () => {
+    const conflicting = [...membershipCandidates, { ...membershipCandidates[0]!, membershipId: internalId('membership_engine_conflict', 'Membership') }];
+    const result = prepareActionExecution({ plan: sendPlan(), executionContext: context([grant('conversation:respond')]), target, membershipCandidates: conflicting, agencyAssignmentCandidates: [], capability: sendCapability, integrationId: integration, policyApprovalRequired: true, approval: validApproval, now, environment: 'STAGING', configVersion: 'cfg-1', releaseFlagEnabled: true, switches: [allowSwitch('KS-OUTBOUND-MESSAGE','conversation.reply.send')] });
+    assert(
+      result.decision === 'DENY' && result.reason.includes('AUTHORIZATION_DENIED'),
+      'conflicting current-authority candidates reached APPROVAL_REQUIRED or EXECUTION_READY',
+    );
   }],
 ];
 for (const [name, fn] of cases) { fn(); console.log(`PASS ${name}`); }

@@ -5,7 +5,7 @@ import {
   type IntegrationContextChangePlan,
 } from '../../packages/authz/src/integration-context-change';
 import type { ExecutionContext, PermissionGrant, ServerResolvedResourceContext } from '../../packages/authz/src/types';
-import { internalId, localeTag, operationalStatus, utcTimestamp } from '../../packages/domain/src';
+import { internalId, localeTag, operationalStatus, utcTimestamp, type Membership } from '../../packages/domain/src';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -15,6 +15,8 @@ const workspace = internalId('mw_context_change_001', 'MerchantWorkspace');
 const otherWorkspace = internalId('mw_context_change_002', 'MerchantWorkspace');
 const organization = internalId('org_context_change_001', 'Organization');
 const now = utcTimestamp('2026-08-10T08:00:00Z');
+const actorUserId = internalId('user_context_change_001', 'User');
+const membershipId = internalId('membership_context_change_001', 'Membership');
 
 function grant(permission: PermissionGrant['permission']): PermissionGrant {
   return {
@@ -26,10 +28,10 @@ function grant(permission: PermissionGrant['permission']): PermissionGrant {
 
 function context(grants: readonly PermissionGrant[]): ExecutionContext {
   return {
-    actorUserId: internalId('user_context_change_001', 'User'),
+    actorUserId,
     actorOrganizationId: organization,
     actorOrganizationType: 'STANDALONE_MERCHANT',
-    membershipId: internalId('membership_context_change_001', 'Membership'),
+    membershipId,
     membershipStatus: operationalStatus('ACTIVE'),
     activeMerchantWorkspaceId: workspace,
     permissionSnapshotRef: 'perm-snapshot-context-change',
@@ -42,6 +44,11 @@ function context(grants: readonly PermissionGrant[]): ExecutionContext {
     occurredAt: now,
   };
 }
+
+/** The one currently-effective membership candidate matching context()'s default binding. */
+const membershipCandidates: readonly Membership[] = [
+  { membershipId, userId: actorUserId, organizationId: organization, roleRefs: [], status: operationalStatus('ACTIVE') },
+];
 
 const target: ServerResolvedResourceContext = {
   owningOrganizationId: organization,
@@ -80,6 +87,8 @@ const cases: Array<[string, () => void]> = [
       plan: basePlan({ authorizationSource: 'GENERIC_CONTINUATION', ownerApprovalRef: undefined }),
       executionContext: context(bothIntegrationPermissions),
       target,
+      membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'OWNER_APPROVAL_REQUIRED', 'generic continuation authorized switch');
   }],
@@ -88,6 +97,8 @@ const cases: Array<[string, () => void]> = [
       plan: basePlan({ authorizationSource: 'PROJECT_POLICY', downstreamIntent: 'READ_ONLY' }),
       executionContext: context(bothIntegrationPermissions),
       target,
+      membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'OWNER_APPROVAL_REQUIRED', 'read-only intent bypassed explicit owner gate');
   }],
@@ -96,6 +107,8 @@ const cases: Array<[string, () => void]> = [
       plan: basePlan({ approvedTargetContextRef: 'shopify:other-store' }),
       executionContext: context(bothIntegrationPermissions),
       target,
+      membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'APPROVED_TARGET_MISMATCH', 'different approved target accepted');
   }],
@@ -104,6 +117,8 @@ const cases: Array<[string, () => void]> = [
       plan: basePlan({ sourceProject: { projectKey: 'BPC', activity: 'ACTIVE', wouldBeDisrupted: true } }),
       executionContext: context(bothIntegrationPermissions),
       target,
+      membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'SOURCE_PROJECT_NON_INTERFERENCE', 'active source project disruption allowed');
   }],
@@ -112,6 +127,8 @@ const cases: Array<[string, () => void]> = [
       plan: basePlan({ sourceProject: { projectKey: 'BPC', activity: 'UNKNOWN', wouldBeDisrupted: true } }),
       executionContext: context(bothIntegrationPermissions),
       target,
+      membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'SOURCE_PROJECT_NON_INTERFERENCE', 'unknown source project state allowed disruption');
   }],
@@ -120,6 +137,8 @@ const cases: Array<[string, () => void]> = [
       plan: basePlan(),
       executionContext: context([grant('integration:connect')]),
       target,
+      membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'AUTHORIZATION_DENIED', 'switch allowed without disconnect permission');
   }],
@@ -128,6 +147,8 @@ const cases: Array<[string, () => void]> = [
       plan: basePlan({ kind: 'CONNECT', currentContextRef: 'shopify:none' }),
       executionContext: context([grant('integration:connect')]),
       target,
+      membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'READY', 'connect not authorized with connect permission');
     assert(result.matchedPermissions.length === 1 && result.matchedPermissions[0] === 'integration:connect', 'connect permission mapping wrong');
@@ -137,6 +158,8 @@ const cases: Array<[string, () => void]> = [
       plan: basePlan({ kind: 'DISCONNECT', targetContextRef: 'shopify:none', approvedTargetContextRef: 'shopify:none' }),
       executionContext: context([grant('integration:disconnect')]),
       target,
+      membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'READY', 'disconnect not authorized with disconnect permission');
   }],
@@ -145,6 +168,8 @@ const cases: Array<[string, () => void]> = [
       plan: basePlan({ kind: 'RELINK' }),
       executionContext: context([grant('integration:disconnect')]),
       target,
+      membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'AUTHORIZATION_DENIED', 'relink allowed without connect permission');
   }],
@@ -153,6 +178,8 @@ const cases: Array<[string, () => void]> = [
       plan: basePlan(),
       executionContext: context(bothIntegrationPermissions),
       target: { ...target, merchantWorkspaceId: otherWorkspace },
+      membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'PLAN_WORKSPACE_MISMATCH', 'cross-workspace plan accepted');
   }],
@@ -161,6 +188,8 @@ const cases: Array<[string, () => void]> = [
       plan: basePlan({ sourceProject: { projectKey: 'BPC', activity: 'INACTIVE', wouldBeDisrupted: false } }),
       executionContext: context(bothIntegrationPermissions),
       target,
+      membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'READY', 'explicit non-disruptive switch not prepared');
     assert(result.prepared.downstreamAuthorityGranted === false, 'context-change approval leaked downstream authority');
@@ -203,8 +232,60 @@ const cases: Array<[string, () => void]> = [
       plan: basePlan(),
       executionContext: context([]),
       target,
+      membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'AUTHORIZATION_DENIED', 'owner approval bypassed RBAC');
+  }],
+  ['IDTEN-BIND-10-NO-CURRENT-MEMBERSHIP-NEVER-READY', () => {
+    const result = resolveIntegrationContextChangeAuthority({
+      plan: basePlan({ kind: 'CONNECT', currentContextRef: 'shopify:none' }),
+      executionContext: context([grant('integration:connect')]),
+      target,
+      membershipCandidates: [],
+      agencyAssignmentCandidates: [],
+    });
+    assert(result.decision === 'DENY' && result.reason === 'AUTHORIZATION_DENIED', 'missing current membership reached READY');
+  }],
+  ['IDTEN-BIND-10-CONFLICTING-MEMBERSHIP-NEVER-READY', () => {
+    const result = resolveIntegrationContextChangeAuthority({
+      plan: basePlan({ kind: 'CONNECT', currentContextRef: 'shopify:none' }),
+      executionContext: context([grant('integration:connect')]),
+      target,
+      membershipCandidates: [
+        membershipCandidates[0]!,
+        { ...membershipCandidates[0]!, membershipId: internalId('membership_context_change_conflict', 'Membership') },
+      ],
+      agencyAssignmentCandidates: [],
+    });
+    assert(result.decision === 'DENY' && result.reason === 'AUTHORIZATION_DENIED', 'conflicting current membership reached READY');
+  }],
+  ['IDTEN-BIND-10-MISMATCHED-MEMBERSHIP-NEVER-READY', () => {
+    const result = resolveIntegrationContextChangeAuthority({
+      plan: basePlan({ kind: 'CONNECT', currentContextRef: 'shopify:none' }),
+      executionContext: context([grant('integration:connect')]),
+      target,
+      membershipCandidates: [
+        { ...membershipCandidates[0]!, membershipId: internalId('membership_context_change_other', 'Membership') },
+      ],
+      agencyAssignmentCandidates: [],
+    });
+    assert(result.decision === 'DENY' && result.reason === 'AUTHORIZATION_DENIED', 'stale caller-selected membership reached READY');
+  }],
+  ['IDTEN-BIND-10-NO-CURRENT-AGENCY-ASSIGNMENT-NEVER-READY', () => {
+    const agencyOrg = internalId('org_context_change_agency', 'Organization');
+    const result = resolveIntegrationContextChangeAuthority({
+      plan: basePlan({ kind: 'CONNECT', currentContextRef: 'shopify:none' }),
+      executionContext: {
+        ...context([grant('integration:connect')]),
+        actorOrganizationId: agencyOrg,
+        actorOrganizationType: 'AGENCY',
+      },
+      target,
+      membershipCandidates: [{ membershipId, userId: actorUserId, organizationId: agencyOrg, roleRefs: [], status: operationalStatus('ACTIVE') }],
+      agencyAssignmentCandidates: [],
+    });
+    assert(result.decision === 'DENY' && result.reason === 'AUTHORIZATION_DENIED', 'agency actor without a current assignment reached READY');
   }],
 ];
 
