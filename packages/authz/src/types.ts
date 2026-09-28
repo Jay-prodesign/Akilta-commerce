@@ -1,6 +1,7 @@
 import type {
   AgencyClientAssignment,
   AgencyClientAssignmentId,
+  Membership,
   MembershipId,
   MerchantWorkspaceId,
   OrganizationId,
@@ -76,7 +77,19 @@ export interface AuthorizationRequest {
   readonly requiredPermission: Permission;
   readonly target: ServerResolvedResourceContext;
   readonly module?: string;
-  readonly agencyAssignment?: AgencyClientAssignment;
+  /**
+   * Server-resolved Membership rows scoped to the caller's actor/organization; the evaluator
+   * derives current authority from these at decision time and never trusts copied context fields.
+   * Omitting this (or passing an empty/non-matching set) can only ever resolve to a deny — it is
+   * not a way to bypass the current-authority check.
+   */
+  readonly membershipCandidates?: readonly Membership[];
+  /**
+   * Server-resolved AgencyClientAssignment rows scoped to the caller's actor organization + the
+   * target merchant workspace. Required in practice for an AGENCY actor to ever reach ALLOW;
+   * a caller can no longer hand the evaluator a single pre-selected assignment object.
+   */
+  readonly agencyAssignmentCandidates?: readonly AgencyClientAssignment[];
 }
 
 export type AuthorizationDecision =
@@ -89,17 +102,14 @@ export type AuthorizationDecision =
       readonly decision: 'DENY';
       readonly code: Extract<ErrorCode, 'AUTH_TENANT_MISMATCH' | 'AUTH_PERMISSION_DENIED'>;
       readonly reason:
-        | 'MEMBERSHIP_INACTIVE'
-        | 'MEMBERSHIP_NOT_YET_VALID'
-        | 'MEMBERSHIP_EXPIRED'
+        | 'MEMBERSHIP_NOT_CURRENT'
+        | 'MEMBERSHIP_CURRENT_CONFLICT'
+        | 'MEMBERSHIP_IDENTITY_MISMATCH'
         | 'ACTIVE_WORKSPACE_MISMATCH'
         | 'STANDALONE_ORGANIZATION_MISMATCH'
-        | 'AGENCY_ASSIGNMENT_REQUIRED'
-        | 'AGENCY_ASSIGNMENT_INACTIVE'
-        | 'AGENCY_ASSIGNMENT_NOT_YET_VALID'
-        | 'AGENCY_ASSIGNMENT_EXPIRED'
-        | 'AGENCY_ASSIGNMENT_ORGANIZATION_MISMATCH'
-        | 'AGENCY_ASSIGNMENT_WORKSPACE_MISMATCH'
+        | 'AGENCY_ASSIGNMENT_NOT_CURRENT'
+        | 'AGENCY_ASSIGNMENT_CURRENT_CONFLICT'
+        | 'AGENCY_ASSIGNMENT_IDENTITY_MISMATCH'
         | 'AGENCY_MODULE_NOT_ALLOWED'
         | 'PLATFORM_INTERNAL_REQUIRES_PRIVILEGED_PATH'
         | 'PERMISSION_NOT_GRANTED';

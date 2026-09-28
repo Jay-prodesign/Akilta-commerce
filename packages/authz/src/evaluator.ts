@@ -1,4 +1,4 @@
-import { isOperationallyActive, validityWindowViolation } from '../../domain/src/tenancy';
+import { resolveCurrentAgencyAssignment, resolveCurrentMembership } from '../../domain/src/tenancy';
 import type { ResourceScope, AuthorizationDecision, AuthorizationRequest, PermissionGrant } from './types';
 
 function deny(
@@ -30,20 +30,23 @@ function grantMatchesTarget(grant: PermissionGrant, request: AuthorizationReques
 export function evaluateAuthorization(request: AuthorizationRequest): AuthorizationDecision {
   const { executionContext: context, target } = request;
 
-  if (!isOperationallyActive(context.membershipStatus)) {
-    return deny('AUTH_PERMISSION_DENIED', 'MEMBERSHIP_INACTIVE');
-  }
-
-  const membershipViolation = validityWindowViolation(
+  // Current authority is always resolved server-side from candidate evidence at
+  // context.occurredAt; copied membershipId/status/window fields on the context are
+  // an identity binding to check against, never a trusted source of currentness.
+  const membershipResolution = resolveCurrentMembership(
+    request.membershipCandidates ?? [],
+    context.actorUserId,
+    context.actorOrganizationId,
     context.occurredAt,
-    context.membershipValidFrom,
-    context.membershipValidTo,
   );
-  if (membershipViolation === 'NOT_YET_VALID') {
-    return deny('AUTH_PERMISSION_DENIED', 'MEMBERSHIP_NOT_YET_VALID');
+  if (membershipResolution.outcome === 'NONE') {
+    return deny('AUTH_PERMISSION_DENIED', 'MEMBERSHIP_NOT_CURRENT');
   }
-  if (membershipViolation === 'EXPIRED') {
-    return deny('AUTH_PERMISSION_DENIED', 'MEMBERSHIP_EXPIRED');
+  if (membershipResolution.outcome === 'CONFLICT') {
+    return deny('AUTH_PERMISSION_DENIED', 'MEMBERSHIP_CURRENT_CONFLICT');
+  }
+  if (membershipResolution.record.membershipId !== context.membershipId) {
+    return deny('AUTH_PERMISSION_DENIED', 'MEMBERSHIP_IDENTITY_MISMATCH');
   }
 
   if (
@@ -58,29 +61,21 @@ export function evaluateAuthorization(request: AuthorizationRequest): Authorizat
       return deny('AUTH_TENANT_MISMATCH', 'STANDALONE_ORGANIZATION_MISMATCH');
     }
   } else if (context.actorOrganizationType === 'AGENCY') {
-    const assignment = request.agencyAssignment;
-    if (!assignment) {
-      return deny('AUTH_TENANT_MISMATCH', 'AGENCY_ASSIGNMENT_REQUIRED');
-    }
-    if (!isOperationallyActive(assignment.status)) {
-      return deny('AUTH_TENANT_MISMATCH', 'AGENCY_ASSIGNMENT_INACTIVE');
-    }
-    const assignmentViolation = validityWindowViolation(
+    const assignmentResolution = resolveCurrentAgencyAssignment(
+      request.agencyAssignmentCandidates ?? [],
+      context.actorOrganizationId,
+      target.merchantWorkspaceId,
       context.occurredAt,
-      assignment.validFrom,
-      assignment.validTo,
     );
-    if (assignmentViolation === 'NOT_YET_VALID') {
-      return deny('AUTH_TENANT_MISMATCH', 'AGENCY_ASSIGNMENT_NOT_YET_VALID');
+    if (assignmentResolution.outcome === 'NONE') {
+      return deny('AUTH_TENANT_MISMATCH', 'AGENCY_ASSIGNMENT_NOT_CURRENT');
     }
-    if (assignmentViolation === 'EXPIRED') {
-      return deny('AUTH_TENANT_MISMATCH', 'AGENCY_ASSIGNMENT_EXPIRED');
+    if (assignmentResolution.outcome === 'CONFLICT') {
+      return deny('AUTH_TENANT_MISMATCH', 'AGENCY_ASSIGNMENT_CURRENT_CONFLICT');
     }
-    if (assignment.agencyOrganizationId !== context.actorOrganizationId) {
-      return deny('AUTH_TENANT_MISMATCH', 'AGENCY_ASSIGNMENT_ORGANIZATION_MISMATCH');
-    }
-    if (assignment.merchantWorkspaceId !== target.merchantWorkspaceId) {
-      return deny('AUTH_TENANT_MISMATCH', 'AGENCY_ASSIGNMENT_WORKSPACE_MISMATCH');
+    const assignment = assignmentResolution.record;
+    if (!context.agencyClientAssignmentId || assignment.assignmentId !== context.agencyClientAssignmentId) {
+      return deny('AUTH_TENANT_MISMATCH', 'AGENCY_ASSIGNMENT_IDENTITY_MISMATCH');
     }
     if (request.module && !assignment.allowedModules.some((module) => module === request.module)) {
       return deny('AUTH_PERMISSION_DENIED', 'AGENCY_MODULE_NOT_ALLOWED');

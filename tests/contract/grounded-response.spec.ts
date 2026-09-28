@@ -8,6 +8,7 @@ import {
   operationalStatus,
   utcTimestamp,
   type Conversation,
+  type Membership,
 } from '../../packages/domain/src';
 import type { ExecutionContext, ServerResolvedResourceContext } from '../../packages/authz/src';
 import type { AiGatewayCandidate } from '../../packages/ai-gateway/src';
@@ -67,6 +68,11 @@ const target: ServerResolvedResourceContext = {
   resourceType: 'conversation',
   resourceId: conversationId,
 };
+
+/** The one currently-effective membership candidate matching executionContext's default binding. */
+const membershipCandidates: readonly Membership[] = [
+  { membershipId: membership, userId: user, organizationId: org, roleRefs: [], status: operationalStatus('ACTIVE') },
+];
 
 function conversation(state: Conversation['ownershipState'] = 'AI_ACTIVE'): Conversation {
   return {
@@ -247,6 +253,7 @@ function baseInput(event = inbound('1')): GroundedResponseInput {
     inboundEvent: event,
     executionContext,
     target,
+    membershipCandidates,
     requiredPermission: 'conversation:respond',
     module: moduleKey('support'),
     conversation: conversation(),
@@ -301,6 +308,48 @@ async function run() {
   const crossDeps = makeDeps();
   const cross = await orchestrateGroundedResponse({ ...baseInput(inbound('cross', otherWorkspace)) }, crossDeps.deps);
   results.push({ id: 'TM-01-CROSS-WORKSPACE-FAIL-CLOSED', actual: cross.outcome, expected: 'DENIED' });
+
+  const bindNoneDeps = makeDeps();
+  const bindNone = await orchestrateGroundedResponse(
+    { ...baseInput(inbound('bind-09-none')), membershipCandidates: [] },
+    bindNoneDeps.deps,
+  );
+  results.push({
+    id: 'IDTEN-BIND-09-NO-CURRENT-MEMBERSHIP-STOPS-BEFORE-EVIDENCE-AI',
+    actual: `${bindNone.outcome}:${bindNoneDeps.getEvidenceCalls()}:${bindNoneDeps.getAiCalls()}`,
+    expected: 'DENIED:0:0',
+  });
+
+  const bindConflictDeps = makeDeps();
+  const bindConflict = await orchestrateGroundedResponse(
+    {
+      ...baseInput(inbound('bind-09-conflict')),
+      membershipCandidates: [
+        membershipCandidates[0]!,
+        { ...membershipCandidates[0]!, membershipId: internalId('membership-orch-conflict', 'Membership') },
+      ],
+    },
+    bindConflictDeps.deps,
+  );
+  results.push({
+    id: 'IDTEN-BIND-09-CONFLICTING-MEMBERSHIP-STOPS-BEFORE-EVIDENCE-AI',
+    actual: `${bindConflict.outcome}:${bindConflictDeps.getEvidenceCalls()}:${bindConflictDeps.getAiCalls()}`,
+    expected: 'DENIED:0:0',
+  });
+
+  const bindMismatchDeps = makeDeps();
+  const bindMismatch = await orchestrateGroundedResponse(
+    {
+      ...baseInput(inbound('bind-09-mismatch')),
+      membershipCandidates: [{ ...membershipCandidates[0]!, membershipId: internalId('membership-orch-other', 'Membership') }],
+    },
+    bindMismatchDeps.deps,
+  );
+  results.push({
+    id: 'IDTEN-BIND-09-MISMATCHED-MEMBERSHIP-STOPS-BEFORE-EVIDENCE-AI',
+    actual: `${bindMismatch.outcome}:${bindMismatchDeps.getEvidenceCalls()}:${bindMismatchDeps.getAiCalls()}`,
+    expected: 'DENIED:0:0',
+  });
 
   const failed = results.filter((x) => x.actual !== x.expected);
   if (failed.length) {

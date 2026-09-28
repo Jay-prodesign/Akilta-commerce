@@ -13,6 +13,7 @@ import type {
   AgencyClientAssignment,
   IdempotencyKey,
   IntegrationId,
+  Membership,
   MerchantWorkspaceId,
   UtcTimestamp,
 } from '../../../packages/domain/src';
@@ -75,7 +76,9 @@ export function prepareActionExecution(input: {
   readonly plan: StagedActionPlan;
   readonly executionContext: ExecutionContext;
   readonly target: ServerResolvedResourceContext;
-  readonly agencyAssignment?: AgencyClientAssignment;
+  /** Server-resolved current-authority evidence, propagated unchanged to the action-authority seam. */
+  readonly membershipCandidates: readonly Membership[];
+  readonly agencyAssignmentCandidates?: readonly AgencyClientAssignment[];
   readonly capability?: CapabilityAuthoritySnapshot;
   readonly policyApprovalRequired?: boolean;
   readonly approval?: ApprovalSnapshot;
@@ -102,7 +105,8 @@ export function prepareActionExecution(input: {
     requestedMaturity: plan.requestedMaturity,
     executionContext: input.executionContext,
     target: input.target,
-    ...(input.agencyAssignment ? { agencyAssignment: input.agencyAssignment } : {}),
+    membershipCandidates: input.membershipCandidates,
+    ...(input.agencyAssignmentCandidates ? { agencyAssignmentCandidates: input.agencyAssignmentCandidates } : {}),
     ...(input.capability ? { capability: input.capability } : {}),
     ...(input.integrationId ? { integrationId: input.integrationId } : {}),
     ...(input.policyApprovalRequired !== undefined

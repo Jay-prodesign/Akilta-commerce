@@ -8,10 +8,15 @@ import {
   utcTimestamp,
   workspaceOnboardingState,
   type AgencyClientAssignment,
+  type Membership,
   type MerchantWorkspaceId,
   type OrganizationId,
 } from '../../packages/domain/src';
 import { evaluateAuthorization, permission, type ExecutionContext } from '../../packages/authz/src';
+
+function assert(condition: unknown, message: string): asserts condition {
+  if (!condition) throw new Error(message);
+}
 
 function oid(value: string): OrganizationId {
   return internalId(value, 'Organization');
@@ -26,13 +31,15 @@ const merchantB = oid('org-merchant-b');
 const agency = oid('org-agency');
 const workspaceA = wid('ws-a');
 const workspaceB = wid('ws-b');
+const userId = internalId('user-1', 'User');
+const membershipId = internalId('membership-1', 'Membership');
 
 function baseContext(overrides: Partial<ExecutionContext> = {}): ExecutionContext {
   return {
-    actorUserId: internalId('user-1', 'User'),
+    actorUserId: userId,
     actorOrganizationId: merchantA,
     actorOrganizationType: 'STANDALONE_MERCHANT',
-    membershipId: internalId('membership-1', 'Membership'),
+    membershipId,
     membershipStatus: operationalStatus('ACTIVE'),
     activeMerchantWorkspaceId: workspaceA,
     permissionSnapshotRef: 'perm-snapshot-1',
@@ -53,6 +60,19 @@ function baseContext(overrides: Partial<ExecutionContext> = {}): ExecutionContex
   };
 }
 
+/** Current membership candidate for a given organization, matching baseContext's default membershipId. */
+function currentMembership(organizationId: OrganizationId): readonly Membership[] {
+  return [
+    {
+      membershipId,
+      userId,
+      organizationId,
+      roleRefs: [],
+      status: operationalStatus('ACTIVE'),
+    },
+  ];
+}
+
 const assignment: AgencyClientAssignment = {
   assignmentId: agencyClientAssignmentId('assignment-1'),
   agencyOrganizationId: agency,
@@ -63,7 +83,6 @@ const assignment: AgencyClientAssignment = {
   status: operationalStatus('ACTIVE'),
 };
 
-// Compile-time scenario table. Executable Vitest assertions are activated at final runtime transfer.
 export const AUTHZ_SECURITY_SCENARIOS = [
   {
     id: 'VS-01-VALID-MERCHANT-A-ALLOW',
@@ -76,6 +95,7 @@ export const AUTHZ_SECURITY_SCENARIOS = [
         resourceType: 'Product',
         resourceId: 'product-a',
       },
+      membershipCandidates: currentMembership(merchantA),
     }),
     expected: { decision: 'ALLOW' },
   },
@@ -90,6 +110,7 @@ export const AUTHZ_SECURITY_SCENARIOS = [
         resourceType: 'Product',
         resourceId: 'product-b',
       },
+      membershipCandidates: currentMembership(merchantA),
     }),
     expected: { decision: 'DENY', code: 'AUTH_TENANT_MISMATCH' },
   },
@@ -109,6 +130,7 @@ export const AUTHZ_SECURITY_SCENARIOS = [
         resourceId: 'product-a',
       },
       module: 'commerce',
+      membershipCandidates: currentMembership(agency),
     }),
     expected: { decision: 'DENY', code: 'AUTH_TENANT_MISMATCH' },
   },
@@ -119,6 +141,7 @@ export const AUTHZ_SECURITY_SCENARIOS = [
         actorOrganizationId: agency,
         actorOrganizationType: 'AGENCY',
         activeMerchantWorkspaceId: workspaceA,
+        agencyClientAssignmentId: assignment.assignmentId,
       }),
       requiredPermission: permission('commerce.product:read'),
       target: {
@@ -128,7 +151,8 @@ export const AUTHZ_SECURITY_SCENARIOS = [
         resourceId: 'product-a',
       },
       module: 'commerce',
-      agencyAssignment: assignment,
+      membershipCandidates: currentMembership(agency),
+      agencyAssignmentCandidates: [assignment],
     }),
     expected: { decision: 'ALLOW' },
   },
@@ -143,6 +167,7 @@ export const AUTHZ_SECURITY_SCENARIOS = [
         resourceType: 'Order',
         resourceId: 'order-a',
       },
+      membershipCandidates: currentMembership(merchantA),
     }),
     expected: { decision: 'DENY', code: 'AUTH_PERMISSION_DENIED' },
   },
@@ -159,13 +184,14 @@ export const AUTHZ_SECURITY_SCENARIOS = [
         resourceType: 'Product',
         resourceId: 'product-a',
       },
+      membershipCandidates: currentMembership(merchantA),
     }),
     expected: { decision: 'DENY', code: 'AUTH_PERMISSION_DENIED' },
   },
   {
     id: 'TM-MEMBERSHIP-REVOKED-DENY',
     actual: evaluateAuthorization({
-      executionContext: baseContext({ membershipStatus: operationalStatus('REVOKED') }),
+      executionContext: baseContext(),
       requiredPermission: permission('commerce.product:read'),
       target: {
         owningOrganizationId: merchantA,
@@ -173,6 +199,7 @@ export const AUTHZ_SECURITY_SCENARIOS = [
         resourceType: 'Product',
         resourceId: 'product-a',
       },
+      membershipCandidates: [{ ...currentMembership(merchantA)[0]!, status: operationalStatus('REVOKED') }],
     }),
     expected: { decision: 'DENY', code: 'AUTH_PERMISSION_DENIED' },
   },
@@ -183,6 +210,7 @@ export const AUTHZ_SECURITY_SCENARIOS = [
         actorOrganizationId: agency,
         actorOrganizationType: 'AGENCY',
         activeMerchantWorkspaceId: workspaceA,
+        agencyClientAssignmentId: assignment.assignmentId,
       }),
       requiredPermission: permission('commerce.product:read'),
       target: {
@@ -192,11 +220,21 @@ export const AUTHZ_SECURITY_SCENARIOS = [
         resourceId: 'product-a',
       },
       module: 'campaign',
-      agencyAssignment: assignment,
+      membershipCandidates: currentMembership(agency),
+      agencyAssignmentCandidates: [assignment],
     }),
     expected: { decision: 'DENY', code: 'AUTH_PERMISSION_DENIED' },
   },
 ] as const;
+
+for (const scenario of AUTHZ_SECURITY_SCENARIOS) {
+  assert(scenario.actual.decision === scenario.expected.decision, `${scenario.id}: expected decision ${scenario.expected.decision}, got ${scenario.actual.decision}`);
+  if (scenario.expected.decision === 'DENY' && scenario.actual.decision === 'DENY') {
+    assert(scenario.actual.code === scenario.expected.code, `${scenario.id}: expected code ${scenario.expected.code}, got ${scenario.actual.code}`);
+  }
+  console.log(`PASS ${scenario.id}`);
+}
+console.log(`PASS ${AUTHZ_SECURITY_SCENARIOS.length}/${AUTHZ_SECURITY_SCENARIOS.length} tenant authz scenarios`);
 
 // Keep otherwise-unused primitive constructors referenced so staging compile validates their exports.
 export const TENANCY_PRIMITIVE_SMOKE = {
