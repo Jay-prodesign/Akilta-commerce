@@ -137,6 +137,40 @@ function assignmentCandidate(id: string, overrides: Partial<AgencyClientAssignme
   };
 }
 
+/** Dependency-free exact permutation witness; used to prove resolver outcomes are order-independent. */
+function permutations<T>(items: readonly T[]): T[][] {
+  if (items.length <= 1) {
+    return [items.slice()];
+  }
+  const result: T[][] = [];
+  for (let i = 0; i < items.length; i += 1) {
+    const current = items[i];
+    if (current === undefined) continue;
+    const rest = [...items.slice(0, i), ...items.slice(i + 1)];
+    for (const rest_permutation of permutations(rest)) {
+      result.push([current, ...rest_permutation]);
+    }
+  }
+  return result;
+}
+
+function factorial(n: number): number {
+  let result = 1;
+  for (let i = 2; i <= n; i += 1) {
+    result *= i;
+  }
+  return result;
+}
+
+function assertExactIdSet<T>(actual: readonly T[], expected: ReadonlySet<T>, message: string): void {
+  assert(actual.length === expected.size, message);
+  const actualSet = new Set(actual);
+  assert(actualSet.size === expected.size, message);
+  for (const id of actualSet) {
+    assert(expected.has(id), message);
+  }
+}
+
 const cases: Array<{ id: string; run: () => void }> = [
   {
     id: 'AUTH-VERIFIED-PRINCIPAL-HAS-NO-WORKSPACE-AUTHORITY',
@@ -451,16 +485,27 @@ const cases: Array<{ id: string; run: () => void }> = [
     run: () => {
       const a = membershipCandidate('m-a');
       const b = membershipCandidate('m-b');
-      const forward = resolveCurrentMembership([a, b], userId, merchantOrg, now);
-      const reversed = resolveCurrentMembership([b, a], userId, merchantOrg, now);
-      assert(
-        forward.outcome === 'CONFLICT' &&
-          reversed.outcome === 'CONFLICT' &&
-          forward.candidates.length === reversed.candidates.length &&
-          new Set(forward.candidates.map((c) => c.membershipId)).size ===
-            new Set(reversed.candidates.map((c) => c.membershipId)).size,
-        'candidate order must never change the resolution outcome or the effective set',
-      );
+      const wrongOrg = membershipCandidate('m-wrong-org', { organizationId: otherOrg });
+      const expired = membershipCandidate('m-expired', { validTo: utcTimestamp('2026-08-01T00:00:00Z') });
+      const future = membershipCandidate('m-future', { validFrom: utcTimestamp('2026-09-01T00:00:00Z') });
+      const revoked = membershipCandidate('m-revoked', { status: operationalStatus('REVOKED') });
+      const expectedIds = new Set([a.membershipId, b.membershipId]);
+      const candidates = [a, b, wrongOrg, expired, future, revoked];
+      let permutationCount = 0;
+      for (const permutation of permutations(candidates)) {
+        const result = resolveCurrentMembership(permutation, userId, merchantOrg, now);
+        assert(
+          result.outcome === 'CONFLICT',
+          'candidate order must never change the resolution outcome away from CONFLICT',
+        );
+        assertExactIdSet(
+          result.candidates.map((c) => c.membershipId),
+          expectedIds,
+          'candidate order must never change the exact effective candidate identity set, and wrong-scope/expired/future/revoked noise must never leak in or produce an authoritative winner',
+        );
+        permutationCount += 1;
+      }
+      assert(permutationCount === factorial(candidates.length), 'every candidate-order permutation must be exercised');
     },
   },
   {
@@ -515,16 +560,27 @@ const cases: Array<{ id: string; run: () => void }> = [
     run: () => {
       const a = assignmentCandidate('a-a');
       const b = assignmentCandidate('a-b');
-      const forward = resolveCurrentAgencyAssignment([a, b], agencyOrg, workspaceA, now);
-      const reversed = resolveCurrentAgencyAssignment([b, a], agencyOrg, workspaceA, now);
-      assert(
-        forward.outcome === 'CONFLICT' &&
-          reversed.outcome === 'CONFLICT' &&
-          forward.candidates.length === reversed.candidates.length &&
-          new Set(forward.candidates.map((c) => c.assignmentId)).size ===
-            new Set(reversed.candidates.map((c) => c.assignmentId)).size,
-        'candidate order must never change the resolution outcome or the effective set',
-      );
+      const wrongWorkspace = assignmentCandidate('a-wrong-ws', { merchantWorkspaceId: workspaceB });
+      const expired = assignmentCandidate('a-expired', { validTo: utcTimestamp('2026-08-01T00:00:00Z') });
+      const future = assignmentCandidate('a-future', { validFrom: utcTimestamp('2026-09-01T00:00:00Z') });
+      const revoked = assignmentCandidate('a-revoked', { status: operationalStatus('REVOKED') });
+      const expectedIds = new Set([a.assignmentId, b.assignmentId]);
+      const candidates = [a, b, wrongWorkspace, expired, future, revoked];
+      let permutationCount = 0;
+      for (const permutation of permutations(candidates)) {
+        const result = resolveCurrentAgencyAssignment(permutation, agencyOrg, workspaceA, now);
+        assert(
+          result.outcome === 'CONFLICT',
+          'candidate order must never change the resolution outcome away from CONFLICT',
+        );
+        assertExactIdSet(
+          result.candidates.map((c) => c.assignmentId),
+          expectedIds,
+          'candidate order must never change the exact effective candidate identity set, and wrong-scope/expired/future/revoked noise must never leak in or produce an authoritative winner',
+        );
+        permutationCount += 1;
+      }
+      assert(permutationCount === factorial(candidates.length), 'every candidate-order permutation must be exercised');
     },
   },
   {
