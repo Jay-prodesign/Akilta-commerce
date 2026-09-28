@@ -88,6 +88,7 @@ const cases: Array<[string, () => void]> = [
       executionContext: context(bothIntegrationPermissions),
       target,
       membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'OWNER_APPROVAL_REQUIRED', 'generic continuation authorized switch');
   }],
@@ -97,6 +98,7 @@ const cases: Array<[string, () => void]> = [
       executionContext: context(bothIntegrationPermissions),
       target,
       membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'OWNER_APPROVAL_REQUIRED', 'read-only intent bypassed explicit owner gate');
   }],
@@ -106,6 +108,7 @@ const cases: Array<[string, () => void]> = [
       executionContext: context(bothIntegrationPermissions),
       target,
       membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'APPROVED_TARGET_MISMATCH', 'different approved target accepted');
   }],
@@ -115,6 +118,7 @@ const cases: Array<[string, () => void]> = [
       executionContext: context(bothIntegrationPermissions),
       target,
       membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'SOURCE_PROJECT_NON_INTERFERENCE', 'active source project disruption allowed');
   }],
@@ -124,6 +128,7 @@ const cases: Array<[string, () => void]> = [
       executionContext: context(bothIntegrationPermissions),
       target,
       membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'SOURCE_PROJECT_NON_INTERFERENCE', 'unknown source project state allowed disruption');
   }],
@@ -133,6 +138,7 @@ const cases: Array<[string, () => void]> = [
       executionContext: context([grant('integration:connect')]),
       target,
       membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'AUTHORIZATION_DENIED', 'switch allowed without disconnect permission');
   }],
@@ -142,6 +148,7 @@ const cases: Array<[string, () => void]> = [
       executionContext: context([grant('integration:connect')]),
       target,
       membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'READY', 'connect not authorized with connect permission');
     assert(result.matchedPermissions.length === 1 && result.matchedPermissions[0] === 'integration:connect', 'connect permission mapping wrong');
@@ -152,6 +159,7 @@ const cases: Array<[string, () => void]> = [
       executionContext: context([grant('integration:disconnect')]),
       target,
       membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'READY', 'disconnect not authorized with disconnect permission');
   }],
@@ -161,6 +169,7 @@ const cases: Array<[string, () => void]> = [
       executionContext: context([grant('integration:disconnect')]),
       target,
       membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'AUTHORIZATION_DENIED', 'relink allowed without connect permission');
   }],
@@ -170,6 +179,7 @@ const cases: Array<[string, () => void]> = [
       executionContext: context(bothIntegrationPermissions),
       target: { ...target, merchantWorkspaceId: otherWorkspace },
       membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'PLAN_WORKSPACE_MISMATCH', 'cross-workspace plan accepted');
   }],
@@ -179,6 +189,7 @@ const cases: Array<[string, () => void]> = [
       executionContext: context(bothIntegrationPermissions),
       target,
       membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'READY', 'explicit non-disruptive switch not prepared');
     assert(result.prepared.downstreamAuthorityGranted === false, 'context-change approval leaked downstream authority');
@@ -222,6 +233,7 @@ const cases: Array<[string, () => void]> = [
       executionContext: context([]),
       target,
       membershipCandidates,
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'AUTHORIZATION_DENIED', 'owner approval bypassed RBAC');
   }],
@@ -231,6 +243,7 @@ const cases: Array<[string, () => void]> = [
       executionContext: context([grant('integration:connect')]),
       target,
       membershipCandidates: [],
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'AUTHORIZATION_DENIED', 'missing current membership reached READY');
   }],
@@ -243,6 +256,7 @@ const cases: Array<[string, () => void]> = [
         membershipCandidates[0]!,
         { ...membershipCandidates[0]!, membershipId: internalId('membership_context_change_conflict', 'Membership') },
       ],
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'AUTHORIZATION_DENIED', 'conflicting current membership reached READY');
   }],
@@ -254,6 +268,7 @@ const cases: Array<[string, () => void]> = [
       membershipCandidates: [
         { ...membershipCandidates[0]!, membershipId: internalId('membership_context_change_other', 'Membership') },
       ],
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'AUTHORIZATION_DENIED', 'stale caller-selected membership reached READY');
   }],
@@ -268,6 +283,7 @@ const cases: Array<[string, () => void]> = [
       },
       target,
       membershipCandidates: [{ membershipId, userId: actorUserId, organizationId: agencyOrg, roleRefs: [], status: operationalStatus('ACTIVE') }],
+      agencyAssignmentCandidates: [],
     });
     assert(result.decision === 'DENY' && result.reason === 'AUTHORIZATION_DENIED', 'agency actor without a current assignment reached READY');
   }],

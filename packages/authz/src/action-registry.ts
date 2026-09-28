@@ -173,7 +173,8 @@ export function resolveActionAuthority(input: {
   readonly target: ServerResolvedResourceContext;
   /** Server-resolved current-authority evidence; the privileged action path can never omit this. */
   readonly membershipCandidates: readonly Membership[];
-  readonly agencyAssignmentCandidates?: readonly AgencyClientAssignment[];
+  /** Non-AGENCY callers pass an explicit empty array — omission does not compile. */
+  readonly agencyAssignmentCandidates: readonly AgencyClientAssignment[];
   readonly capability?: CapabilityAuthoritySnapshot;
   readonly integrationId?: IntegrationId;
   readonly policyApprovalRequired?: boolean;
@@ -193,7 +194,7 @@ export function resolveActionAuthority(input: {
     target: input.target,
     module: definition.module,
     membershipCandidates: input.membershipCandidates,
-    ...(input.agencyAssignmentCandidates ? { agencyAssignmentCandidates: input.agencyAssignmentCandidates } : {}),
+    agencyAssignmentCandidates: input.agencyAssignmentCandidates,
   });
   if (authz.decision === 'DENY') {
     return { decision: 'DENY', reason: 'AUTHORIZATION_DENIED', detail: authz.reason };

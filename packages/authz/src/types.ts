@@ -80,16 +80,16 @@ export interface AuthorizationRequest {
   /**
    * Server-resolved Membership rows scoped to the caller's actor/organization; the evaluator
    * derives current authority from these at decision time and never trusts copied context fields.
-   * Omitting this (or passing an empty/non-matching set) can only ever resolve to a deny — it is
-   * not a way to bypass the current-authority check.
+   * Structurally required so a caller cannot compile without supplying the evidence envelope; an
+   * empty/non-matching set can still only ever resolve to a deny, never a bypass.
    */
-  readonly membershipCandidates?: readonly Membership[];
+  readonly membershipCandidates: readonly Membership[];
   /**
    * Server-resolved AgencyClientAssignment rows scoped to the caller's actor organization + the
-   * target merchant workspace. Required in practice for an AGENCY actor to ever reach ALLOW;
-   * a caller can no longer hand the evaluator a single pre-selected assignment object.
+   * target merchant workspace. Structurally required — a non-AGENCY caller passes an explicit
+   * empty array; a caller can no longer hand the evaluator a single pre-selected assignment object.
    */
-  readonly agencyAssignmentCandidates?: readonly AgencyClientAssignment[];
+  readonly agencyAssignmentCandidates: readonly AgencyClientAssignment[];
 }
 
 export type AuthorizationDecision =

@@ -254,6 +254,7 @@ function baseInput(event = inbound('1')): GroundedResponseInput {
     executionContext,
     target,
     membershipCandidates,
+    agencyAssignmentCandidates: [],
     requiredPermission: 'conversation:respond',
     module: moduleKey('support'),
     conversation: conversation(),

@@ -136,7 +136,8 @@ export function resolveIntegrationContextChangeAuthority(input: {
   readonly target: ServerResolvedResourceContext;
   /** Server-resolved current-authority evidence; this seam can never grant authority without it. */
   readonly membershipCandidates: readonly Membership[];
-  readonly agencyAssignmentCandidates?: readonly AgencyClientAssignment[];
+  /** Non-AGENCY callers pass an explicit empty array — omission does not compile. */
+  readonly agencyAssignmentCandidates: readonly AgencyClientAssignment[];
 }): IntegrationContextChangeAuthorityDecision {
   const prepared = prepareIntegrationContextChange(input.plan);
   if (prepared.decision === 'DENY') return prepared;
@@ -152,7 +153,7 @@ export function resolveIntegrationContextChangeAuthority(input: {
       requiredPermission,
       target: input.target,
       membershipCandidates: input.membershipCandidates,
-      ...(input.agencyAssignmentCandidates ? { agencyAssignmentCandidates: input.agencyAssignmentCandidates } : {}),
+      agencyAssignmentCandidates: input.agencyAssignmentCandidates,
     });
     if (authz.decision === 'DENY') {
       return {

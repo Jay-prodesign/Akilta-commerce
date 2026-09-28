@@ -77,7 +77,8 @@ export interface GroundedResponseInput {
   readonly target: ServerResolvedResourceContext;
   /** Server-resolved current-authority evidence; this seam can never grant authority without it. */
   readonly membershipCandidates: readonly Membership[];
-  readonly agencyAssignmentCandidates?: readonly AgencyClientAssignment[];
+  /** Non-AGENCY callers pass an explicit empty array — omission does not compile. */
+  readonly agencyAssignmentCandidates: readonly AgencyClientAssignment[];
   readonly requiredPermission: Permission;
   readonly module: string;
   readonly conversation: Conversation;
@@ -215,7 +216,7 @@ export async function orchestrateGroundedResponse(
     target: input.target,
     module: input.module,
     membershipCandidates: input.membershipCandidates,
-    ...(input.agencyAssignmentCandidates ? { agencyAssignmentCandidates: input.agencyAssignmentCandidates } : {}),
+    agencyAssignmentCandidates: input.agencyAssignmentCandidates,
   });
   if (authorization.decision === 'DENY') {
     await deps.auditWriter.append(

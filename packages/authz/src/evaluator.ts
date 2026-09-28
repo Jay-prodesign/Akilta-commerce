@@ -34,7 +34,7 @@ export function evaluateAuthorization(request: AuthorizationRequest): Authorizat
   // context.occurredAt; copied membershipId/status/window fields on the context are
   // an identity binding to check against, never a trusted source of currentness.
   const membershipResolution = resolveCurrentMembership(
-    request.membershipCandidates ?? [],
+    request.membershipCandidates,
     context.actorUserId,
     context.actorOrganizationId,
     context.occurredAt,
@@ -62,7 +62,7 @@ export function evaluateAuthorization(request: AuthorizationRequest): Authorizat
     }
   } else if (context.actorOrganizationType === 'AGENCY') {
     const assignmentResolution = resolveCurrentAgencyAssignment(
-      request.agencyAssignmentCandidates ?? [],
+      request.agencyAssignmentCandidates,
       context.actorOrganizationId,
       target.merchantWorkspaceId,
       context.occurredAt,

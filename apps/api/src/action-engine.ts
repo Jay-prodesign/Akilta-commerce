@@ -78,7 +78,8 @@ export function prepareActionExecution(input: {
   readonly target: ServerResolvedResourceContext;
   /** Server-resolved current-authority evidence, propagated unchanged to the action-authority seam. */
   readonly membershipCandidates: readonly Membership[];
-  readonly agencyAssignmentCandidates?: readonly AgencyClientAssignment[];
+  /** Non-AGENCY callers pass an explicit empty array — omission does not compile. */
+  readonly agencyAssignmentCandidates: readonly AgencyClientAssignment[];
   readonly capability?: CapabilityAuthoritySnapshot;
   readonly policyApprovalRequired?: boolean;
   readonly approval?: ApprovalSnapshot;
@@ -106,7 +107,7 @@ export function prepareActionExecution(input: {
     executionContext: input.executionContext,
     target: input.target,
     membershipCandidates: input.membershipCandidates,
-    ...(input.agencyAssignmentCandidates ? { agencyAssignmentCandidates: input.agencyAssignmentCandidates } : {}),
+    agencyAssignmentCandidates: input.agencyAssignmentCandidates,
     ...(input.capability ? { capability: input.capability } : {}),
     ...(input.integrationId ? { integrationId: input.integrationId } : {}),
     ...(input.policyApprovalRequired !== undefined

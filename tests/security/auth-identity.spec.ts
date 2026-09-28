@@ -219,6 +219,7 @@ const cases: Array<{ id: string; run: () => void }> = [
           resourceId: 'p1',
         },
         membershipCandidates: [membershipCandidate('membership-1', { status: operationalStatus('REVOKED') })],
+        agencyAssignmentCandidates: [],
       });
       assert(decision.decision === 'DENY', 'revoked membership must deny despite valid vendor session');
     },
@@ -241,6 +242,7 @@ const cases: Array<{ id: string; run: () => void }> = [
         },
         module: 'commerce',
         membershipCandidates: [membershipCandidate('membership-1', { organizationId: agencyOrg })],
+        agencyAssignmentCandidates: [],
       });
       assert(decision.decision === 'DENY', 'agency membership alone must not grant client access');
     },
@@ -300,6 +302,7 @@ const cases: Array<{ id: string; run: () => void }> = [
           resourceId: 'p-b',
         },
         membershipCandidates: [membershipCandidate('membership-1')],
+        agencyAssignmentCandidates: [],
       });
       assert(decision.decision === 'DENY', 'client-selected workspace must not bypass server context');
     },
@@ -312,6 +315,7 @@ const cases: Array<{ id: string; run: () => void }> = [
         requiredPermission: permission('commerce.product:read'),
         target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
         membershipCandidates: [membershipCandidate('membership-1', { validFrom: utcTimestamp('2026-08-01T00:00:00Z') })],
+        agencyAssignmentCandidates: [],
       });
       assert(decision.decision === 'ALLOW', 'in-range membership with an open upper bound should allow');
     },
@@ -324,6 +328,7 @@ const cases: Array<{ id: string; run: () => void }> = [
         requiredPermission: permission('commerce.product:read'),
         target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
         membershipCandidates: [membershipCandidate('membership-1', { validFrom: utcTimestamp('2026-08-08T00:00:00Z') })],
+        agencyAssignmentCandidates: [],
       });
       assert(decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_NOT_CURRENT', 'future membership must deny');
     },
@@ -336,6 +341,7 @@ const cases: Array<{ id: string; run: () => void }> = [
         requiredPermission: permission('commerce.product:read'),
         target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
         membershipCandidates: [membershipCandidate('membership-1', { validTo: utcTimestamp('2026-08-07T12:00:00Z') })],
+        agencyAssignmentCandidates: [],
       });
       assert(decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_NOT_CURRENT', 'expired membership must deny');
     },
@@ -411,6 +417,7 @@ const cases: Array<{ id: string; run: () => void }> = [
         requiredPermission: permission('commerce.product:read'),
         target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
         membershipCandidates: [membershipCandidate('membership-1', { validFrom: now })],
+        agencyAssignmentCandidates: [],
       });
       assert(decision.decision === 'ALLOW', 'validFrom boundary is inclusive');
     },
@@ -423,6 +430,7 @@ const cases: Array<{ id: string; run: () => void }> = [
         requiredPermission: permission('commerce.product:read'),
         target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
         membershipCandidates: [membershipCandidate('membership-1', { validTo: now })],
+        agencyAssignmentCandidates: [],
       });
       assert(decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_NOT_CURRENT', 'validTo boundary is exclusive');
     },
@@ -440,6 +448,7 @@ const cases: Array<{ id: string; run: () => void }> = [
             validTo: utcTimestamp('2026-08-07T17:00:00Z'),
           }),
         ],
+        agencyAssignmentCandidates: [],
       });
       assert(
         decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_NOT_CURRENT',
@@ -455,6 +464,7 @@ const cases: Array<{ id: string; run: () => void }> = [
         requiredPermission: permission('commerce.product:read'),
         target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
         membershipCandidates: [membershipCandidate('membership-1')],
+        agencyAssignmentCandidates: [],
       });
       assert(decision.decision === 'ALLOW', 'exact current membership matching the context binding must permit existing downstream gates');
     },
@@ -467,6 +477,7 @@ const cases: Array<{ id: string; run: () => void }> = [
         requiredPermission: permission('commerce.product:read'),
         target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
         membershipCandidates: [],
+        agencyAssignmentCandidates: [],
       });
       assert(decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_NOT_CURRENT', 'no effective current membership must deny');
     },
@@ -479,6 +490,7 @@ const cases: Array<{ id: string; run: () => void }> = [
         requiredPermission: permission('commerce.product:read'),
         target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
         membershipCandidates: [membershipCandidate('membership-1'), membershipCandidate('membership-2')],
+        agencyAssignmentCandidates: [],
       });
       assert(
         decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_CURRENT_CONFLICT',
@@ -495,6 +507,7 @@ const cases: Array<{ id: string; run: () => void }> = [
         target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
         // The only effective candidate carries a different membershipId than the context claims to be bound to.
         membershipCandidates: [membershipCandidate('membership-stale-caller-selection')],
+        agencyAssignmentCandidates: [],
       });
       assert(
         decision.decision === 'DENY' && decision.reason === 'MEMBERSHIP_IDENTITY_MISMATCH',
