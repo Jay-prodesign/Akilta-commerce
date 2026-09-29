@@ -14,6 +14,8 @@ import {
   resolvePermissionAuthoritySnapshot,
   ROLE_PERMISSION_POLICY,
   type ExecutionContext,
+  type MembershipRoleReadResult,
+  type MembershipRoleReader,
   type ServerResolvedResourceContext,
 } from '../../packages/authz/src';
 import type { AiGatewayCandidate } from '../../packages/ai-gateway/src';
@@ -45,17 +47,26 @@ const user = internalId('user-orch-a', 'User');
 const membership = internalId('membership-orch-a', 'Membership');
 const conversationId = internalId('conv-orch-a', 'Conversation');
 const integrationId = internalId('integration-orch-a', 'Integration');
-const grantedRole = 'conversation:respond' as const;
+/** Directly-evidenced V1 role covering conversation:respond. */
+const grantedRoleKey = 'CLIENT_SUPPORT_AGENT';
 const currentPermissionAuthority = resolvePermissionAuthoritySnapshot(
   membership,
   workspace,
-  [grantedRole],
+  [grantedRoleKey],
   ROLE_PERMISSION_POLICY,
 );
 if (currentPermissionAuthority.outcome !== 'RESOLVED') {
   throw new Error('fixture misconfigured: expected a resolvable permission authority snapshot');
 }
 const currentPermissionSnapshotRef = currentPermissionAuthority.snapshot.authorityVersion;
+
+function fakeReader(result: MembershipRoleReadResult): MembershipRoleReader {
+  return { read: () => Promise.resolve(result) };
+}
+
+function defaultRoleReader(): MembershipRoleReader {
+  return fakeReader({ outcome: 'READ_SUCCESS', roleKeys: [grantedRoleKey] });
+}
 
 const executionContext: ExecutionContext = {
   actorUserId: user,
@@ -87,7 +98,7 @@ const target: ServerResolvedResourceContext = {
 
 /** The one currently-effective membership candidate matching executionContext's default binding. */
 const membershipCandidates: readonly Membership[] = [
-  { membershipId: membership, userId: user, organizationId: org, roleRefs: [grantedRole], status: operationalStatus('ACTIVE') },
+  { membershipId: membership, userId: user, organizationId: org, roleRefs: [], status: operationalStatus('ACTIVE') },
 ];
 
 function conversation(state: Conversation['ownershipState'] = 'AI_ACTIVE'): Conversation {
@@ -271,6 +282,7 @@ function baseInput(event = inbound('1')): GroundedResponseInput {
     target,
     membershipCandidates,
     agencyAssignmentCandidates: [],
+    roleReader: defaultRoleReader(),
     requiredPermission: 'conversation:respond',
     module: moduleKey('support'),
     conversation: conversation(),
@@ -301,9 +313,10 @@ async function run() {
   const denied = await orchestrateGroundedResponse(
     {
       ...baseInput(inbound('deny')),
-      // Current membership resolves fine but has zero current roles; the fresh permission-authority
-      // snapshot denies even though executionContext.permissionGrants still (falsely) claims the permission.
-      membershipCandidates: [{ ...membershipCandidates[0]!, roleRefs: [] }],
+      // Current membership resolves fine, but the authoritative role read returns zero current
+      // roles; the fresh permission-authority snapshot denies even though
+      // executionContext.permissionGrants still (falsely) claims the permission.
+      roleReader: fakeReader({ outcome: 'READ_SUCCESS', roleKeys: [] }),
     },
     deniedDeps.deps,
   );

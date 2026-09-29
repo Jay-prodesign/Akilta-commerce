@@ -1,4 +1,5 @@
 export * from './grounded-response';
+export * from './membership-role-reader';
 export * from './transport-contracts';
 export * from './webhook-boundary';
 export * from './runtime-config';

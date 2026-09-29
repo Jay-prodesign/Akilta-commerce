@@ -1,4 +1,4 @@
-import { evaluateAuthorization } from '../../../packages/authz/src';
+import { evaluateAuthorization, type MembershipRoleReader } from '../../../packages/authz/src';
 import type {
   AuthorizationDecision,
   ExecutionContext,
@@ -79,6 +79,8 @@ export interface GroundedResponseInput {
   readonly membershipCandidates: readonly Membership[];
   /** Non-AGENCY callers pass an explicit empty array — omission does not compile. */
   readonly agencyAssignmentCandidates: readonly AgencyClientAssignment[];
+  /** Server-owned dependency for reading current role keys; never role-key data itself. */
+  readonly roleReader: MembershipRoleReader;
   readonly requiredPermission: Permission;
   readonly module: string;
   readonly conversation: Conversation;
@@ -210,13 +212,14 @@ export async function orchestrateGroundedResponse(
     return { outcome: 'DENIED', code: authorization.code, authorization };
   }
 
-  const authorization = evaluateAuthorization({
+  const authorization = await evaluateAuthorization({
     executionContext: input.executionContext,
     requiredPermission: input.requiredPermission,
     target: input.target,
     module: input.module,
     membershipCandidates: input.membershipCandidates,
     agencyAssignmentCandidates: input.agencyAssignmentCandidates,
+    roleReader: input.roleReader,
   });
   if (authorization.decision === 'DENY') {
     await deps.auditWriter.append(

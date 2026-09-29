@@ -1,6 +1,6 @@
 import type { MembershipId, MerchantWorkspaceId } from '../../domain/src';
-import { PERMISSIONS, type Permission } from './permissions';
-import type { PermissionGrant } from './types';
+import { permission, type Permission } from './permissions';
+import type { MembershipRoleReadResult, MembershipRoleReader, PermissionGrant } from './types';
 
 export interface RolePermissionPolicy {
   readonly policyVersion: string;
@@ -8,16 +8,28 @@ export interface RolePermissionPolicy {
 }
 
 /**
- * Minimum-viable, versioned, server-owned role->Permission catalog. Every admitted Permission is
- * also its own role key, granting exactly itself. Bundling multiple permissions under named
- * business roles (e.g. "workspace-owner") is product content, not engineering architecture, and is
- * deliberately left to future, separately-selected work; this identity mapping keeps role
- * granularity maximally narrow (never over-grants) while still being a real versioned catalog that
- * proves the deterministic snapshot/authorityVersion mechanism this task is scoped to deliver.
+ * Minimum directly-evidenced V1 subset of the canonical D-12 named-role model. Deliberately
+ * partial and conservative: no complete role bundle or frozen machine role_key set exists yet, so
+ * only role->Permission pairs whose semantics are directly supported by D-12 are admitted here.
+ * Broader roles (Client Owner/Admin, Agency Owner/Operator, Platform Internal, Custom) are
+ * intentionally left unmapped rather than approximated as "gets everything" — an unmapped role
+ * fails closed. This closes permission-currentness mechanics only, not final RBAC bundle design.
  */
 export const ROLE_PERMISSION_POLICY: RolePermissionPolicy = {
   policyVersion: 'v1',
-  grants: Object.fromEntries(PERMISSIONS.map((p) => [p, [p]])),
+  grants: {
+    CLIENT_SUPPORT_AGENT: [
+      permission('conversation:read'),
+      permission('conversation:respond'),
+      permission('conversation:assign'),
+      permission('customer:read'),
+      permission('commerce.order:read'),
+    ],
+    CLIENT_ANALYST: [permission('analytics:read')],
+    // Still requires the existing current AgencyClientAssignment gate in evaluateAuthorization.
+    AGENCY_ANALYST: [permission('analytics:read')],
+    CLIENT_MARKETING_MANAGER: [permission('campaign:read'), permission('campaign:draft')],
+  },
 };
 
 export interface PermissionAuthoritySnapshot {
@@ -38,21 +50,42 @@ function normalizeRoleKeys(roleKeys: readonly string[]): readonly string[] {
   return Array.from(new Set(roleKeys)).sort();
 }
 
-/** Deterministic derivation only: identical authoritative state always yields an identical value; no wall-clock, no randomness. */
+/**
+ * Collision-safe: a canonical JSON encoding — explicit array/object structure with proper string
+ * escaping via JSON.stringify — so no delimiter-concatenation ambiguity between structurally
+ * different inputs (e.g. an identifier containing the join character a naive `join('|')` would use)
+ * can collapse to the same value. Includes the deterministic effective-grant/scope representation,
+ * not just role keys, per field in a fixed key order so equal inputs always serialize identically.
+ * Deterministic only: no wall-clock, no randomness, no hashing (avoids a runtime-specific crypto
+ * dependency; the JSON encoding alone is what provides collision-safety here).
+ */
 function deriveAuthorityVersion(
   membershipId: MembershipId,
   merchantWorkspaceId: MerchantWorkspaceId,
   normalizedRoleKeys: readonly string[],
   policyVersion: string,
+  effectiveGrants: readonly PermissionGrant[],
 ): string {
-  return `${membershipId}|${merchantWorkspaceId}|${normalizedRoleKeys.join(',')}|${policyVersion}`;
+  return JSON.stringify([
+    membershipId,
+    merchantWorkspaceId,
+    normalizedRoleKeys,
+    policyVersion,
+    effectiveGrants.map((g) => [
+      g.permission,
+      g.scope.kind,
+      g.scope.kind !== 'ORGANIZATION' ? g.scope.merchantWorkspaceId : null,
+    ]),
+  ]);
 }
 
 /**
- * Pure, decision-time recomputation of current permission authority from the already-resolved
- * current Membership's role keys (never a stored/cached snapshot, never re-reads anything itself).
- * Fails closed — never falls back to any caller-copied grant — on empty or unrecognized role keys,
- * so a membership with zero or unknown roles can never fall through to an implicit grant.
+ * Pure, deterministic derivation from already-obtained current role keys (never reads anything
+ * itself). A successful read that returns zero roles is a valid current state — it resolves to a
+ * snapshot with an empty effectiveGrants set, never a failure. Fails closed only when a role key is
+ * not a recognized entry in the policy (unmapped/unknown role), never falling back to any
+ * caller-copied grant. Exposed directly so normalization/versioning mechanics can be unit-tested
+ * without an injected reader.
  */
 export function resolvePermissionAuthoritySnapshot(
   membershipId: MembershipId,
@@ -61,9 +94,6 @@ export function resolvePermissionAuthoritySnapshot(
   policy: RolePermissionPolicy,
 ): PermissionAuthorityResolution {
   const normalizedRoleKeys = normalizeRoleKeys(roleKeys);
-  if (normalizedRoleKeys.length === 0) {
-    return { outcome: 'FAILED' };
-  }
 
   const permissionSet = new Set<Permission>();
   for (const roleKey of normalizedRoleKeys) {
@@ -84,7 +114,13 @@ export function resolvePermissionAuthoritySnapshot(
       sourceRef: `role-policy:${policy.policyVersion}`,
     }));
 
-  const authorityVersion = deriveAuthorityVersion(membershipId, merchantWorkspaceId, normalizedRoleKeys, policy.policyVersion);
+  const authorityVersion = deriveAuthorityVersion(
+    membershipId,
+    merchantWorkspaceId,
+    normalizedRoleKeys,
+    policy.policyVersion,
+    effectiveGrants,
+  );
 
   return {
     outcome: 'RESOLVED',
@@ -97,4 +133,23 @@ export function resolvePermissionAuthoritySnapshot(
       authorityVersion,
     },
   };
+}
+
+/**
+ * Decision-time entry point: reads current role keys for the exact resolved membershipId through
+ * the server-owned MembershipRoleReader port, then derives the snapshot. A reader error fails
+ * closed (FAILED) — never falls back to any caller-supplied Membership.roleRefs, copied
+ * context.permissionGrants, or client/provider/model payload.
+ */
+export async function resolveCurrentPermissionAuthority(
+  reader: MembershipRoleReader,
+  membershipId: MembershipId,
+  merchantWorkspaceId: MerchantWorkspaceId,
+  policy: RolePermissionPolicy,
+): Promise<PermissionAuthorityResolution> {
+  const read: MembershipRoleReadResult = await reader.read(membershipId);
+  if (read.outcome === 'READ_ERROR') {
+    return { outcome: 'FAILED' };
+  }
+  return resolvePermissionAuthoritySnapshot(membershipId, merchantWorkspaceId, read.roleKeys, policy);
 }
