@@ -1,4 +1,5 @@
 import { resolveCurrentAgencyAssignment, resolveCurrentMembership } from '../../domain/src/tenancy';
+import { ROLE_PERMISSION_POLICY, resolvePermissionAuthoritySnapshot } from './permission-authority';
 import type { ResourceScope, AuthorizationDecision, AuthorizationRequest, PermissionGrant } from './types';
 
 function deny(
@@ -86,7 +87,23 @@ export function evaluateAuthorization(request: AuthorizationRequest): Authorizat
     return deny('AUTH_PERMISSION_DENIED', 'PLATFORM_INTERNAL_REQUIRES_PRIVILEGED_PATH');
   }
 
-  const grant = context.permissionGrants.find(
+  // Current permission authority is always recomputed server-side from the already-resolved
+  // current membership's role keys, never from context.permissionGrants: that field is a
+  // caller-copied claim/cache correlation only and can never establish, nor widen, current grants.
+  const permissionAuthority = resolvePermissionAuthoritySnapshot(
+    membershipResolution.record.membershipId,
+    target.merchantWorkspaceId,
+    membershipResolution.record.roleRefs,
+    ROLE_PERMISSION_POLICY,
+  );
+  if (permissionAuthority.outcome === 'FAILED') {
+    return deny('AUTH_PERMISSION_DENIED', 'PERMISSION_AUTHORITY_UNRESOLVED');
+  }
+  if (context.permissionSnapshotRef !== permissionAuthority.snapshot.authorityVersion) {
+    return deny('AUTH_PERMISSION_DENIED', 'PERMISSION_AUTHORITY_STALE_REF');
+  }
+
+  const grant = permissionAuthority.snapshot.effectiveGrants.find(
     (candidate) =>
       candidate.permission === request.requiredPermission && grantMatchesTarget(candidate, request),
   );

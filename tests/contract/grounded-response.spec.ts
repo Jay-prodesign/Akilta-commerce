@@ -10,7 +10,12 @@ import {
   type Conversation,
   type Membership,
 } from '../../packages/domain/src';
-import type { ExecutionContext, ServerResolvedResourceContext } from '../../packages/authz/src';
+import {
+  resolvePermissionAuthoritySnapshot,
+  ROLE_PERMISSION_POLICY,
+  type ExecutionContext,
+  type ServerResolvedResourceContext,
+} from '../../packages/authz/src';
 import type { AiGatewayCandidate } from '../../packages/ai-gateway/src';
 import {
   NOT_CLASSIFIED,
@@ -40,6 +45,17 @@ const user = internalId('user-orch-a', 'User');
 const membership = internalId('membership-orch-a', 'Membership');
 const conversationId = internalId('conv-orch-a', 'Conversation');
 const integrationId = internalId('integration-orch-a', 'Integration');
+const grantedRole = 'conversation:respond' as const;
+const currentPermissionAuthority = resolvePermissionAuthoritySnapshot(
+  membership,
+  workspace,
+  [grantedRole],
+  ROLE_PERMISSION_POLICY,
+);
+if (currentPermissionAuthority.outcome !== 'RESOLVED') {
+  throw new Error('fixture misconfigured: expected a resolvable permission authority snapshot');
+}
+const currentPermissionSnapshotRef = currentPermissionAuthority.snapshot.authorityVersion;
 
 const executionContext: ExecutionContext = {
   actorUserId: user,
@@ -48,7 +64,7 @@ const executionContext: ExecutionContext = {
   membershipId: membership,
   membershipStatus: operationalStatus('ACTIVE'),
   activeMerchantWorkspaceId: workspace,
-  permissionSnapshotRef: 'perm-snapshot-1',
+  permissionSnapshotRef: currentPermissionSnapshotRef,
   permissionGrants: [{
     permission: 'conversation:respond',
     scope: { kind: 'MERCHANT_WORKSPACE', merchantWorkspaceId: workspace },
@@ -71,7 +87,7 @@ const target: ServerResolvedResourceContext = {
 
 /** The one currently-effective membership candidate matching executionContext's default binding. */
 const membershipCandidates: readonly Membership[] = [
-  { membershipId: membership, userId: user, organizationId: org, roleRefs: [], status: operationalStatus('ACTIVE') },
+  { membershipId: membership, userId: user, organizationId: org, roleRefs: [grantedRole], status: operationalStatus('ACTIVE') },
 ];
 
 function conversation(state: Conversation['ownershipState'] = 'AI_ACTIVE'): Conversation {
@@ -282,8 +298,15 @@ async function run() {
   results.push({ id: 'VS-08-DUPLICATE-NO-SECOND-AI-CALL', actual: ok.getAiCalls(), expected: 1 });
 
   const deniedDeps = makeDeps();
-  const deniedContext: ExecutionContext = { ...executionContext, permissionGrants: [] };
-  const denied = await orchestrateGroundedResponse({ ...baseInput(inbound('deny')), executionContext: deniedContext }, deniedDeps.deps);
+  const denied = await orchestrateGroundedResponse(
+    {
+      ...baseInput(inbound('deny')),
+      // Current membership resolves fine but has zero current roles; the fresh permission-authority
+      // snapshot denies even though executionContext.permissionGrants still (falsely) claims the permission.
+      membershipCandidates: [{ ...membershipCandidates[0]!, roleRefs: [] }],
+    },
+    deniedDeps.deps,
+  );
   results.push({ id: 'TM-01-AUTHZ-DENY-BEFORE-EVIDENCE', actual: `${denied.outcome}:${deniedDeps.getEvidenceCalls()}:${deniedDeps.getAiCalls()}`, expected: 'DENIED:0:0' });
 
   const unknownDeps = makeDeps({ facts: [] });

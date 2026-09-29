@@ -7,6 +7,8 @@ import {
   permission,
   resolveAuthenticatedPrincipal,
   resolveAuthOrganizationBinding,
+  resolvePermissionAuthoritySnapshot,
+  ROLE_PERMISSION_POLICY,
   type AuthOrganizationBinding,
   type ExecutionContext,
   type UserIdentity,
@@ -51,6 +53,20 @@ const identity: UserIdentity = {
   createdAt: now,
 };
 
+const grantedRole = permission('commerce.product:read');
+const membership1Id = internalId('membership-1', 'Membership');
+const currentPermissionAuthority = resolvePermissionAuthoritySnapshot(
+  membership1Id,
+  workspaceA,
+  [grantedRole],
+  ROLE_PERMISSION_POLICY,
+);
+if (currentPermissionAuthority.outcome !== 'RESOLVED') {
+  throw new Error('fixture misconfigured: expected a resolvable permission authority snapshot');
+}
+/** The current permissionSnapshotRef matching membership-1's default roleRefs at workspaceA. */
+const currentPermissionSnapshotRef = currentPermissionAuthority.snapshot.authorityVersion;
+
 function verifiedAttempt(overrides: Record<string, unknown> = {}) {
   return {
     outcome: 'VERIFIED' as const,
@@ -76,7 +92,7 @@ function baseContext(overrides: Partial<ExecutionContext> = {}): ExecutionContex
     membershipId: internalId('membership-1', 'Membership'),
     membershipStatus: operationalStatus('ACTIVE'),
     activeMerchantWorkspaceId: workspaceA,
-    permissionSnapshotRef: 'perm-1',
+    permissionSnapshotRef: currentPermissionSnapshotRef,
     permissionGrants: [
       {
         permission: permission('commerce.product:read'),
@@ -118,7 +134,7 @@ function membershipCandidate(id: string, overrides: Partial<Membership> = {}): M
     membershipId: internalId(id, 'Membership'),
     userId,
     organizationId: merchantOrg,
-    roleRefs: [],
+    roleRefs: [grantedRole],
     status: operationalStatus('ACTIVE'),
     ...overrides,
   };
@@ -588,6 +604,66 @@ const cases: Array<{ id: string; run: () => void }> = [
       assert(
         decision.decision === 'DENY' && decision.reason === 'AGENCY_ASSIGNMENT_NOT_CURRENT',
         'an assignment scoped to a different workspace must never authorize the switched-to workspace',
+      );
+    },
+  },
+  {
+    id: 'PERM-GEN-02-STALE-SNAPSHOT-REF-DENIES',
+    run: () => {
+      const decision = evaluateAuthorization({
+        executionContext: baseContext({ permissionSnapshotRef: 'stale-ref-from-before-a-role-change' }),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        membershipCandidates: [membershipCandidate('membership-1')],
+        agencyAssignmentCandidates: [],
+      });
+      assert(
+        decision.decision === 'DENY' && decision.reason === 'PERMISSION_AUTHORITY_STALE_REF',
+        'a claimed permissionSnapshotRef that does not match the freshly recomputed current authority must deny before any grant match',
+      );
+    },
+  },
+  {
+    id: 'PERM-GEN-06-ZERO-CURRENT-ROLES-DENIES-NEVER-FALLS-BACK-TO-COPIED-GRANTS',
+    run: () => {
+      const decision = evaluateAuthorization({
+        executionContext: baseContext(),
+        requiredPermission: permission('commerce.product:read'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        // Current membership resolves fine, but carries zero roles; the context's copied
+        // permissionGrants (still claiming commerce.product:read) must never be used as a fallback.
+        membershipCandidates: [membershipCandidate('membership-1', { roleRefs: [] })],
+        agencyAssignmentCandidates: [],
+      });
+      assert(
+        decision.decision === 'DENY' && decision.reason === 'PERMISSION_AUTHORITY_UNRESOLVED',
+        'a current membership with zero current roles must deny, never fall back to copied context.permissionGrants',
+      );
+    },
+  },
+  {
+    id: 'PERM-GEN-10-COPIED-GRANTS-CANNOT-WIDEN-CURRENT-GRANTS',
+    run: () => {
+      // The context's copied permissionGrants claims a permission the current role set does not
+      // actually grant; the fresh server-recomputed snapshot must be the only source of truth.
+      const decision = evaluateAuthorization({
+        executionContext: baseContext({
+          permissionGrants: [
+            {
+              permission: permission('commerce.order:refund'),
+              scope: { kind: 'MERCHANT_WORKSPACE', merchantWorkspaceId: workspaceA },
+              sourceRef: 'stale-copied-grant',
+            },
+          ],
+        }),
+        requiredPermission: permission('commerce.order:refund'),
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Order', resourceId: 'order-1' },
+        membershipCandidates: [membershipCandidate('membership-1')],
+        agencyAssignmentCandidates: [],
+      });
+      assert(
+        decision.decision === 'DENY' && decision.reason === 'PERMISSION_NOT_GRANTED',
+        'a permission present only in copied context.permissionGrants, not in the current role-derived snapshot, must never authorize',
       );
     },
   },

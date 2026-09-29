@@ -12,7 +12,13 @@ import {
   type MerchantWorkspaceId,
   type OrganizationId,
 } from '../../packages/domain/src';
-import { evaluateAuthorization, permission, type ExecutionContext } from '../../packages/authz/src';
+import {
+  evaluateAuthorization,
+  permission,
+  resolvePermissionAuthoritySnapshot,
+  ROLE_PERMISSION_POLICY,
+  type ExecutionContext,
+} from '../../packages/authz/src';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -33,6 +39,17 @@ const workspaceA = wid('ws-a');
 const workspaceB = wid('ws-b');
 const userId = internalId('user-1', 'User');
 const membershipId = internalId('membership-1', 'Membership');
+const grantedRole = permission('commerce.product:read');
+const currentPermissionAuthority = resolvePermissionAuthoritySnapshot(
+  membershipId,
+  workspaceA,
+  [grantedRole],
+  ROLE_PERMISSION_POLICY,
+);
+if (currentPermissionAuthority.outcome !== 'RESOLVED') {
+  throw new Error('fixture misconfigured: expected a resolvable permission authority snapshot');
+}
+const currentPermissionSnapshotRef = currentPermissionAuthority.snapshot.authorityVersion;
 
 function baseContext(overrides: Partial<ExecutionContext> = {}): ExecutionContext {
   return {
@@ -42,7 +59,7 @@ function baseContext(overrides: Partial<ExecutionContext> = {}): ExecutionContex
     membershipId,
     membershipStatus: operationalStatus('ACTIVE'),
     activeMerchantWorkspaceId: workspaceA,
-    permissionSnapshotRef: 'perm-snapshot-1',
+    permissionSnapshotRef: currentPermissionSnapshotRef,
     permissionGrants: [
       {
         permission: permission('commerce.product:read'),
@@ -67,7 +84,7 @@ function currentMembership(organizationId: OrganizationId): readonly Membership[
       membershipId,
       userId,
       organizationId,
-      roleRefs: [],
+      roleRefs: [grantedRole],
       status: operationalStatus('ACTIVE'),
     },
   ];
