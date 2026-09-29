@@ -6,6 +6,7 @@ import {
   type CapabilityAuthoritySnapshot,
   type ExecutionContext,
   type ExecutionMaturityLevel,
+  type MembershipRoleReader,
   type ServerResolvedResourceContext,
 } from '../../../packages/authz/src';
 import type {
@@ -72,7 +73,7 @@ export type PrepareExecutionDecision =
       readonly reason: string;
     };
 
-export function prepareActionExecution(input: {
+export async function prepareActionExecution(input: {
   readonly plan: StagedActionPlan;
   readonly executionContext: ExecutionContext;
   readonly target: ServerResolvedResourceContext;
@@ -80,6 +81,8 @@ export function prepareActionExecution(input: {
   readonly membershipCandidates: readonly Membership[];
   /** Non-AGENCY callers pass an explicit empty array — omission does not compile. */
   readonly agencyAssignmentCandidates: readonly AgencyClientAssignment[];
+  /** Server-owned dependency for reading current role keys; never role-key data itself. */
+  readonly roleReader: MembershipRoleReader;
   readonly capability?: CapabilityAuthoritySnapshot;
   readonly policyApprovalRequired?: boolean;
   readonly approval?: ApprovalSnapshot;
@@ -90,7 +93,7 @@ export function prepareActionExecution(input: {
   readonly switches: readonly SafetySwitchSnapshot[];
   readonly provider?: string;
   readonly integrationId?: IntegrationId;
-}): PrepareExecutionDecision {
+}): Promise<PrepareExecutionDecision> {
   const { plan } = input;
   const actionDefinition = getActionDefinition(plan.actionName);
   if (!actionDefinition) return { decision: 'DENY', reason: 'UNREGISTERED_ACTION' };
@@ -101,13 +104,14 @@ export function prepareActionExecution(input: {
     return { decision: 'DENY', reason: 'ACTION_PLAN_WORKSPACE_MISMATCH' };
   }
 
-  const authority = resolveActionAuthority({
+  const authority = await resolveActionAuthority({
     actionName: plan.actionName,
     requestedMaturity: plan.requestedMaturity,
     executionContext: input.executionContext,
     target: input.target,
     membershipCandidates: input.membershipCandidates,
     agencyAssignmentCandidates: input.agencyAssignmentCandidates,
+    roleReader: input.roleReader,
     ...(input.capability ? { capability: input.capability } : {}),
     ...(input.integrationId ? { integrationId: input.integrationId } : {}),
     ...(input.policyApprovalRequired !== undefined

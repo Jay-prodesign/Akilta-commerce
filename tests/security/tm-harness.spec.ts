@@ -6,7 +6,7 @@ import {
   utcTimestamp,
   validateOutboundUrl,
 } from '../../packages/domain/src';
-import { evaluateAuthorization, validateApprovalExecution, type ExecutionContext } from '../../packages/authz/src';
+import { evaluateAuthorization, validateApprovalExecution, type ExecutionContext, type MembershipRoleReader } from '../../packages/authz/src';
 import { checkAiCandidate, type AiGatewayRequest } from '../../packages/ai-gateway/src';
 import { validateProviderResponseEnvelope } from '../../packages/commerce-contract/src';
 import {
@@ -31,7 +31,11 @@ const context: ExecutionContext = {
   assuranceLevel:'STANDARD', channel:'web', requestId:internalId('tm-req','Request'), runId:internalId('tm-run','Run'), locale:localeTag('tr-TR'), occurredAt:now,
 };
 const targetB = { owningOrganizationId: internalId('tm-org-b','Organization'), merchantWorkspaceId: wsB, resourceType:'conversation', resourceId:'conv-b' } as const;
-const tm01 = evaluateAuthorization({ executionContext:context, requiredPermission:'conversation:respond', target:targetB, membershipCandidates:[], agencyAssignmentCandidates:[] });
+/** membershipCandidates:[] denies before permission-authority is ever reached, so an erroring reader is a harmless placeholder. */
+const unreachedRoleReader: MembershipRoleReader = { read: () => Promise.resolve({ outcome: 'READ_ERROR' }) };
+
+async function main() {
+const tm01 = await evaluateAuthorization({ executionContext:context, requiredPermission:'conversation:respond', target:targetB, membershipCandidates:[], agencyAssignmentCandidates:[], roleReader: unreachedRoleReader });
 
 const factSet = resolveFactCandidates({
   approvedFactSetId: internalId('tm-facts','ApprovedFactSet'), merchantWorkspaceId:wsA, intent:'stock',
@@ -90,10 +94,13 @@ const scenarios = [
   {id:'TM-10-CROSS-TENANT-BUDGET-DENY',actual:tm10Cross.decision,expected:'DENY'},
   {id:'TM-11-WEBHOOK-INVALID-SECURITY-DESCRIPTOR',actual:ERROR_DESCRIPTORS.WEBHOOK_INVALID.securitySeverity,expected:'HIGH'},
   {id:'TM-13-DEACTIVATED-KNOWLEDGE-NOT-TRUTH',actual:deletedFact.unknowns.length,expected:1},
-  {id:'TM-14-NORMAL-PLATFORM-INTERNAL-PATH-DENY',actual:evaluateAuthorization({...({executionContext:{...context,actorOrganizationType:'PLATFORM_INTERNAL'},requiredPermission:'conversation:respond',target:{...targetB,merchantWorkspaceId:wsA,owningOrganizationId:orgA},membershipCandidates:[],agencyAssignmentCandidates:[]})}).decision,expected:'DENY'},
+  {id:'TM-14-NORMAL-PLATFORM-INTERNAL-PATH-DENY',actual:(await evaluateAuthorization({executionContext:{...context,actorOrganizationType:'PLATFORM_INTERNAL'},requiredPermission:'conversation:respond',target:{...targetB,merchantWorkspaceId:wsA,owningOrganizationId:orgA},membershipCandidates:[],agencyAssignmentCandidates:[],roleReader:unreachedRoleReader})).decision,expected:'DENY'},
   {id:'TM-15-TIMEOUT-CLASSIFIED-RETRYABLE',actual:ERROR_DESCRIPTORS.PROVIDER_TIMEOUT.retryable,expected:true},
   {id:'TM-15-INTERNAL-UNEXPECTED-FAILS-SAFE-HANDOFF',actual:ERROR_DESCRIPTORS.INTERNAL_UNEXPECTED.customerSafeHandling,expected:'HANDOFF'},
 ] as const;
 const failures=scenarios.filter((s)=>s.actual!==s.expected);
 if(failures.length){for(const f of failures)console.error('FAIL',f);throw new Error(`${failures.length}/${scenarios.length} TM synthetic checks failed`)}
 console.log(`PASS ${scenarios.length}/${scenarios.length}`);for(const s of scenarios)console.log(`PASS ${s.id}`);
+}
+
+void main();

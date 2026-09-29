@@ -1,7 +1,7 @@
 import type { AgencyClientAssignment, Membership, MerchantWorkspaceId, UtcTimestamp } from '../../domain/src';
 import { evaluateAuthorization } from './evaluator';
 import type { Permission } from './permissions';
-import type { ExecutionContext, ServerResolvedResourceContext } from './types';
+import type { ExecutionContext, MembershipRoleReader, ServerResolvedResourceContext } from './types';
 
 export const INTEGRATION_CONTEXT_CHANGE_KINDS = [
   'CONNECT',
@@ -100,7 +100,7 @@ export function prepareIntegrationContextChange(
   };
 }
 
-const permissionsByKind: Readonly<Record<IntegrationContextChangeKind, readonly Permission[]>> = {
+export const permissionsByKind: Readonly<Record<IntegrationContextChangeKind, readonly Permission[]>> = {
   CONNECT: ['integration:connect'],
   DISCONNECT: ['integration:disconnect'],
   RELINK: ['integration:disconnect', 'integration:connect'],
@@ -130,7 +130,7 @@ export type IntegrationContextChangeAuthorityDecision =
  * 2) the D-057 explicit-owner/exact-target/non-interference context-change contract.
  * Neither layer can substitute for the other, and a READY result still grants no downstream store mutation authority.
  */
-export function resolveIntegrationContextChangeAuthority(input: {
+export async function resolveIntegrationContextChangeAuthority(input: {
   readonly plan: IntegrationContextChangePlan;
   readonly executionContext: ExecutionContext;
   readonly target: ServerResolvedResourceContext;
@@ -138,7 +138,9 @@ export function resolveIntegrationContextChangeAuthority(input: {
   readonly membershipCandidates: readonly Membership[];
   /** Non-AGENCY callers pass an explicit empty array — omission does not compile. */
   readonly agencyAssignmentCandidates: readonly AgencyClientAssignment[];
-}): IntegrationContextChangeAuthorityDecision {
+  /** Server-owned dependency for reading current role keys; never role-key data itself. */
+  readonly roleReader: MembershipRoleReader;
+}): Promise<IntegrationContextChangeAuthorityDecision> {
   const prepared = prepareIntegrationContextChange(input.plan);
   if (prepared.decision === 'DENY') return prepared;
 
@@ -148,12 +150,13 @@ export function resolveIntegrationContextChangeAuthority(input: {
 
   const matchedPermissions: Permission[] = [];
   for (const requiredPermission of permissionsByKind[input.plan.kind]) {
-    const authz = evaluateAuthorization({
+    const authz = await evaluateAuthorization({
       executionContext: input.executionContext,
       requiredPermission,
       target: input.target,
       membershipCandidates: input.membershipCandidates,
       agencyAssignmentCandidates: input.agencyAssignmentCandidates,
+      roleReader: input.roleReader,
     });
     if (authz.decision === 'DENY') {
       return {
