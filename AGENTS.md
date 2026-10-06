@@ -2,6 +2,24 @@
 
 This file defines engineering capability roles and authority for this repository. It is an operational summary only; it does not replace canonical governance records.
 
+## AKILTA First-Party Inheritance
+
+AI Commerce / AKILTA Commerce is centrally registered as **AKP-0001 / AKILTA_FIRST_PARTY**.
+
+When company-level inheritance is material to a task, use this order:
+
+1. fresh-read current AKILTA company canonical state and the AKILTA First-Party Product Registry;
+2. fresh-read the current AKILTA First-Party Product Contract;
+3. if the task materially touches ownership, licensing, distribution, third-party material, donor reuse, provenance, public-source posture, AI-assisted/generated material, or release-rights questions, also fresh-read the current AKILTA IP/Licensing policy;
+4. fresh-read the current AI Commerce canonical state, selected task/handoff and product-local authority;
+5. inspect live repository evidence for implementation state.
+
+Company-level rules come from AKILTA. Commerce-domain, roadmap, architecture, task selection, release and execution truth remain AI Commerce-local unless a more specific current canonical decision says otherwise.
+
+First-party status does **not** authorize writes to AKILTA company canonical artifacts, other AKILTA product repositories, shared databases, shared credentials, or silent cross-project code movement. Cross-project reuse/integration must use an explicitly admitted, versioned boundary and preserve AI Commerce re-authorization of commerce effects.
+
+Do not duplicate the company First-Party Product Contract inside this repository. This section is a discoverability pointer only.
+
 ## Roles
 
 - **Brain / Architect / Task Authority / Final Verifier**
@@ -32,11 +50,12 @@ Those states require Brain verification with evidence.
 ## Authority Sources
 
 - Google Drive canonical AI Commerce project records remain the project/product/architecture/governance authority.
-- This GitHub repository is the engineering source-of-truth only for engineering artifacts once formally admitted and verified here.
+- This GitHub repository is the engineering source-of-truth for repository-local engineering artifacts and live implementation evidence.
 - Conversation history (chat transcripts) is not an authority source.
 - Architecture and CR-V1 scope must not be silently changed by repository work.
-- A material conflict between repository state and canonical project truth requires `ESCALATION_REQUIRED` — stop and escalate to the AI Commerce Brain before changing architecture or scope.
+- A material conflict between repository state and canonical project truth requires reconciliation before changing architecture or scope.
 - Routine founder/manual relay between engineering models is not the intended workflow. Task, checkpoint, and evidence continuity must be repository-native (issues, PRs, docs/exec-plans, commit history) rather than depending on manual relay.
+- The current engineering selector remains the current AI Commerce canonical selector. A docs/governance task must not silently replace or interrupt it.
 
 ## D-090 — Seven Engineering Invariants (Mandatory Summary)
 
