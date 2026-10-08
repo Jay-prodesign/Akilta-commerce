@@ -155,8 +155,8 @@ const agencyAssignment: AgencyClientAssignment = {
 
 /**
  * roleRefs is no longer the permission-authority source (an authoritative MembershipRoleReader is)
- * so it is always empty here — legacy permission-literal roleRefs must not be preserved as product
- * semantics.
+ * so the helper defaults to empty. Adversarial tests may explicitly override roleRefs
+ * to prove stale caller-copied role claims cannot widen server-current permission authority.
  */
 function membershipCandidate(id: string, overrides: Partial<Membership> = {}): Membership {
   return {
@@ -738,6 +738,32 @@ const cases: Array<{ id: string; run: () => void | Promise<void> }> = [
       assert(
         decision.decision === 'DENY' && decision.reason === 'PERMISSION_NOT_GRANTED',
         'a permission present only in copied context.permissionGrants, not in the current role-derived snapshot, must never authorize',
+      );
+    },
+  },
+  {
+    id: 'PERM-GEN-10B-ELEVATED-STALE-CANDIDATE-ROLES-CANNOT-WIDEN-AUTHORITATIVE-LOWER-ROLES',
+    run: async () => {
+      // A caller supplies an exact-current membership with stale elevated CLIENT_SUPPORT_AGENT
+      // roleRefs, but the independently authoritative reader says only CLIENT_ANALYST remains.
+      // Compute the claimed ref from that LOWER current state so denial cannot be explained by
+      // a stale snapshot ref rather than rejection of the copied role/grant authority.
+      const authoritativeRoleKeys = ['CLIENT_ANALYST'];
+      const current = resolvePermissionAuthoritySnapshot(
+        membership1Id, workspaceA, authoritativeRoleKeys, ROLE_PERMISSION_POLICY,
+      );
+      assert(current.outcome === 'RESOLVED', 'lower authoritative role state must resolve');
+      const decision = await evaluateAuthorization({
+        executionContext: baseContext({ permissionSnapshotRef: current.snapshot.authorityVersion }),
+        requiredPermission: grantedPermission,
+        target: { owningOrganizationId: merchantOrg, merchantWorkspaceId: workspaceA, resourceType: 'Product', resourceId: 'p1' },
+        membershipCandidates: [membershipCandidate('membership-1', { roleRefs: [grantedRoleKey] })],
+        agencyAssignmentCandidates: [],
+        roleReader: fakeReader({ outcome: 'READ_SUCCESS', roleKeys: authoritativeRoleKeys }),
+      });
+      assert(
+        decision.decision === 'DENY' && decision.reason === 'PERMISSION_NOT_GRANTED',
+        'fresh lower authoritative role snapshot must deny despite elevated stale candidate.roleRefs and copied context grants; stale-ref mismatch is not an acceptable explanation',
       );
     },
   },
