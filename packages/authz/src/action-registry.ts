@@ -7,7 +7,7 @@ import type {
 } from '../../domain/src';
 import { evaluateAuthorization } from './evaluator';
 import type { Permission } from './permissions';
-import type { ExecutionContext, ServerResolvedResourceContext } from './types';
+import type { ExecutionContext, MembershipRoleReader, ServerResolvedResourceContext } from './types';
 
 export const ACTION_RISK_CLASSES = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5'] as const;
 export type ActionRiskClass = (typeof ACTION_RISK_CLASSES)[number];
@@ -166,7 +166,7 @@ export type ActionAuthorityDecision =
       readonly detail?: string;
     };
 
-export function resolveActionAuthority(input: {
+export async function resolveActionAuthority(input: {
   readonly actionName: string;
   readonly requestedMaturity: ExecutionMaturityLevel;
   readonly executionContext: ExecutionContext;
@@ -175,10 +175,12 @@ export function resolveActionAuthority(input: {
   readonly membershipCandidates: readonly Membership[];
   /** Non-AGENCY callers pass an explicit empty array — omission does not compile. */
   readonly agencyAssignmentCandidates: readonly AgencyClientAssignment[];
+  /** Server-owned dependency for reading current role keys; never role-key data itself. */
+  readonly roleReader: MembershipRoleReader;
   readonly capability?: CapabilityAuthoritySnapshot;
   readonly integrationId?: IntegrationId;
   readonly policyApprovalRequired?: boolean;
-}): ActionAuthorityDecision {
+}): Promise<ActionAuthorityDecision> {
   const definition = getActionDefinition(input.actionName);
   if (!definition) return { decision: 'DENY', reason: 'UNREGISTERED_ACTION' };
 
@@ -188,13 +190,14 @@ export function resolveActionAuthority(input: {
     return { decision: 'DENY', reason: 'MATURITY_CEILING_EXCEEDED' };
   }
 
-  const authz = evaluateAuthorization({
+  const authz = await evaluateAuthorization({
     executionContext: input.executionContext,
     requiredPermission: definition.requiredPermission,
     target: input.target,
     module: definition.module,
     membershipCandidates: input.membershipCandidates,
     agencyAssignmentCandidates: input.agencyAssignmentCandidates,
+    roleReader: input.roleReader,
   });
   if (authz.decision === 'DENY') {
     return { decision: 'DENY', reason: 'AUTHORIZATION_DENIED', detail: authz.reason };

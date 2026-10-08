@@ -1,4 +1,5 @@
 import { resolveCurrentAgencyAssignment, resolveCurrentMembership } from '../../domain/src/tenancy';
+import { ROLE_PERMISSION_POLICY, resolveCurrentPermissionAuthority } from './permission-authority';
 import type { ResourceScope, AuthorizationDecision, AuthorizationRequest, PermissionGrant } from './types';
 
 function deny(
@@ -27,7 +28,7 @@ function grantMatchesTarget(grant: PermissionGrant, request: AuthorizationReques
   );
 }
 
-export function evaluateAuthorization(request: AuthorizationRequest): AuthorizationDecision {
+export async function evaluateAuthorization(request: AuthorizationRequest): Promise<AuthorizationDecision> {
   const { executionContext: context, target } = request;
 
   // Current authority is always resolved server-side from candidate evidence at
@@ -86,7 +87,25 @@ export function evaluateAuthorization(request: AuthorizationRequest): Authorizat
     return deny('AUTH_PERMISSION_DENIED', 'PLATFORM_INTERNAL_REQUIRES_PRIVILEGED_PATH');
   }
 
-  const grant = context.permissionGrants.find(
+  // Current permission authority is always recomputed server-side by reading current role keys
+  // through the server-owned MembershipRoleReader port for the exact resolved membershipId — never
+  // from context.permissionGrants (a caller-copied claim/cache correlation only) and never from
+  // Membership.roleRefs on the caller-supplied membershipCandidates evidence, which cannot itself
+  // prove currentness the way an authoritative membership_roles read can.
+  const permissionAuthority = await resolveCurrentPermissionAuthority(
+    request.roleReader,
+    membershipResolution.record.membershipId,
+    target.merchantWorkspaceId,
+    ROLE_PERMISSION_POLICY,
+  );
+  if (permissionAuthority.outcome === 'FAILED') {
+    return deny('AUTH_PERMISSION_DENIED', 'PERMISSION_AUTHORITY_UNRESOLVED');
+  }
+  if (context.permissionSnapshotRef !== permissionAuthority.snapshot.authorityVersion) {
+    return deny('AUTH_PERMISSION_DENIED', 'PERMISSION_AUTHORITY_STALE_REF');
+  }
+
+  const grant = permissionAuthority.snapshot.effectiveGrants.find(
     (candidate) =>
       candidate.permission === request.requiredPermission && grantMatchesTarget(candidate, request),
   );
