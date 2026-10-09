@@ -1,4 +1,5 @@
 export * from './evaluator';
+export * from './commerce-session-link';
 export * from './permission-authority';
 export * from './permissions';
 export * from './types';
