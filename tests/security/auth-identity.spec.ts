@@ -241,14 +241,24 @@ const cases: Array<{ id: string; run: () => void | Promise<void> }> = [
       };
       for (const candidates of permutations([identity, conflict, noise])) {
         const result = resolveAuthenticatedPrincipal(verifiedAttempt(), candidates, now);
-        assert(result.status === 'DENIED', 'duplicate exact identity bindings must deny regardless of order');
+        assert(
+          result.status === 'DENIED' && result.reason === 'IDENTITY_CONFLICT',
+          'duplicate exact identity bindings must deny as a conflict, not a plain not-bound, regardless of order',
+        );
       }
       const inactive = { ...conflict, status: operationalStatus('REVOKED') };
       for (const candidates of permutations([identity, inactive, noise])) {
         const result = resolveAuthenticatedPrincipal(verifiedAttempt(), candidates, now);
-        assert(result.status === 'DENIED', 'inactive duplicate exact identity still conflicts');
+        assert(
+          result.status === 'DENIED' && result.reason === 'IDENTITY_CONFLICT',
+          'inactive duplicate exact identity still conflicts, not merely not-bound',
+        );
       }
-      assert(resolveAuthenticatedPrincipal(verifiedAttempt(), [noise], now).status === 'DENIED', 'unbound subject denied');
+      const unbound = resolveAuthenticatedPrincipal(verifiedAttempt(), [noise], now);
+      assert(
+        unbound.status === 'DENIED' && unbound.reason === 'SUBJECT_NOT_BOUND',
+        'a genuinely absent subject is SUBJECT_NOT_BOUND, distinct from a conflict',
+      );
       assert(resolveAuthenticatedPrincipal(verifiedAttempt(), [identity, noise], now).status === 'AUTHENTICATED', 'wrong-scope noise must not block unique identity');
     },
   },

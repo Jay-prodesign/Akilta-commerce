@@ -112,6 +112,7 @@ export type IdentityResolutionResult =
         | 'SESSION_REVOKED'
         | 'SESSION_EXPIRED'
         | 'SUBJECT_NOT_BOUND'
+        | 'IDENTITY_CONFLICT'
         | 'IDENTITY_INACTIVE'
         | 'IDENTITY_PROVIDER_MISMATCH';
     }
@@ -154,8 +155,10 @@ export function resolveAuthenticatedPrincipal(
       candidate.authProvider === proof.authProvider &&
       candidate.externalSubjectRef === proof.externalSubjectRef,
   );
-  // Ambiguous exact bindings must never select a principal by input order.
-  if (matches.length !== 1) return { status: 'DENIED', reason: 'SUBJECT_NOT_BOUND' };
+  // Ambiguous exact bindings must never select a principal by input order:
+  // a genuine duplicate-identity data state is a conflict, not an absence.
+  if (matches.length > 1) return { status: 'DENIED', reason: 'IDENTITY_CONFLICT' };
+  if (matches.length === 0) return { status: 'DENIED', reason: 'SUBJECT_NOT_BOUND' };
   const identity = matches[0];
   if (!identity) return { status: 'DENIED', reason: 'SUBJECT_NOT_BOUND' };
   if (identity.authProvider !== proof.authProvider) {
