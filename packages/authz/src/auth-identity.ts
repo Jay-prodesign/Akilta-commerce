@@ -112,6 +112,7 @@ export type IdentityResolutionResult =
         | 'SESSION_REVOKED'
         | 'SESSION_EXPIRED'
         | 'SUBJECT_NOT_BOUND'
+        | 'IDENTITY_CONFLICT'
         | 'IDENTITY_INACTIVE'
         | 'IDENTITY_PROVIDER_MISMATCH';
     }
@@ -149,11 +150,16 @@ export function resolveAuthenticatedPrincipal(
     return { status: 'DENIED', reason: 'SESSION_EXPIRED' };
   }
 
-  const identity = identities.find(
+  const matches = identities.filter(
     (candidate) =>
       candidate.authProvider === proof.authProvider &&
       candidate.externalSubjectRef === proof.externalSubjectRef,
   );
+  // Ambiguous exact bindings must never select a principal by input order:
+  // a genuine duplicate-identity data state is a conflict, not an absence.
+  if (matches.length > 1) return { status: 'DENIED', reason: 'IDENTITY_CONFLICT' };
+  if (matches.length === 0) return { status: 'DENIED', reason: 'SUBJECT_NOT_BOUND' };
+  const identity = matches[0];
   if (!identity) return { status: 'DENIED', reason: 'SUBJECT_NOT_BOUND' };
   if (identity.authProvider !== proof.authProvider) {
     return { status: 'DENIED', reason: 'IDENTITY_PROVIDER_MISMATCH' };
@@ -184,11 +190,12 @@ export function resolveAuthOrganizationBinding(
   externalOrganizationRef: ExternalAuthOrganizationRef,
   bindings: readonly AuthOrganizationBinding[],
 ): OrganizationId | null {
-  const binding = bindings.find(
+  const matches = bindings.filter(
     (candidate) =>
       candidate.authProvider === authProvider &&
       candidate.externalOrganizationRef === externalOrganizationRef &&
       isOperationallyActive(candidate.status),
   );
-  return binding?.internalOrganizationId ?? null;
+  // Multiple active exact bindings are a conflict, not an ordering decision.
+  return matches.length === 1 ? (matches[0]?.internalOrganizationId ?? null) : null;
 }

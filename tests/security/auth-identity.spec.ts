@@ -227,6 +227,62 @@ const cases: Array<{ id: string; run: () => void | Promise<void> }> = [
     },
   },
   {
+    id: 'XSESS-A0-DUPLICATE-EXACT-IDENTITIES-DENIED',
+    run: () => {
+      const conflict: UserIdentity = {
+        ...identity,
+        userIdentityId: internalId('uid-conflict', 'UserIdentity'),
+        userId: internalId('user-conflict', 'User'),
+      };
+      const noise: UserIdentity = {
+        ...identity,
+        userIdentityId: internalId('uid-noise', 'UserIdentity'),
+        externalSubjectRef: externalAuthSubjectRef('other-subject'),
+      };
+      for (const candidates of permutations([identity, conflict, noise])) {
+        const result = resolveAuthenticatedPrincipal(verifiedAttempt(), candidates, now);
+        assert(
+          result.status === 'DENIED' && result.reason === 'IDENTITY_CONFLICT',
+          'duplicate exact identity bindings must deny as a conflict, not a plain not-bound, regardless of order',
+        );
+      }
+      const inactive = { ...conflict, status: operationalStatus('REVOKED') };
+      for (const candidates of permutations([identity, inactive, noise])) {
+        const result = resolveAuthenticatedPrincipal(verifiedAttempt(), candidates, now);
+        assert(
+          result.status === 'DENIED' && result.reason === 'IDENTITY_CONFLICT',
+          'inactive duplicate exact identity still conflicts, not merely not-bound',
+        );
+      }
+      const unbound = resolveAuthenticatedPrincipal(verifiedAttempt(), [noise], now);
+      assert(
+        unbound.status === 'DENIED' && unbound.reason === 'SUBJECT_NOT_BOUND',
+        'a genuinely absent subject is SUBJECT_NOT_BOUND, distinct from a conflict',
+      );
+      assert(resolveAuthenticatedPrincipal(verifiedAttempt(), [identity, noise], now).status === 'AUTHENTICATED', 'wrong-scope noise must not block unique identity');
+    },
+  },
+  {
+    id: 'XSESS-A0-DUPLICATE-ACTIVE-ORG-BINDINGS-DENIED',
+    run: () => {
+      const conflict: AuthOrganizationBinding = {
+        ...orgBinding,
+        internalOrganizationId: otherOrg,
+        sourceRef: 'auth-binding:conflict',
+      };
+      const inactive = { ...conflict, status: operationalStatus('REVOKED') };
+      const wrongProvider = { ...conflict, authProvider: authProviderKey('other-provider') };
+      const wrongOrg = { ...conflict, externalOrganizationRef: externalAuthOrganizationRef('other-org') };
+      for (const candidates of permutations([orgBinding, conflict, inactive])) {
+        assert(resolveAuthOrganizationBinding(provider, orgBinding.externalOrganizationRef, candidates) === null, 'ambiguous active exact org bindings must not choose first');
+      }
+      for (const candidates of permutations([orgBinding, inactive, wrongProvider, wrongOrg])) {
+        assert(resolveAuthOrganizationBinding(provider, orgBinding.externalOrganizationRef, candidates) === merchantOrg, 'inactive and wrong-scope bindings must not conflict');
+      }
+      assert(resolveAuthOrganizationBinding(provider, orgBinding.externalOrganizationRef, [inactive]) === null, 'inactive-only binding must not resolve');
+    },
+  },
+  {
     id: 'AUTHZ-A01-FORGED-EXTERNAL-ORG-NOT-BOUND',
     run: () => {
       const resolved = resolveAuthOrganizationBinding(
