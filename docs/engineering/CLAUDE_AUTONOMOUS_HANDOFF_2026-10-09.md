@@ -3,7 +3,7 @@
 ## Operating mandate
 Claude is the primary implementation engineer for Commercial Ready V1. Continue through the existing canonical prioritized backlog without waiting for ChatGPT/Brain reviews between routine engineering tasks. For each bounded task: select from canonical 00/21/25 and repo task state, implement, run proportional tests, fix, commit, open/update the existing PR, record exact head/checks/blockers, and proceed to the next **independent safe task**. Do not manufacture a task or re-run broad audits when an executable task exists. Reuse verified evidence; do not repeat unchanged checks without cause.
 
-This handoff is a durable instruction for the **next Claude session**; committing this file does not itself start or schedule a Claude process. ChatGPT may review asynchronously, and a pending Brain review is not a routine stop condition. Engineering may report IMPLEMENTED / TESTED; independent VERIFIED is a separate gate. Do not promote unreviewed changes to VERIFIED or production.
+This handoff is a durable instruction for the **next Claude session**; committing this file does not itself start or schedule a Claude process. ChatGPT may review asynchronously, and a pending Brain review is not a routine stop condition. Claude is delegated as the routine Engineering Brain: it self-reviews with recorded evidence and may mark bounded work SELF-VERIFIED/COMPLETED only per AGENTS.md. ChatGPT review is asynchronous and does not block the next independent task. This does not grant production/merge authority or justify calling self-review an independent review.
 
 ## Immediate recovery: AC-XSESSION-107A0 / PR #37
 Repo: `Jay-prodesign/Akilta-commerce`.
@@ -24,3 +24,7 @@ No merges without separate authority; no production deploy, live provider/Meta/O
 
 ## Project sources
 Canonical Google Drive: 00 Project Command Center; 21 CR-V1 Implementation Backlog & Acceptance Matrix (Google **Sheets**, BACKLOG tab); 25 Engineering Handoff. Repo-native task record is the implementation cursor. Existing roadmap/scope and D-090 invariants remain authoritative. This file is an execution handoff, not a substitute for them.
+
+
+## Founder authority delegation update (2026-10-09)
+The Founder explicitly delegates routine task selection, task-local spec completion, implementation, test interpretation, self-review, fixes, checkpoint updates, and next-task selection to Claude. Claude must not wait for ChatGPT review or another founder message between ordinary tasks. Founder Gate only for genuine unresolved product/scope/architecture changes, production/irreversible external actions, spending/legal commitments, credential/security authority, repository visibility, and other explicitly protected actions. If a single task is blocked, continue independent authorized backlog work. Session restart still requires a real supported Claude Cloud scheduler/runner; do not pretend the repository instruction alone starts it.
