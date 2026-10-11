@@ -66,6 +66,27 @@ const cases: Array<{ id: string; run: () => void }> = [
     },
   },
   {
+    id: 'XSESS-04-REVOKING-ONE-LINK-DOES-NOT-FENCE-AN-UNRELATED-LINK',
+    run: () => {
+      // XSESS-04: external logout/revocation must fence only sessions actually derived from that
+      // link, never an unrelated independently authenticated Commerce session/link — even for the
+      // same principal.
+      const revokedLinkState = { generation: 1, revoked: true };
+      const liveOtherLinkState = { generation: 1, revoked: false };
+
+      const revokedClaim = resolveCommerceSessionLinkSnapshot(principalId, linkRef, revokedLinkState).linkVersion;
+      const revokedResult = evaluateSessionLinkCurrentness(revokedClaim, principalId, linkRef, revokedLinkState);
+      assert(revokedResult.status === 'DENIED' && revokedResult.reason === 'SESSION_LINK_REVOKED', 'the revoked link itself must deny');
+
+      const otherLinkClaim = resolveCommerceSessionLinkSnapshot(principalId, otherLinkRef, liveOtherLinkState).linkVersion;
+      const otherLinkResult = evaluateSessionLinkCurrentness(otherLinkClaim, principalId, otherLinkRef, liveOtherLinkState);
+      assert(
+        otherLinkResult.status === 'READY',
+        'an unrelated link for the same principal must remain unaffected by a different link being revoked',
+      );
+    },
+  },
+  {
     id: 'XSESS-03-SNAPSHOT-DERIVATION-IS-DETERMINISTIC-AND-SCOPE-SENSITIVE',
     run: () => {
       const state = { generation: 5, revoked: false };
