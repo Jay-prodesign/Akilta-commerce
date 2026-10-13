@@ -13,3 +13,15 @@
 ## Authentication identity boundary addition
 
 `0001_foundation.sql` now includes provider-neutral `auth_organization_bindings`. An external auth organization reference maps only to an internal `Organization`; it never maps directly to `MerchantWorkspace` and never grants permissions. Session/provider claims remain authentication evidence only; application Membership, AgencyClientAssignment and permission checks stay authoritative.
+
+## SC-02 provider-store binding addition
+
+`0001_foundation.sql` now includes `provider_store_bindings` (ID-G10): a provider-originated store (e.g. a Shopify shop install) maps to exactly one `MerchantWorkspace`, independently of `auth_organization_bindings` and never merged with it by similarity. `generation` is an optimistic-concurrency (CAS) column — every transition (`apps/api/src/provider-store-binding-store.ts`) must match it exactly via `UPDATE ... WHERE generation = $n`, a single atomically-consistent statement requiring no explicit transaction. `revoked` is sticky until an explicit REINSTALL. This table is authentication/binding evidence only; it never itself grants permission, workspace, or action authority.
+
+## SC-02 commerce session-link addition
+
+`0001_foundation.sql` now includes `commerce_session_links` (XSESS-06): the authoritative generation/revoked record a linked Commerce session's currentness is evaluated against, independent of any externally-presented session token/cache. Same CAS discipline and single-statement-atomic transition technique as `provider_store_bindings`, applied via `apps/api/src/commerce-session-link-store.ts`. This table never itself grants workspace/permission authority.
+
+## SC-02 workspace-context addition
+
+`0001_foundation.sql` now includes `workspace_contexts` (XSESS-05): one principal's currently active workspace, fenced by `generation` so a stale cache/tab cannot act in the old or new workspace merely by copying an id — switching back to the same workspace still advances the generation. Applied via `apps/api/src/workspace-context-store.ts`, UPDATE-only (no insert path): a principal's very first workspace assignment is a separate, not-yet-selected onboarding concern.

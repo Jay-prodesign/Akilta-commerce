@@ -35,6 +35,54 @@ CREATE TABLE users (
   updated_at TIMESTAMPTZ NOT NULL
 );
 
+-- SC-02 provider-store binding (ID-G10): a provider-originated store (e.g. a Shopify shop) maps to
+-- exactly one MerchantWorkspace at a time, independently of any other provider/organization auth
+-- binding and never merged with one by similarity. `generation` is the CAS precondition every
+-- transition must match; `revoked` is sticky (set by UNINSTALL) until an explicit REINSTALL advances
+-- the generation again. Never a direct authority grant by itself — permission/membership checks
+-- remain the sole authorization source.
+CREATE TABLE provider_store_bindings (
+  provider_store_binding_id TEXT PRIMARY KEY,
+  auth_provider TEXT NOT NULL,
+  external_store_ref TEXT NOT NULL,
+  merchant_workspace_id TEXT NOT NULL REFERENCES merchant_workspaces(merchant_workspace_id) ON DELETE RESTRICT,
+  generation INTEGER NOT NULL,
+  revoked BOOLEAN NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL,
+  UNIQUE (auth_provider, external_store_ref)
+);
+CREATE INDEX provider_store_bindings_workspace_idx
+  ON provider_store_bindings(merchant_workspace_id);
+
+-- SC-02 commerce session-link CAS state (XSESS-06): the authoritative generation/revoked record a
+-- linked Commerce session's currentness is evaluated against. `generation` is the CAS precondition
+-- every link/relink/unlink transition must match; `revoked` is sticky until a fresh link creates a
+-- new scope. This table never itself grants workspace/permission authority.
+CREATE TABLE commerce_session_links (
+  commerce_session_link_id TEXT PRIMARY KEY,
+  principal_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
+  external_link_ref TEXT NOT NULL,
+  generation INTEGER NOT NULL,
+  revoked BOOLEAN NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL,
+  UNIQUE (principal_id, external_link_ref)
+);
+CREATE INDEX commerce_session_links_principal_idx
+  ON commerce_session_links(principal_id);
+
+-- SC-02 workspace-context CAS state (XSESS-05): one principal's currently active workspace, fenced
+-- by `generation` so a stale cache/tab cannot act in the old or new workspace merely by copying an
+-- id. A principal's very first workspace context (onboarding) is assigned by a separate, not-yet-
+-- selected flow; this table only ever receives UPDATEs from the switch adapter, never inserts.
+CREATE TABLE workspace_contexts (
+  principal_id TEXT PRIMARY KEY REFERENCES users(user_id) ON DELETE RESTRICT,
+  merchant_workspace_id TEXT NOT NULL REFERENCES merchant_workspaces(merchant_workspace_id) ON DELETE RESTRICT,
+  generation INTEGER NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+
 CREATE TABLE user_identities (
   user_identity_id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
