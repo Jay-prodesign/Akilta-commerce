@@ -3,6 +3,7 @@ export * from './commerce-session-link';
 export * from './commerce-session-link-transition';
 export * from './workspace-context-generation';
 export * from './provider-store-binding';
+export * from './conversation-ownership-transition';
 export * from './federated-exchange-admission';
 export * from './permission-authority';
 export * from './permissions';
