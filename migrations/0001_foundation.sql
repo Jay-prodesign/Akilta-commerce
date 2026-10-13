@@ -35,6 +35,26 @@ CREATE TABLE users (
   updated_at TIMESTAMPTZ NOT NULL
 );
 
+-- SC-02 provider-store binding (ID-G10): a provider-originated store (e.g. a Shopify shop) maps to
+-- exactly one MerchantWorkspace at a time, independently of any other provider/organization auth
+-- binding and never merged with one by similarity. `generation` is the CAS precondition every
+-- transition must match; `revoked` is sticky (set by UNINSTALL) until an explicit REINSTALL advances
+-- the generation again. Never a direct authority grant by itself — permission/membership checks
+-- remain the sole authorization source.
+CREATE TABLE provider_store_bindings (
+  provider_store_binding_id TEXT PRIMARY KEY,
+  auth_provider TEXT NOT NULL,
+  external_store_ref TEXT NOT NULL,
+  merchant_workspace_id TEXT NOT NULL REFERENCES merchant_workspaces(merchant_workspace_id) ON DELETE RESTRICT,
+  generation INTEGER NOT NULL,
+  revoked BOOLEAN NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL,
+  UNIQUE (auth_provider, external_store_ref)
+);
+CREATE INDEX provider_store_bindings_workspace_idx
+  ON provider_store_bindings(merchant_workspace_id);
+
 CREATE TABLE user_identities (
   user_identity_id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,

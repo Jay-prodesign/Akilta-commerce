@@ -13,3 +13,7 @@
 ## Authentication identity boundary addition
 
 `0001_foundation.sql` now includes provider-neutral `auth_organization_bindings`. An external auth organization reference maps only to an internal `Organization`; it never maps directly to `MerchantWorkspace` and never grants permissions. Session/provider claims remain authentication evidence only; application Membership, AgencyClientAssignment and permission checks stay authoritative.
+
+## SC-02 provider-store binding addition
+
+`0001_foundation.sql` now includes `provider_store_bindings` (ID-G10): a provider-originated store (e.g. a Shopify shop install) maps to exactly one `MerchantWorkspace`, independently of `auth_organization_bindings` and never merged with it by similarity. `generation` is an optimistic-concurrency (CAS) column — every transition (`apps/api/src/provider-store-binding-store.ts`) must match it exactly via `UPDATE ... WHERE generation = $n`, a single atomically-consistent statement requiring no explicit transaction. `revoked` is sticky until an explicit REINSTALL. This table is authentication/binding evidence only; it never itself grants permission, workspace, or action authority.
