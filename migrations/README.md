@@ -21,3 +21,7 @@
 ## SC-02 commerce session-link addition
 
 `0001_foundation.sql` now includes `commerce_session_links` (XSESS-06): the authoritative generation/revoked record a linked Commerce session's currentness is evaluated against, independent of any externally-presented session token/cache. Same CAS discipline and single-statement-atomic transition technique as `provider_store_bindings`, applied via `apps/api/src/commerce-session-link-store.ts`. This table never itself grants workspace/permission authority.
+
+## SC-02 workspace-context addition
+
+`0001_foundation.sql` now includes `workspace_contexts` (XSESS-05): one principal's currently active workspace, fenced by `generation` so a stale cache/tab cannot act in the old or new workspace merely by copying an id — switching back to the same workspace still advances the generation. Applied via `apps/api/src/workspace-context-store.ts`, UPDATE-only (no insert path): a principal's very first workspace assignment is a separate, not-yet-selected onboarding concern.

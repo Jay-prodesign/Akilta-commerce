@@ -72,6 +72,17 @@ CREATE TABLE commerce_session_links (
 CREATE INDEX commerce_session_links_principal_idx
   ON commerce_session_links(principal_id);
 
+-- SC-02 workspace-context CAS state (XSESS-05): one principal's currently active workspace, fenced
+-- by `generation` so a stale cache/tab cannot act in the old or new workspace merely by copying an
+-- id. A principal's very first workspace context (onboarding) is assigned by a separate, not-yet-
+-- selected flow; this table only ever receives UPDATEs from the switch adapter, never inserts.
+CREATE TABLE workspace_contexts (
+  principal_id TEXT PRIMARY KEY REFERENCES users(user_id) ON DELETE RESTRICT,
+  merchant_workspace_id TEXT NOT NULL REFERENCES merchant_workspaces(merchant_workspace_id) ON DELETE RESTRICT,
+  generation INTEGER NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+
 CREATE TABLE user_identities (
   user_identity_id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,

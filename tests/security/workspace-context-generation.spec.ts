@@ -1,7 +1,11 @@
 import {
   evaluateWorkspaceContextCurrentness,
   resolveWorkspaceContextSnapshot,
+  resolveWorkspaceContextSwitch,
+  workspaceContextIdempotencyKey,
   type ContextPrincipalId,
+  type WorkspaceContextIdempotencyKey,
+  type WorkspaceContextState,
 } from '../../packages/authz/src';
 import { internalId, type MerchantWorkspaceId } from '../../packages/domain/src';
 
@@ -93,6 +97,99 @@ const cases: Array<{ id: string; run: () => void }> = [
 
       const differentWorkspace = resolveWorkspaceContextSnapshot(principalId, { ...state, merchantWorkspaceId: workspaceB });
       assert(a.contextVersion !== differentWorkspace.contextVersion, 'a workspace change must change contextVersion even at the same generation');
+    },
+  },
+  {
+    id: 'XSESS-05-SWITCH-WITH-MATCHING-CAS-ADVANCES-GENERATION-BY-EXACTLY-ONE',
+    run: () => {
+      const noPriorApplications: ReadonlyMap<WorkspaceContextIdempotencyKey, WorkspaceContextState> = new Map();
+      const current = { merchantWorkspaceId: workspaceA, generation: 1 };
+      const result = resolveWorkspaceContextSwitch(
+        {
+          principalId,
+          expectedGeneration: 1,
+          targetMerchantWorkspaceId: workspaceB,
+          idempotencyKey: workspaceContextIdempotencyKey('switch-op-1'),
+        },
+        current,
+        noPriorApplications,
+      );
+      assert(
+        result.status === 'APPLIED' && result.resultingState.generation === 2 && result.resultingState.merchantWorkspaceId === workspaceB,
+        'a switch whose expectedGeneration matches current must apply, advancing the generation by exactly one and repointing to the new workspace',
+      );
+    },
+  },
+  {
+    id: 'XSESS-05-SWITCH-BACK-TO-SAME-WORKSPACE-STILL-ADVANCES-GENERATION',
+    run: () => {
+      const noPriorApplications: ReadonlyMap<WorkspaceContextIdempotencyKey, WorkspaceContextState> = new Map();
+      const current = { merchantWorkspaceId: workspaceA, generation: 2 };
+      const result = resolveWorkspaceContextSwitch(
+        {
+          principalId,
+          expectedGeneration: 2,
+          targetMerchantWorkspaceId: workspaceA,
+          idempotencyKey: workspaceContextIdempotencyKey('switch-op-2'),
+        },
+        current,
+        noPriorApplications,
+      );
+      assert(
+        result.status === 'APPLIED' && result.resultingState.generation === 3,
+        'switching back to the same workspace id must still advance the generation — workspace id alone is never evidence of currentness',
+      );
+    },
+  },
+  {
+    id: 'XSESS-05-CONCURRENT-COMPETING-SWITCHES-ONE-WINS-OTHER-CONFLICTS',
+    run: () => {
+      const noPriorApplications: ReadonlyMap<WorkspaceContextIdempotencyKey, WorkspaceContextState> = new Map();
+      const base = { merchantWorkspaceId: workspaceA, generation: 1 };
+      const first = resolveWorkspaceContextSwitch(
+        {
+          principalId,
+          expectedGeneration: 1,
+          targetMerchantWorkspaceId: workspaceB,
+          idempotencyKey: workspaceContextIdempotencyKey('writer-a'),
+        },
+        base,
+        noPriorApplications,
+      );
+      assert(first.status === 'APPLIED', 'the first writer against the then-current generation must succeed');
+
+      const second = resolveWorkspaceContextSwitch(
+        {
+          principalId,
+          expectedGeneration: 1,
+          targetMerchantWorkspaceId: workspaceA,
+          idempotencyKey: workspaceContextIdempotencyKey('writer-b'),
+        },
+        first.status === 'APPLIED' ? first.resultingState : base,
+        noPriorApplications,
+      );
+      assert(
+        second.status === 'CONFLICT' && second.reason === 'STALE_EXPECTED_GENERATION',
+        'the losing concurrent writer must receive an explicit CONFLICT, never silently overwrite the winner',
+      );
+    },
+  },
+  {
+    id: 'XSESS-05-RETRY-WITH-SAME-IDEMPOTENCY-KEY-REPLAYS-PRIOR-OUTCOME',
+    run: () => {
+      const key = workspaceContextIdempotencyKey('retry-key-1');
+      const applied: WorkspaceContextState = { merchantWorkspaceId: workspaceB, generation: 2 };
+      const ledger: ReadonlyMap<WorkspaceContextIdempotencyKey, WorkspaceContextState> = new Map([[key, applied]]);
+      const driftedCurrent = { merchantWorkspaceId: workspaceB, generation: 9 };
+      const retry = resolveWorkspaceContextSwitch(
+        { principalId, expectedGeneration: 1, targetMerchantWorkspaceId: workspaceB, idempotencyKey: key },
+        driftedCurrent,
+        ledger,
+      );
+      assert(
+        retry.status === 'ALREADY_APPLIED' && retry.resultingState.generation === 2,
+        'a retried switch with a previously-applied idempotency key must replay the original outcome verbatim, never re-advance or re-evaluate against drifted current state',
+      );
     },
   },
 ];

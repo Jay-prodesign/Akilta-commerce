@@ -1,4 +1,4 @@
-import type { MerchantWorkspaceId, UserId } from '../../domain/src';
+import { DomainPrimitiveError, type MerchantWorkspaceId, type UserId } from '../../domain/src';
 
 /**
  * AC-XSESSION-107A1 slice 2 — pure workspace-context currentness primitive only (XSESS-05). Same
@@ -77,4 +77,62 @@ export function evaluateWorkspaceContextCurrentness(
     return { status: 'DENIED', reason: 'STALE_WORKSPACE_CONTEXT_REF' };
   }
   return { status: 'READY', snapshot };
+}
+
+/**
+ * SC-02 CAS transition for a workspace switch, same discipline as commerce-session-link-transition.ts
+ * (XSESS-06) and provider-store-binding.ts: `expectedGeneration` is the CAS precondition, never a
+ * timestamp; a switch always advances the generation by exactly one, even when switching back to a
+ * workspace the principal was already in before (so a stale copied claim from the first visit can
+ * never silently re-validate merely because the workspace id matches again). This function only
+ * handles switches against an already-existing WorkspaceContextState — a principal's very first
+ * workspace assignment ever (onboarding) is a separate, not-yet-selected concern and out of scope
+ * here, exactly as the module-level doc comment already states for WorkspaceContextState itself.
+ */
+
+export type WorkspaceContextIdempotencyKey = string & { readonly __brand: 'WorkspaceContextIdempotencyKey' };
+
+function assertIsWorkspaceContextIdempotencyKey(
+  value: string,
+): asserts value is WorkspaceContextIdempotencyKey {
+  if (!value) throw new DomainPrimitiveError('WorkspaceContextIdempotencyKey must be non-empty');
+}
+
+export function workspaceContextIdempotencyKey(value: string): WorkspaceContextIdempotencyKey {
+  const normalized = value.trim();
+  assertIsWorkspaceContextIdempotencyKey(normalized);
+  return normalized;
+}
+
+export interface WorkspaceContextSwitchRequest {
+  readonly principalId: ContextPrincipalId;
+  readonly expectedGeneration: number;
+  readonly targetMerchantWorkspaceId: MerchantWorkspaceId;
+  readonly idempotencyKey: WorkspaceContextIdempotencyKey;
+}
+
+export type WorkspaceContextSwitchResult =
+  | { readonly status: 'APPLIED'; readonly resultingState: WorkspaceContextState }
+  | { readonly status: 'ALREADY_APPLIED'; readonly resultingState: WorkspaceContextState }
+  | { readonly status: 'CONFLICT'; readonly reason: 'STALE_EXPECTED_GENERATION' };
+
+export function resolveWorkspaceContextSwitch(
+  request: WorkspaceContextSwitchRequest,
+  currentState: WorkspaceContextState,
+  appliedIdempotencyKeys: ReadonlyMap<WorkspaceContextIdempotencyKey, WorkspaceContextState>,
+): WorkspaceContextSwitchResult {
+  const priorOutcome = appliedIdempotencyKeys.get(request.idempotencyKey);
+  if (priorOutcome) {
+    return { status: 'ALREADY_APPLIED', resultingState: priorOutcome };
+  }
+  if (request.expectedGeneration !== currentState.generation) {
+    return { status: 'CONFLICT', reason: 'STALE_EXPECTED_GENERATION' };
+  }
+  return {
+    status: 'APPLIED',
+    resultingState: {
+      merchantWorkspaceId: request.targetMerchantWorkspaceId,
+      generation: currentState.generation + 1,
+    },
+  };
 }
