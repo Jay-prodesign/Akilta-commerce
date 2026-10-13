@@ -5,6 +5,7 @@ export * from './workspace-context-generation';
 export * from './provider-store-binding';
 export * from './conversation-ownership-transition';
 export * from './final-send-currentness';
+export * from './customer-identity-link-transition';
 export * from './federated-exchange-admission';
 export * from './permission-authority';
 export * from './permissions';
