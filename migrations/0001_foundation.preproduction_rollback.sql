@@ -35,6 +35,7 @@ DROP TABLE IF EXISTS integrations;
 DROP TABLE IF EXISTS agency_client_assignments;
 DROP TABLE IF EXISTS membership_roles;
 DROP TABLE IF EXISTS memberships;
+DROP TABLE IF EXISTS commerce_session_links;
 DROP TABLE IF EXISTS provider_store_bindings;
 DROP TABLE IF EXISTS auth_organization_bindings;
 DROP TABLE IF EXISTS user_identities;

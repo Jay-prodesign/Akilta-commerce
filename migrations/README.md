@@ -17,3 +17,7 @@
 ## SC-02 provider-store binding addition
 
 `0001_foundation.sql` now includes `provider_store_bindings` (ID-G10): a provider-originated store (e.g. a Shopify shop install) maps to exactly one `MerchantWorkspace`, independently of `auth_organization_bindings` and never merged with it by similarity. `generation` is an optimistic-concurrency (CAS) column — every transition (`apps/api/src/provider-store-binding-store.ts`) must match it exactly via `UPDATE ... WHERE generation = $n`, a single atomically-consistent statement requiring no explicit transaction. `revoked` is sticky until an explicit REINSTALL. This table is authentication/binding evidence only; it never itself grants permission, workspace, or action authority.
+
+## SC-02 commerce session-link addition
+
+`0001_foundation.sql` now includes `commerce_session_links` (XSESS-06): the authoritative generation/revoked record a linked Commerce session's currentness is evaluated against, independent of any externally-presented session token/cache. Same CAS discipline and single-statement-atomic transition technique as `provider_store_bindings`, applied via `apps/api/src/commerce-session-link-store.ts`. This table never itself grants workspace/permission authority.

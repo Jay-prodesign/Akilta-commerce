@@ -55,6 +55,23 @@ CREATE TABLE provider_store_bindings (
 CREATE INDEX provider_store_bindings_workspace_idx
   ON provider_store_bindings(merchant_workspace_id);
 
+-- SC-02 commerce session-link CAS state (XSESS-06): the authoritative generation/revoked record a
+-- linked Commerce session's currentness is evaluated against. `generation` is the CAS precondition
+-- every link/relink/unlink transition must match; `revoked` is sticky until a fresh link creates a
+-- new scope. This table never itself grants workspace/permission authority.
+CREATE TABLE commerce_session_links (
+  commerce_session_link_id TEXT PRIMARY KEY,
+  principal_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
+  external_link_ref TEXT NOT NULL,
+  generation INTEGER NOT NULL,
+  revoked BOOLEAN NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL,
+  UNIQUE (principal_id, external_link_ref)
+);
+CREATE INDEX commerce_session_links_principal_idx
+  ON commerce_session_links(principal_id);
+
 CREATE TABLE user_identities (
   user_identity_id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
