@@ -1,5 +1,6 @@
 export * from './evaluator';
 export * from './commerce-session-link';
+export * from './commerce-session-link-transition';
 export * from './workspace-context-generation';
 export * from './federated-exchange-admission';
 export * from './permission-authority';
