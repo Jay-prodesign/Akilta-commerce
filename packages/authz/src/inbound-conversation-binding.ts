@@ -1,4 +1,10 @@
-import type { ChannelType, ConversationId, IntegrationId, MerchantWorkspaceId } from '../../domain/src';
+import type {
+  ChannelType,
+  ConversationId,
+  ConversationOwnershipState,
+  IntegrationId,
+  MerchantWorkspaceId,
+} from '../../domain/src';
 
 /**
  * SC-05 (Conversation Core / AC-CONV-CORE-106) — server-owned conversation/workspace/surface binding.
@@ -26,6 +32,35 @@ import type { ChannelType, ConversationId, IntegrationId, MerchantWorkspaceId } 
  * inbound event composes this binding decision with those functions unchanged — see
  * tests/security/inbound-conversation-binding.spec.ts for the composed scenarios that close the
  * "duplicate/out-of-order inbound" acceptance criteria without duplicating that logic.
+ *
+ * CLOSED-thread policy (Founder decision, SC-05 closure slice, no new REOPEN transition for V1):
+ *  1. CLOSED is already terminal in `conversation-ownership-transition.ts` — no trigger is defined for
+ *     it, so every transition attempt against a CLOSED record is denied TERMINAL_STATE. Untouched here.
+ *  2. When the surface-keyed existing record is CLOSED, this function returns `BIND_NEW_CONTINUATION`
+ *     rather than `BOUND_EXISTING` — the caller must create a genuinely NEW conversation entity (new
+ *     `ConversationId`, fresh ownership record at AI_ACTIVE/epoch 0, independently re-resolved
+ *     workspace/surface/customer-verification/permissions/policies), never resume the closed one.
+ *  3. `BIND_NEW_CONTINUATION` carries only `precedingConversationId` — the closed conversation's own id
+ *     — as the "authorized, auditable continuity reference." It carries no other field. This is what
+ *     makes "never inherit customer verification, authorization, pending actions, queued sends, human
+ *     assignment or AI execution authority from the closed thread" hold BY CONSTRUCTION: there is no
+ *     field on this result type through which any of that could flow. The caller resolves every one of
+ *     those axes fresh for the new conversation, exactly as it would for a first-ever inbound contact.
+ *  4. Fail-closed ordering is preserved: a workspace/integration/channel/thread-ref claim mismatch is
+ *     checked, and denies, BEFORE the closed-state check — an unauthorized claim never reaches far
+ *     enough to open a new conversation merely because the matched record happens to be closed.
+ *  5. Deliberately OUT OF SCOPE for this pure-decision slice (left to a later, separately-built
+ *     persistence adapter unit, same split as every prior SC-02/SC-05 unit): actually persisting the
+ *     new continuation conversation needs a schema change, because today's
+ *     `UNIQUE (integration_id, channel_thread_ref)` constraint is a plain (non-partial) unique index
+ *     and would reject a second row sharing the same external thread ref even when the first is
+ *     CLOSED. The adapter unit must replace that with a partial unique index scoped to live
+ *     (non-CLOSED) conversations, or an equivalent CAS-safe mechanism, before a continuation can
+ *     actually be written. This slice only defines the correct decision; it performs no migration.
+ *  6. Inbound duplicate/replay handling for the closed-surface case is the same composition already
+ *     established for the live case (see point above): the caller dedupes via the existing
+ *     `classifyDelivery` BEFORE ever calling this function, so a replayed/duplicate inbound event never
+ *     reaches — and therefore never redundantly re-triggers — a `BIND_NEW_CONTINUATION` decision.
  */
 
 export interface InboundConversationSurfaceClaim {
@@ -41,19 +76,25 @@ export interface ExistingConversationSurfaceRecord {
   readonly integrationId: IntegrationId;
   readonly channel: ChannelType;
   readonly channelThreadRef: string;
+  readonly ownershipState: ConversationOwnershipState;
 }
 
 export type InboundConversationBindingResult =
   | { readonly status: 'BOUND_EXISTING'; readonly conversationId: ConversationId }
   | { readonly status: 'BIND_NEW' }
+  | { readonly status: 'BIND_NEW_CONTINUATION'; readonly precedingConversationId: ConversationId }
   | { readonly status: 'DENIED'; readonly reason: 'WORKSPACE_MISMATCH' };
 
 /**
- * `existingSurfaceRecord` is whatever a server-owned reader found (or null) for this exact
- * (integrationId, channelThreadRef) pair — the schema's own unique key. Equality is checked across
- * the full tuple rather than trusting that the caller's lookup was correct: if the record's own
- * workspace (or any other claimed field) disagrees with what this inbound event claims, that is
- * denied as a tenant-claim mismatch rather than silently binding into the wrong conversation.
+ * Decision order, each a hard gate the next never reconsiders:
+ *  1. No existing surface record at all -> `BIND_NEW` (a genuinely first-ever contact on this surface,
+ *     no predecessor to link).
+ *  2. Tuple mismatch between the claim and the surface-keyed record -> `DENIED(WORKSPACE_MISMATCH)`,
+ *     checked across the FULL tuple rather than trusting that the caller's lookup was correct, and
+ *     checked BEFORE the closed-state branch so a bad claim can never ride in on a closed record.
+ *  3. The record's `ownershipState` is `CLOSED` -> `BIND_NEW_CONTINUATION`, carrying only the closed
+ *     record's own id as the continuity reference (see the CLOSED-thread policy above).
+ *  4. Otherwise -> `BOUND_EXISTING`, unchanged from before this policy existed.
  */
 export function resolveInboundConversationBinding(
   claim: InboundConversationSurfaceClaim,
@@ -70,6 +111,10 @@ export function resolveInboundConversationBinding(
     existingSurfaceRecord.channelThreadRef !== claim.channelThreadRef
   ) {
     return { status: 'DENIED', reason: 'WORKSPACE_MISMATCH' };
+  }
+
+  if (existingSurfaceRecord.ownershipState === 'CLOSED') {
+    return { status: 'BIND_NEW_CONTINUATION', precedingConversationId: existingSurfaceRecord.conversationId };
   }
 
   return { status: 'BOUND_EXISTING', conversationId: existingSurfaceRecord.conversationId };

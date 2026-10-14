@@ -1,5 +1,9 @@
 import {
+  conversationOwnershipIdempotencyKey,
+  resolveConversationOwnershipTransition,
   resolveInboundConversationBinding,
+  type ConversationOwnershipIdempotencyKey,
+  type ConversationOwnershipRecord,
   type ExistingConversationSurfaceRecord,
   type InboundConversationSurfaceClaim,
 } from '../../packages/authz/src';
@@ -49,6 +53,7 @@ function existingRecord(
     integrationId,
     channel,
     channelThreadRef: threadRef,
+    ownershipState: 'AI_ACTIVE',
     ...overrides,
   };
 }
@@ -154,6 +159,124 @@ const cases: Array<{ id: string; run: () => void }> = [
     run: () => {
       const result = resolveInboundConversationBinding(claim({ channelThreadRef: 'thread-002' }), null);
       assert(result.status === 'BIND_NEW', 'a distinct channelThreadRef with no existing record must never be conflated with an unrelated conversation');
+    },
+  },
+  {
+    id: 'CONV-08-CLOSED-SURFACE-RECORD-SIGNALS-BIND-NEW-CONTINUATION-NOT-BOUND-EXISTING',
+    run: () => {
+      const result = resolveInboundConversationBinding(claim(), existingRecord({ ownershipState: 'CLOSED' }));
+      assert(
+        result.status === 'BIND_NEW_CONTINUATION' && result.precedingConversationId === conversationId,
+        'a matching inbound event against a CLOSED conversation must never implicitly resume it — it must signal a new continuation thread carrying the closed conversation id as the continuity reference',
+      );
+    },
+  },
+  {
+    id: 'CONV-09-WORKSPACE-MISMATCH-ON-A-CLOSED-RECORD-STILL-DENIES-FAIL-CLOSED-TAKES-PRIORITY',
+    run: () => {
+      const result = resolveInboundConversationBinding(
+        claim({ merchantWorkspaceId: otherWorkspaceId }),
+        existingRecord({ ownershipState: 'CLOSED' }),
+      );
+      assert(
+        result.status === 'DENIED' && result.reason === 'WORKSPACE_MISMATCH',
+        'a claim mismatch must deny even against a closed record — a bad tenant claim must never ride in merely because the matched record happens to be closed',
+      );
+    },
+  },
+  {
+    id: 'CONV-10-NON-CLOSED-LIVE-STATES-STILL-BIND-EXISTING-REGRESSION-UNCHANGED-BY-THE-NEW-BRANCH',
+    run: () => {
+      const liveStates: ExistingConversationSurfaceRecord['ownershipState'][] = [
+        'AI_ACTIVE',
+        'HANDOFF_REQUESTED',
+        'HUMAN_ASSIGNED',
+        'HUMAN_ACTIVE',
+        'AI_SUGGEST_ONLY',
+        'RETURN_TO_AI_PENDING',
+        'AI_ACTIVE_RESTORED',
+      ];
+      for (const state of liveStates) {
+        const result = resolveInboundConversationBinding(claim(), existingRecord({ ownershipState: state }));
+        assert(
+          result.status === 'BOUND_EXISTING' && result.conversationId === conversationId,
+          `a surface record in live state ${state} must still bind to the existing conversation, unaffected by the CLOSED-continuation branch`,
+        );
+      }
+    },
+  },
+  {
+    id: 'CONV-11-BIND-NEW-CONTINUATION-CARRIES-NOTHING-BUT-THE-CONTINUITY-REFERENCE-NO-AUTHORITY-INHERITANCE-BY-CONSTRUCTION',
+    run: () => {
+      const result = resolveInboundConversationBinding(claim(), existingRecord({ ownershipState: 'CLOSED' }));
+      assert(result.status === 'BIND_NEW_CONTINUATION', 'precondition: a closed surface record yields BIND_NEW_CONTINUATION');
+      const keys = Object.keys(result).sort();
+      assert(
+        keys.length === 2 && keys[0] === 'precedingConversationId' && keys[1] === 'status',
+        'BIND_NEW_CONTINUATION must carry exactly the continuity reference and nothing else — no customer verification, authorization, pending action, queued send, human assignment or AI execution authority field exists on this result for the caller to accidentally inherit',
+      );
+    },
+  },
+  {
+    id: 'CONV-12-THE-CLOSED-CONVERSATION-ITSELF-REMAINS-TERMINAL-NO-REOPEN-TRANSITION-WAS-INVENTED',
+    run: () => {
+      // Composes with the already-existing ownership state machine rather than inventing a new one:
+      // the closed predecessor record is still denied every trigger (TERMINAL_STATE); the new
+      // continuation conversation gets its OWN fresh ConversationOwnershipRecord at AI_ACTIVE/epoch 0,
+      // constructed directly by the caller — never produced by transitioning the closed record.
+      const closedRecord: ConversationOwnershipRecord = {
+        ownerConversationId: conversationId,
+        ownerMerchantWorkspaceId: workspaceId,
+        state: 'CLOSED',
+        epoch: 4,
+      };
+      const noPriorApplications: ReadonlyMap<ConversationOwnershipIdempotencyKey, ConversationOwnershipRecord> = new Map();
+      const attemptedReactivation = resolveConversationOwnershipTransition(
+        {
+          conversationId,
+          merchantWorkspaceId: workspaceId,
+          trigger: 'HUMAN_TAKEOVER',
+          expectedEpoch: 4,
+          idempotencyKey: conversationOwnershipIdempotencyKey('closed-reactivation-attempt'),
+        },
+        closedRecord,
+        noPriorApplications,
+      );
+      assert(
+        attemptedReactivation.status === 'DENIED' && attemptedReactivation.reason === 'TERMINAL_STATE',
+        'the closed predecessor must remain terminal — no REOPEN trigger exists, consistent with the Founder policy that a future reopen capability is a separate product decision',
+      );
+    },
+  },
+  {
+    id: 'CONV-13-DUPLICATE-INBOUND-AGAINST-A-CLOSED-SURFACE-IS-CAUGHT-BY-THE-EXISTING-DEDUP-PRIMITIVE-BEFORE-BINDING-RUNS',
+    run: () => {
+      // Mirrors CONV-05 for the closed-surface case: the caller dedupes via classifyDelivery first, so
+      // a replayed inbound event never reaches — and therefore never redundantly re-triggers — a
+      // second BIND_NEW_CONTINUATION decision for the same provider delivery.
+      const event: OperationalEvent = {
+        eventId: internalId('evt-closed-1', 'OperationalEvent'),
+        merchantWorkspaceId: workspaceId,
+        integrationId,
+        eventType: 'conversation.inbound_message',
+        source: 'meta_whatsapp',
+        sourceEventId: 'wa-msg-closed-001',
+        observedAt: utcTimestamp(new Date(0)),
+        correlationId: internalId('corr-closed-1', 'Correlation'),
+        idempotencyKey: idempotencyKey('fallback-key-closed-1'),
+        processingState: 'RECEIVED',
+      };
+      const firstDelivery = classifyDelivery(new Set(), event);
+      assert(firstDelivery === 'ACCEPT', 'the first delivery must be accepted, reaching the binding decision exactly once');
+      const firstBinding = resolveInboundConversationBinding(claim(), existingRecord({ ownershipState: 'CLOSED' }));
+      assert(firstBinding.status === 'BIND_NEW_CONTINUATION', 'the first, non-duplicate delivery must produce the continuation decision');
+
+      const seenKeys = new Set([eventDeduplicationKey(event)]);
+      const redelivery = classifyDelivery(seenKeys, event);
+      assert(
+        redelivery === 'DUPLICATE',
+        'a redelivered webhook for the same provider event against a closed surface must classify as DUPLICATE and must never be passed on to resolveInboundConversationBinding a second time',
+      );
     },
   },
 ];
