@@ -2,6 +2,7 @@ export * from './evaluator';
 export * from './commerce-session-link';
 export * from './commerce-session-link-transition';
 export * from './commerce-session-link-candidate-resolution';
+export * from './external-revocation-fencing';
 export * from './workspace-context-generation';
 export * from './provider-store-binding';
 export * from './conversation-ownership-transition';
