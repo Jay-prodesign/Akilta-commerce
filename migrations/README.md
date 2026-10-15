@@ -25,3 +25,7 @@
 ## SC-02 workspace-context addition
 
 `0001_foundation.sql` now includes `workspace_contexts` (XSESS-05): one principal's currently active workspace, fenced by `generation` so a stale cache/tab cannot act in the old or new workspace merely by copying an id — switching back to the same workspace still advances the generation. Applied via `apps/api/src/workspace-context-store.ts`, UPDATE-only (no insert path): a principal's very first workspace assignment is a separate, not-yet-selected onboarding concern.
+
+## SC-04 entitlement addition
+
+`0001_foundation.sql` now includes `entitlements` (AC-BILLENT-106): the single authoritative, generation-tracked workspace+module grant, keyed `UNIQUE (merchant_workspace_id, module_key)`. A missing row is the structural `NONE` state (no grant exists yet), never a store error — the first grant (`NONE -> TRIAL|ACTIVE`) is a conflict-free `INSERT ... ON CONFLICT DO NOTHING`, every later transition a CAS `UPDATE ... WHERE generation = $n`, same technique as `commerce_session_links`. Applied via `apps/api/src/entitlement-store.ts`. `billing_source_ref` is observational provenance only — never part of this row's identity, so a payer/billing-source switch never changes which workspace the entitlement belongs to. This table never itself grants installation, configuration, capability, or action authorization.
