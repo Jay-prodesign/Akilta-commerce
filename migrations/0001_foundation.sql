@@ -83,6 +83,26 @@ CREATE TABLE workspace_contexts (
   updated_at TIMESTAMPTZ NOT NULL
 );
 
+-- SC-04 provider-neutral entitlement core (AC-BILLENT-106): the single authoritative,
+-- generation-tracked workspace+module grant. `generation` is the CAS precondition every transition
+-- (apps/api/src/entitlement-store.ts) must match exactly; a missing row is the structural NONE state
+-- (no grant exists yet), never a store error. `billing_source_ref` is observational provenance only
+-- (packages/domain/src/entitlement.ts) -- it is never part of this row's identity, so switching
+-- billing/payer source never changes which workspace this entitlement belongs to. This table never
+-- itself grants installation, configuration, capability, or action authorization.
+CREATE TABLE entitlements (
+  entitlement_id TEXT PRIMARY KEY,
+  merchant_workspace_id TEXT NOT NULL REFERENCES merchant_workspaces(merchant_workspace_id) ON DELETE RESTRICT,
+  module_key TEXT NOT NULL,
+  state TEXT NOT NULL CHECK (state IN ('NONE','TRIAL','ACTIVE','GRACE','PAST_DUE','RESTRICTED','CANCEL_PENDING','CANCELLED')),
+  generation INTEGER NOT NULL,
+  billing_source_ref TEXT,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL,
+  UNIQUE (merchant_workspace_id, module_key)
+);
+CREATE INDEX entitlements_workspace_idx ON entitlements(merchant_workspace_id);
+
 CREATE TABLE user_identities (
   user_identity_id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
