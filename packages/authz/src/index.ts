@@ -9,6 +9,7 @@ export * from './conversation-ownership-transition';
 export * from './final-send-currentness';
 export * from './customer-identity-link-transition';
 export * from './inbound-conversation-binding';
+export * from './entitlement-resolution';
 export * from './federated-exchange-admission';
 export * from './permission-authority';
 export * from './permissions';

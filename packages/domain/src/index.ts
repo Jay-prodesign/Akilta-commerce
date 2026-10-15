@@ -16,3 +16,4 @@ export * from './recovery';
 export * from './reference-learning';
 export * from './evidence-maturity';
 export * from './release-gate';
+export * from './entitlement';
