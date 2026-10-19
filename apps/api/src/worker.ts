@@ -1,6 +1,8 @@
 import { Hono } from 'hono';
 
-const app = new Hono();
+import { registerConversationOwnershipRoutes, type ConversationOwnershipRouteVariables } from './conversation-handoff-route';
+
+const app = new Hono<{ Variables: ConversationOwnershipRouteVariables }>();
 
 app.get('/health', (c) =>
   c.json({
@@ -8,5 +10,7 @@ app.get('/health', (c) =>
     service: 'ai-commerce-api',
   }),
 );
+
+registerConversationOwnershipRoutes(app);
 
 export default app;
