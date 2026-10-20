@@ -1,8 +1,14 @@
 import {
   handleConversationOwnershipTransitionRequest,
+  handleConversationOwnershipReadRequest,
   type ConversationOwnershipHttpRequest,
+  type ConversationOwnershipReadHttpRequest,
 } from '../../apps/api/src/conversation-handoff-route';
-import { createConversationOwnershipStore, type ConversationOwnershipQueryExecutor } from '../../apps/api/src/conversation-ownership-store';
+import {
+  createConversationOwnershipStore,
+  type ConversationOwnershipQueryExecutor,
+  type ConversationOwnershipStore,
+} from '../../apps/api/src/conversation-ownership-store';
 import {
   conversationOwnershipIdempotencyKey,
   permission,
@@ -110,6 +116,18 @@ function baseRequest(overrides: Partial<ConversationOwnershipHttpRequest> = {}):
     roleReader: roleReader(),
     store: createConversationOwnershipStore(fakeExecutor({ ownership_state: 'AI_ACTIVE', ownership_epoch: 0 })),
     appliedIdempotencyKeys: noPriorApplications,
+    ...overrides,
+  };
+}
+
+function baseReadRequest(overrides: Partial<ConversationOwnershipReadHttpRequest> = {}): ConversationOwnershipReadHttpRequest {
+  return {
+    conversationId,
+    executionContext: baseExecutionContext(),
+    membershipCandidates: membership(),
+    agencyAssignmentCandidates: [],
+    roleReader: roleReader(),
+    store: createConversationOwnershipStore(fakeExecutor({ ownership_state: 'HUMAN_ACTIVE', ownership_epoch: 3 })),
     ...overrides,
   };
 }
@@ -274,6 +292,56 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
       assert(
         result.httpStatus === 200 && result.body.auditWriteFailed === true && result.body.epoch === 1,
         'an audit-write failure must never be reported as a 500 — the authoritative CAS update already succeeded and must be surfaced as a real success carrying an explicit warning',
+      );
+    },
+  },
+  {
+    id: 'ROUTE-12-AUTHORIZED-READ-RETURNS-200-WITH-STATE-AND-EPOCH',
+    run: async () => {
+      const result = await handleConversationOwnershipReadRequest(baseReadRequest());
+      assert(
+        result.httpStatus === 200 && result.body.ownershipState === 'HUMAN_ACTIVE' && result.body.epoch === 3,
+        'an authorized read must return the real current state/epoch so a caller can discover the CAS precondition for a later handoff/return-to-ai call',
+      );
+    },
+  },
+  {
+    id: 'ROUTE-13-READ-MISSING-CONVERSATION-READ-PERMISSION-DENIES-403-BEFORE-ANY-STORE-CALL',
+    run: async () => {
+      let storeCalled = false;
+      const store: ConversationOwnershipStore = {
+        applyTransition: () => Promise.reject(new Error('must not be called')),
+        getCurrent: () => {
+          storeCalled = true;
+          return Promise.resolve({ status: 'NOT_FOUND' });
+        },
+      };
+      const result = await handleConversationOwnershipReadRequest(
+        baseReadRequest({ roleReader: roleReader(['CLIENT_ANALYST']), store }),
+      );
+      assert(result.httpStatus === 403, 'a role lacking conversation:read must be denied read access');
+      assert(!storeCalled, 'authorization must fail closed before the ownership store is ever queried for a read');
+    },
+  },
+  {
+    id: 'ROUTE-14-READ-NO-EXISTING-CONVERSATION-RETURNS-404',
+    run: async () => {
+      const store = createConversationOwnershipStore(fakeExecutor(null));
+      const result = await handleConversationOwnershipReadRequest(baseReadRequest({ store }));
+      assert(result.httpStatus === 404, 'reading a conversation absent from this workspace must return 404, not 500 or an empty 200');
+    },
+  },
+  {
+    id: 'ROUTE-15-READ-STORE-ERROR-RETURNS-500-RETRYABLE',
+    run: async () => {
+      const store: ConversationOwnershipStore = {
+        applyTransition: () => Promise.reject(new Error('must not be called')),
+        getCurrent: () => Promise.resolve({ status: 'STORE_ERROR' }),
+      };
+      const result = await handleConversationOwnershipReadRequest(baseReadRequest({ store }));
+      assert(
+        result.httpStatus === 500 && 'retryable' in result.body && result.body.retryable === true,
+        'a real read failure must surface as a retryable 500, never a false 404/200',
       );
     },
   },

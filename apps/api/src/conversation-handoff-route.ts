@@ -296,14 +296,123 @@ async function runRoute(c: ConversationOwnershipRouteContext, trigger: Conversat
   return jsonResponse(result.body, result.httpStatus);
 }
 
+export interface ConversationOwnershipReadHttpSuccessBody {
+  readonly conversationId: ConversationId;
+  readonly ownershipState: ConversationOwnershipRecord['state'];
+  readonly epoch: number;
+}
+
+export type ConversationOwnershipReadHttpResult =
+  | { readonly httpStatus: 200; readonly body: ConversationOwnershipReadHttpSuccessBody }
+  | { readonly httpStatus: 403; readonly body: SafeHttpErrorEnvelope }
+  | { readonly httpStatus: 404; readonly body: ConversationOwnershipHttpTypedErrorBody }
+  | { readonly httpStatus: 500; readonly body: SafeHttpErrorEnvelope };
+
+export interface ConversationOwnershipReadHttpRequest {
+  readonly conversationId: ConversationId;
+  readonly executionContext: ExecutionContext;
+  readonly membershipCandidates: readonly Membership[];
+  readonly agencyAssignmentCandidates: readonly AgencyClientAssignment[];
+  readonly roleReader: MembershipRoleReader;
+  readonly store: ConversationOwnershipStore;
+}
+
 /**
- * Registers the two real `/v1/conversations/{id}/handoff` and `/v1/conversations/{id}/return-to-ai`
- * routes on any Hono app — the production `worker.ts` app and an isolated test app alike, so both
- * exercise the identical real dispatch/parse/response path (no test-only duplicate route logic).
+ * Read-only counterpart to `handleConversationOwnershipTransitionRequest`: the `conversation:read`
+ * gate is intentionally weaker than `conversation:assign` (a caller may be allowed to see current
+ * state without being allowed to change who owns it). Lets a client discover the `epoch` it must
+ * supply as the CAS precondition on a subsequent handoff/return-to-ai call.
+ */
+export async function handleConversationOwnershipReadRequest(
+  request: ConversationOwnershipReadHttpRequest,
+): Promise<ConversationOwnershipReadHttpResult> {
+  const requestId = request.executionContext.requestId;
+
+  if (request.executionContext.activeMerchantWorkspaceId === null) {
+    return {
+      httpStatus: 403,
+      body: safeHttpErrorEnvelope({ code: 'AUTH_TENANT_MISMATCH', requestId, retryable: false, requiredAction: 'NONE' }),
+    };
+  }
+  const merchantWorkspaceId = request.executionContext.activeMerchantWorkspaceId;
+
+  const authorization = await evaluateAuthorization({
+    executionContext: request.executionContext,
+    requiredPermission: 'conversation:read',
+    target: {
+      owningOrganizationId: request.executionContext.actorOrganizationId,
+      merchantWorkspaceId,
+      resourceType: 'conversation',
+      resourceId: request.conversationId,
+    },
+    membershipCandidates: request.membershipCandidates,
+    agencyAssignmentCandidates: request.agencyAssignmentCandidates,
+    roleReader: request.roleReader,
+  });
+
+  if (authorization.decision === 'DENY') {
+    return {
+      httpStatus: 403,
+      body: safeHttpErrorEnvelope({ code: authorization.code, requestId, retryable: false, requiredAction: 'NONE' }),
+    };
+  }
+
+  const outcome = await request.store.getCurrent(request.conversationId, merchantWorkspaceId);
+  switch (outcome.status) {
+    case 'FOUND':
+      return {
+        httpStatus: 200,
+        body: {
+          conversationId: request.conversationId,
+          ownershipState: outcome.record.state,
+          epoch: outcome.record.epoch,
+        },
+      };
+    case 'NOT_FOUND':
+      return { httpStatus: 404, body: { code: 'NOT_FOUND', requestId } };
+    case 'STORE_ERROR':
+      return {
+        httpStatus: 500,
+        body: safeHttpErrorEnvelope({ code: 'INTERNAL_UNEXPECTED', requestId, retryable: true, requiredAction: 'RETRY_LATER' }),
+      };
+  }
+}
+
+async function runReadRoute(c: ConversationOwnershipRouteContext): Promise<Response> {
+  const executionContext = c.get('executionContext');
+  const roleReader = c.get('roleReader');
+  const store = c.get('conversationOwnershipStore');
+  if (!executionContext || !roleReader || !store) {
+    return jsonResponse({ code: 'SESSION_CONTEXT_NOT_RESOLVED' }, 500);
+  }
+
+  const conversationIdParam = c.req.param('id');
+  if (!conversationIdParam) {
+    return jsonResponse({ code: 'NOT_FOUND', requestId: executionContext.requestId }, 404);
+  }
+
+  const result = await handleConversationOwnershipReadRequest({
+    conversationId: internalId(conversationIdParam, 'Conversation'),
+    executionContext,
+    membershipCandidates: c.get('membershipCandidates') ?? [],
+    agencyAssignmentCandidates: c.get('agencyAssignmentCandidates') ?? [],
+    roleReader,
+    store,
+  });
+
+  return jsonResponse(result.body, result.httpStatus);
+}
+
+/**
+ * Registers the real `/v1/conversations/{id}` read route plus the `/v1/conversations/{id}/handoff`
+ * and `/v1/conversations/{id}/return-to-ai` mutation routes on any Hono app — the production
+ * `worker.ts` app and an isolated test app alike, so both exercise the identical real dispatch/
+ * parse/response path (no test-only duplicate route logic).
  */
 export function registerConversationOwnershipRoutes(
   app: Hono<{ Variables: ConversationOwnershipRouteVariables }>,
 ): Hono<{ Variables: ConversationOwnershipRouteVariables }> {
+  app.get('/v1/conversations/:id', (c) => runReadRoute(c));
   app.post('/v1/conversations/:id/handoff', (c) => runRoute(c, 'HUMAN_TAKEOVER'));
   app.post('/v1/conversations/:id/return-to-ai', (c) => runRoute(c, 'REQUEST_RETURN_TO_AI'));
   return app;

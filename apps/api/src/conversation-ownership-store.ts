@@ -60,6 +60,11 @@ export type ConversationOwnershipPersistOutcome =
   | { readonly status: 'STORE_ERROR' }
   | { readonly status: 'AUDIT_WRITE_FAILED'; readonly resultingRecord: ConversationOwnershipRecord };
 
+export type ConversationOwnershipReadOutcome =
+  | { readonly status: 'FOUND'; readonly record: ConversationOwnershipRecord }
+  | { readonly status: 'NOT_FOUND' }
+  | { readonly status: 'STORE_ERROR' };
+
 const SELECT_CURRENT =
   'SELECT ownership_state, ownership_epoch FROM conversations WHERE conversation_id = $1 AND merchant_workspace_id = $2';
 
@@ -82,22 +87,69 @@ export interface ConversationOwnershipStore {
     actorRef: string,
     appliedIdempotencyKeys: ReadonlyMap<ConversationOwnershipIdempotencyKey, ConversationOwnershipRecord>,
   ): Promise<ConversationOwnershipPersistOutcome>;
+  /**
+   * Plain, non-mutating read of the current ownership state/epoch — the same SELECT_CURRENT query
+   * `applyTransition` already runs internally, exposed directly so a caller (e.g. the `GET
+   * /v1/conversations/{id}` read route) can discover the current `epoch` it must pass as the CAS
+   * precondition on a subsequent handoff/return-to-ai call, without needing to attempt a mutation
+   * just to observe state.
+   */
+  getCurrent(
+    conversationId: ConversationOwnershipTransitionRequest['conversationId'],
+    merchantWorkspaceId: ConversationOwnershipTransitionRequest['merchantWorkspaceId'],
+  ): Promise<ConversationOwnershipReadOutcome>;
+}
+
+type CurrentRowReadResult =
+  | { readonly outcome: 'FOUND'; readonly record: ConversationOwnershipRecord }
+  | { readonly outcome: 'NOT_FOUND' }
+  | { readonly outcome: 'READ_ERROR' };
+
+/**
+ * Shared SELECT_CURRENT execute-and-parse step for both `getCurrent` and `applyTransition` — a
+ * single place that queries, catches a connectivity/query failure, and parses the row, so neither
+ * caller can drift into a different empty-row or malformed-state handling shape than the other. A
+ * row whose `ownership_state` is outside the canonical enum (corrupt data, bad migration) is itself
+ * a read failure, never an uncaught throw past this boundary.
+ */
+async function readCurrentRow(
+  executor: ConversationOwnershipQueryExecutor,
+  conversationId: ConversationOwnershipTransitionRequest['conversationId'],
+  merchantWorkspaceId: ConversationOwnershipTransitionRequest['merchantWorkspaceId'],
+): Promise<CurrentRowReadResult> {
+  try {
+    const readResult = await executor.query(SELECT_CURRENT, [conversationId, merchantWorkspaceId]);
+    const row = readResult.rows[0];
+    if (!row) return { outcome: 'NOT_FOUND' };
+    return {
+      outcome: 'FOUND',
+      record: {
+        ownerConversationId: conversationId,
+        ownerMerchantWorkspaceId: merchantWorkspaceId,
+        state: parseOwnershipState(row.ownership_state),
+        epoch: Number(row.ownership_epoch),
+      },
+    };
+  } catch {
+    return { outcome: 'READ_ERROR' };
+  }
 }
 
 export function createConversationOwnershipStore(
   executor: ConversationOwnershipQueryExecutor,
 ): ConversationOwnershipStore {
   return {
+    async getCurrent(conversationId, merchantWorkspaceId) {
+      const read = await readCurrentRow(executor, conversationId, merchantWorkspaceId);
+      if (read.outcome === 'READ_ERROR') return { status: 'STORE_ERROR' };
+      if (read.outcome === 'NOT_FOUND') return { status: 'NOT_FOUND' };
+      return { status: 'FOUND', record: read.record };
+    },
     async applyTransition(request, actorRef, appliedIdempotencyKeys) {
-      let row: Record<string, unknown> | undefined;
-      try {
-        const readResult = await executor.query(SELECT_CURRENT, [request.conversationId, request.merchantWorkspaceId]);
-        row = readResult.rows[0];
-      } catch {
-        return { status: 'STORE_ERROR' };
-      }
+      const read = await readCurrentRow(executor, request.conversationId, request.merchantWorkspaceId);
+      if (read.outcome === 'READ_ERROR') return { status: 'STORE_ERROR' };
 
-      if (!row) {
+      if (read.outcome === 'NOT_FOUND') {
         const priorOutcome = appliedIdempotencyKeys.get(request.idempotencyKey);
         if (priorOutcome) {
           return { status: 'ALREADY_APPLIED', resultingRecord: priorOutcome };
@@ -105,12 +157,7 @@ export function createConversationOwnershipStore(
         return { status: 'NO_EXISTING_CONVERSATION' };
       }
 
-      const currentRecord: ConversationOwnershipRecord = {
-        ownerConversationId: request.conversationId,
-        ownerMerchantWorkspaceId: request.merchantWorkspaceId,
-        state: parseOwnershipState(row.ownership_state),
-        epoch: Number(row.ownership_epoch),
-      };
+      const currentRecord = read.record;
 
       const decision = resolveConversationOwnershipTransition(request, currentRecord, appliedIdempotencyKeys);
       if (decision.status !== 'APPLIED') {

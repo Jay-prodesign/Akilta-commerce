@@ -192,4 +192,26 @@ describe('conversation handoff/return-to-ai HTTP routes', () => {
     const body = await response.json();
     expect(body).toMatchObject({ code: 'NOT_FOUND' });
   });
+
+  it('reads current ownership state/epoch end-to-end over real HTTP (GET)', async () => {
+    const testApp = buildTestApp({ ownership_state: 'HUMAN_ACTIVE', ownership_epoch: 3 });
+    const response = await testApp.request('https://worker.test/v1/conversations/conv-1');
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toEqual({ conversationId: 'conv-1', ownershipState: 'HUMAN_ACTIVE', epoch: 3 });
+  });
+
+  it('returns a real 404 on GET for a conversation absent from this workspace', async () => {
+    const testApp = buildTestApp(null);
+    const response = await testApp.request('https://worker.test/v1/conversations/conv-missing');
+    expect(response.status).toBe(404);
+    const body = await response.json();
+    expect(body).toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  it('fails closed with 500 SESSION_CONTEXT_NOT_RESOLVED on GET against the real unmodified production worker', async () => {
+    const response = await app.request('https://worker.test/v1/conversations/conv-1');
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({ code: 'SESSION_CONTEXT_NOT_RESOLVED' });
+  });
 });
