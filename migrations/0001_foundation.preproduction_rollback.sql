@@ -24,6 +24,7 @@ DROP TABLE IF EXISTS variant_options;
 DROP TABLE IF EXISTS variants;
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS conversation_ownership_events;
+DROP TABLE IF EXISTS customer_identity_link_events;
 DROP TABLE IF EXISTS message_drafts;
 DROP TABLE IF EXISTS messages;
 DROP TABLE IF EXISTS conversations;

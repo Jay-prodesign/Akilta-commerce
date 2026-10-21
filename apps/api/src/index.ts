@@ -15,3 +15,5 @@ export * from './conversation-list-store';
 export * from './conversation-list-route';
 export * from './message-draft-store';
 export * from './message-draft-route';
+export * from './customer-identity-link-store';
+export * from './customer-identity-link-route';

@@ -219,6 +219,7 @@ CREATE TABLE customer_identities (
   normalized_identifier_ref TEXT NOT NULL,
   provider_identifier_ref TEXT,
   customer_id TEXT,
+  link_generation INTEGER NOT NULL DEFAULT 0,
   verification_level TEXT NOT NULL CHECK (verification_level IN ('CV0','CV1','CV2','CV3')),
   verification_expires_at TIMESTAMPTZ,
   match_evidence_ref TEXT,
@@ -230,6 +231,22 @@ CREATE TABLE customer_identities (
     REFERENCES customers(customer_id, merchant_workspace_id) ON DELETE RESTRICT
 );
 CREATE UNIQUE INDEX customer_identity_lookup_idx ON customer_identities(merchant_workspace_id, channel_type, normalized_identifier_ref);
+
+CREATE TABLE customer_identity_link_events (
+  link_event_id TEXT PRIMARY KEY,
+  customer_identity_id TEXT NOT NULL,
+  merchant_workspace_id TEXT NOT NULL,
+  operation TEXT NOT NULL CHECK (operation IN ('LINK','RELINK','UNLINK')),
+  from_customer_id TEXT,
+  to_customer_id TEXT,
+  from_generation INTEGER NOT NULL,
+  to_generation INTEGER NOT NULL,
+  actor_ref TEXT,
+  created_at TIMESTAMPTZ NOT NULL,
+  CHECK (to_generation = from_generation + 1),
+  FOREIGN KEY (customer_identity_id, merchant_workspace_id)
+    REFERENCES customer_identities(customer_identity_id, merchant_workspace_id) ON DELETE RESTRICT
+);
 
 CREATE TABLE customer_verification_events (
   verification_event_id TEXT PRIMARY KEY,
