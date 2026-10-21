@@ -31,9 +31,19 @@ import type { ConversationOwnershipStore } from './conversation-ownership-store'
  *    authority dependencies from Hono context variables a future middleware is responsible for
  *    setting; if nothing sets them, the route fails closed (SESSION_CONTEXT_NOT_RESOLVED), never
  *    silently bypasses authorization.
- *  - A durable idempotency-key ledger read. `appliedIdempotencyKeys` is accepted as an injected
+ *  - A durable idempotency-key ledger. `appliedIdempotencyKeys` is accepted as an injected
  *    dependency, same precedent as every store adapter this session (P0-004: "real event
- *    persistence/atomic idempotency storage/runtime remain later concerns").
+ *    persistence/atomic idempotency storage/runtime remain later concerns") — but stated precisely,
+ *    not softened: nothing anywhere in this codebase yet writes an applied outcome back into such a
+ *    map after a successful transition, so in the real deployed system this map is always empty on
+ *    every request. The pure replay-decision branch is real and tested in isolation
+ *    (`ROUTE-09`/`conversation-ownership-transition.ts`'s own tests), but idempotent retry is NOT
+ *    functional end-to-end today: a genuine retry of an already-applied request will not be
+ *    recognized as a replay — it will attempt a fresh CAS against what is now a stale
+ *    `expectedEpoch`, surfacing as `409 OWNERSHIP_CONFLICT` instead of the replayed `200` the
+ *    operation's contract promises. Closing this requires either a durable ledger table (a
+ *    cross-cutting change touching every mutation adapter in this codebase the same way, not a
+ *    single-route fix) or an equivalent mechanism — not yet selected.
  *  - A live Postgres connection. `store` wraps a `ConversationOwnershipQueryExecutor`; which concrete
  *    executor backs it in a given environment (real `pg` pool vs. a test double) is a deploy-time/
  *    test-time binding, not something this file decides.
@@ -116,6 +126,7 @@ export async function handleConversationOwnershipTransitionRequest(
       resourceType: 'conversation',
       resourceId: request.conversationId,
     },
+    module: 'conversation',
     membershipCandidates: request.membershipCandidates,
     agencyAssignmentCandidates: request.agencyAssignmentCandidates,
     roleReader: request.roleReader,
@@ -340,6 +351,7 @@ export async function handleConversationOwnershipReadRequest(
       resourceType: 'conversation',
       resourceId: request.conversationId,
     },
+    module: 'conversation',
     membershipCandidates: request.membershipCandidates,
     agencyAssignmentCandidates: request.agencyAssignmentCandidates,
     roleReader: request.roleReader,

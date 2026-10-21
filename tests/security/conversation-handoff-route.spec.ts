@@ -20,10 +20,13 @@ import {
   type MembershipRoleReader,
 } from '../../packages/authz/src';
 import {
+  agencyClientAssignmentId,
   internalId,
   localeTag,
+  moduleKey,
   operationalStatus,
   utcTimestamp,
+  type AgencyClientAssignment,
   type ConversationId,
   type Membership,
   type MerchantWorkspaceId,
@@ -52,6 +55,34 @@ if (currentPermissionAuthority.outcome !== 'RESOLVED') {
   throw new Error('fixture misconfigured: expected a resolvable permission authority snapshot');
 }
 const currentPermissionSnapshotRef = currentPermissionAuthority.snapshot.authorityVersion;
+
+const agencyOrgId: OrganizationId = internalId('route-agency-a', 'Organization');
+const agencyAssignmentId = agencyClientAssignmentId('route-assignment-1');
+
+function agencyAssignment(allowedModules: readonly string[]): AgencyClientAssignment {
+  return {
+    assignmentId: agencyAssignmentId,
+    agencyOrganizationId: agencyOrgId,
+    merchantWorkspaceId: workspaceA,
+    allowedModules: allowedModules.map(moduleKey),
+    permissionOverrideRefs: [],
+    approvalAuthorityRefs: [],
+    status: operationalStatus('ACTIVE'),
+  };
+}
+
+function agencyExecutionContext(overrides: Partial<ExecutionContext> = {}): ExecutionContext {
+  return baseExecutionContext({
+    actorOrganizationId: agencyOrgId,
+    actorOrganizationType: 'AGENCY',
+    agencyClientAssignmentId: agencyAssignmentId,
+    ...overrides,
+  });
+}
+
+function agencyMembership(): readonly Membership[] {
+  return [{ membershipId, userId, organizationId: agencyOrgId, roleRefs: [], status: operationalStatus('ACTIVE') }];
+}
 
 function roleReader(roleKeys: readonly string[] = [grantedRoleKey]): MembershipRoleReader {
   return { read: () => Promise.resolve({ outcome: 'READ_SUCCESS', roleKeys }) };
@@ -343,6 +374,57 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
         result.httpStatus === 500 && 'retryable' in result.body && result.body.retryable === true,
         'a real read failure must surface as a retryable 500, never a false 404/200',
       );
+    },
+  },
+  {
+    id: 'ROUTE-16-AGENCY-WITH-MODULE-RESTRICTION-EXCLUDING-CONVERSATION-DENIES-TRANSITION-403',
+    run: async () => {
+      let storeCalled = false;
+      const store = createConversationOwnershipStore({
+        query: () => {
+          storeCalled = true;
+          return Promise.resolve({ rows: [] });
+        },
+      });
+      const result = await handleConversationOwnershipTransitionRequest(
+        baseRequest({
+          executionContext: agencyExecutionContext(),
+          membershipCandidates: agencyMembership(),
+          agencyAssignmentCandidates: [agencyAssignment(['commerce'])],
+          store,
+        }),
+      );
+      assert(
+        result.httpStatus === 403,
+        "an agency whose current AgencyClientAssignment does not include the 'conversation' module must be denied a handoff, even with a role that grants conversation:assign",
+      );
+      assert(!storeCalled, 'the ownership store must never be queried when the agency module allowlist excludes this operation');
+    },
+  },
+  {
+    id: 'ROUTE-17-AGENCY-WITH-MODULE-RESTRICTION-EXCLUDING-CONVERSATION-DENIES-READ-403',
+    run: async () => {
+      let storeCalled = false;
+      const store: ConversationOwnershipStore = {
+        applyTransition: () => Promise.reject(new Error('must not be called')),
+        getCurrent: () => {
+          storeCalled = true;
+          return Promise.resolve({ status: 'NOT_FOUND' });
+        },
+      };
+      const result = await handleConversationOwnershipReadRequest(
+        baseReadRequest({
+          executionContext: agencyExecutionContext(),
+          membershipCandidates: agencyMembership(),
+          agencyAssignmentCandidates: [agencyAssignment(['commerce'])],
+          store,
+        }),
+      );
+      assert(
+        result.httpStatus === 403,
+        "an agency whose current AgencyClientAssignment does not include the 'conversation' module must be denied even a read, even with a role that grants conversation:read",
+      );
+      assert(!storeCalled, 'the ownership store must never be queried for a read when the agency module allowlist excludes this operation');
     },
   },
 ];

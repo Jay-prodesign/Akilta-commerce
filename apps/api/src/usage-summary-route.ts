@@ -85,6 +85,7 @@ export async function handleUsageSummaryRequest(request: UsageSummaryHttpRequest
       merchantWorkspaceId,
       resourceType: 'usage_summary',
     },
+    module: 'analytics',
     membershipCandidates: request.membershipCandidates,
     agencyAssignmentCandidates: request.agencyAssignmentCandidates,
     roleReader: request.roleReader,

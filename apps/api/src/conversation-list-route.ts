@@ -93,6 +93,7 @@ export async function handleConversationListRequest(request: ConversationListHtt
       merchantWorkspaceId,
       resourceType: 'conversation_list',
     },
+    module: 'conversation',
     membershipCandidates: request.membershipCandidates,
     agencyAssignmentCandidates: request.agencyAssignmentCandidates,
     roleReader: request.roleReader,

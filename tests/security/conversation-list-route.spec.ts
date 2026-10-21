@@ -11,10 +11,13 @@ import {
   type MembershipRoleReader,
 } from '../../packages/authz/src';
 import {
+  agencyClientAssignmentId,
   internalId,
   localeTag,
+  moduleKey,
   operationalStatus,
   utcTimestamp,
+  type AgencyClientAssignment,
   type Membership,
   type MerchantWorkspaceId,
   type OrganizationId,
@@ -40,6 +43,34 @@ if (currentPermissionAuthority.outcome !== 'RESOLVED') {
   throw new Error('fixture misconfigured: expected a resolvable permission authority snapshot');
 }
 const currentPermissionSnapshotRef = currentPermissionAuthority.snapshot.authorityVersion;
+
+const agencyOrgId: OrganizationId = internalId('conv-list-route-agency-a', 'Organization');
+const agencyAssignmentId = agencyClientAssignmentId('conv-list-route-assignment-1');
+
+function agencyAssignment(allowedModules: readonly string[]): AgencyClientAssignment {
+  return {
+    assignmentId: agencyAssignmentId,
+    agencyOrganizationId: agencyOrgId,
+    merchantWorkspaceId: workspaceA,
+    allowedModules: allowedModules.map(moduleKey),
+    permissionOverrideRefs: [],
+    approvalAuthorityRefs: [],
+    status: operationalStatus('ACTIVE'),
+  };
+}
+
+function agencyExecutionContext(overrides: Partial<ExecutionContext> = {}): ExecutionContext {
+  return baseExecutionContext({
+    actorOrganizationId: agencyOrgId,
+    actorOrganizationType: 'AGENCY',
+    agencyClientAssignmentId: agencyAssignmentId,
+    ...overrides,
+  });
+}
+
+function agencyMembership(): readonly Membership[] {
+  return [{ membershipId, userId, organizationId: agencyOrgId, roleRefs: [], status: operationalStatus('ACTIVE') }];
+}
 
 function roleReader(roleKeys: readonly string[] = [grantedRoleKey]): MembershipRoleReader {
   return { read: () => Promise.resolve({ outcome: 'READ_SUCCESS', roleKeys }) };
@@ -168,6 +199,31 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
         result.httpStatus === 200 && result.body.conversations.length === 0,
         'a workspace with zero conversations must be a real empty 200 list, never an error',
       );
+    },
+  },
+  {
+    id: 'CONVLISTROUTE-06-AGENCY-WITH-MODULE-RESTRICTION-EXCLUDING-CONVERSATION-DENIES-403-BEFORE-ANY-STORE-CALL',
+    run: async () => {
+      let storeCalled = false;
+      const store = createConversationListStore({
+        query: () => {
+          storeCalled = true;
+          return Promise.resolve({ rows: [] });
+        },
+      });
+      const result = await handleConversationListRequest(
+        baseRequest({
+          executionContext: agencyExecutionContext(),
+          membershipCandidates: agencyMembership(),
+          agencyAssignmentCandidates: [agencyAssignment(['commerce'])],
+          store,
+        }),
+      );
+      assert(
+        result.httpStatus === 403,
+        "an agency whose current AgencyClientAssignment does not include the 'conversation' module must be denied, even with a role that grants conversation:read",
+      );
+      assert(!storeCalled, 'the conversation list store must never be queried when the agency module allowlist excludes this operation');
     },
   },
 ];

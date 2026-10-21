@@ -12,10 +12,13 @@ import {
   type MembershipRoleReader,
 } from '../../packages/authz/src';
 import {
+  agencyClientAssignmentId,
   internalId,
   localeTag,
+  moduleKey,
   operationalStatus,
   utcTimestamp,
+  type AgencyClientAssignment,
   type CustomerId,
   type Membership,
   type MerchantWorkspaceId,
@@ -43,6 +46,34 @@ if (currentPermissionAuthority.outcome !== 'RESOLVED') {
   throw new Error('fixture misconfigured: expected a resolvable permission authority snapshot');
 }
 const currentPermissionSnapshotRef = currentPermissionAuthority.snapshot.authorityVersion;
+
+const agencyOrgId: OrganizationId = internalId('cctx-route-agency-a', 'Organization');
+const agencyAssignmentId = agencyClientAssignmentId('cctx-route-assignment-1');
+
+function agencyAssignment(allowedModules: readonly string[]): AgencyClientAssignment {
+  return {
+    assignmentId: agencyAssignmentId,
+    agencyOrganizationId: agencyOrgId,
+    merchantWorkspaceId: workspaceA,
+    allowedModules: allowedModules.map(moduleKey),
+    permissionOverrideRefs: [],
+    approvalAuthorityRefs: [],
+    status: operationalStatus('ACTIVE'),
+  };
+}
+
+function agencyExecutionContext(overrides: Partial<ExecutionContext> = {}): ExecutionContext {
+  return baseExecutionContext({
+    actorOrganizationId: agencyOrgId,
+    actorOrganizationType: 'AGENCY',
+    agencyClientAssignmentId: agencyAssignmentId,
+    ...overrides,
+  });
+}
+
+function agencyMembership(): readonly Membership[] {
+  return [{ membershipId, userId, organizationId: agencyOrgId, roleRefs: [], status: operationalStatus('ACTIVE') }];
+}
 
 function roleReader(roleKeys: readonly string[] = [grantedRoleKey]): MembershipRoleReader {
   return { read: () => Promise.resolve({ outcome: 'READ_SUCCESS', roleKeys }) };
@@ -217,12 +248,54 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
       );
     },
   },
-  // Note: a "customer:read granted but commerce.order:read denied" scenario cannot currently be
-  // exercised against the real deployed ROLE_PERMISSION_POLICY — CLIENT_SUPPORT_AGENT is the only
-  // role holding customer:read, and it holds commerce.order:read too. The DENY branch in
-  // readOrdersIfAuthorized exists as defense-in-depth for a future role bundle where that stops
-  // being true (see the module doc comment); it is not fabricated RBAC, and is not re-verified here
-  // against a policy entry this unit does not own.
+  {
+    id: 'CCTXROUTE-08-AGENCY-WITH-MODULE-RESTRICTION-EXCLUDING-CUSTOMER-DENIES-403-BEFORE-ANY-STORE-CALL',
+    run: async () => {
+      let storeCalled = false;
+      const store = createCustomerContextStore({
+        query: () => {
+          storeCalled = true;
+          return Promise.resolve({ rows: [] });
+        },
+      });
+      const result = await handleCustomerContextRequest(
+        baseRequest({
+          executionContext: agencyExecutionContext(),
+          membershipCandidates: agencyMembership(),
+          agencyAssignmentCandidates: [agencyAssignment(['commerce'])],
+          store,
+        }),
+      );
+      assert(
+        result.httpStatus === 403,
+        "an agency whose current AgencyClientAssignment does not include the 'customer' module must be denied, even with a role that grants customer:read",
+      );
+      assert(!storeCalled, 'the customer context store must never be queried when the agency module allowlist excludes this operation');
+    },
+  },
+  {
+    id: 'CCTXROUTE-09-AGENCY-WITH-MODULE-RESTRICTION-EXCLUDING-COMMERCE-OMITS-ORDERS-BUT-STILL-RETURNS-200',
+    run: async () => {
+      // This is the real, now-exercisable counterpart to what was previously an untestable claim:
+      // the *same* CLIENT_SUPPORT_AGENT role grants both customer:read and commerce.order:read, but
+      // an agency's module allowlist can independently restrict each operation — here 'customer' is
+      // allowed (so the base context read succeeds) while 'commerce' is not (so order history must
+      // be omitted), proving the two authorization gates are genuinely independent in practice, not
+      // just in the pure decision function.
+      const result = await handleCustomerContextRequest(
+        baseRequest({
+          executionContext: agencyExecutionContext(),
+          membershipCandidates: agencyMembership(),
+          agencyAssignmentCandidates: [agencyAssignment(['customer'])],
+        }),
+      );
+      assert(result.httpStatus === 200, 'the customer:read-gated base context must still succeed');
+      assert(
+        result.httpStatus === 200 && !('orders' in result.body),
+        "order history must be omitted when the agency's module allowlist excludes 'commerce', even though the role itself grants commerce.order:read",
+      );
+    },
+  },
 ];
 
 async function main() {

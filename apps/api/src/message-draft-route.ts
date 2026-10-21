@@ -23,9 +23,16 @@ import type { MessageDraftRecord, MessageDraftStore } from './message-draft-stor
  * build or approximate.
  *
  * Same deliberately-deferred boundaries as every other route this session: session/identity
- * middleware, a durable idempotency ledger (see message-draft-store.ts's doc comment for why this
- * one has no DB column to back it either), a live Postgres connection, independent
- * workspace-ownership verification.
+ * middleware, a live Postgres connection, independent workspace-ownership verification.
+ *
+ * Idempotency is NOT functional end-to-end today, stated precisely rather than softened: nothing
+ * in this codebase ever writes an applied outcome back into `appliedIdempotencyKeys`, so the map is
+ * always empty on every real request. Two concurrent retries sharing an idempotency key the caller
+ * has not yet recorded will both pass `createDraft`'s check and may both insert a draft row (see
+ * message-draft-store.ts's doc comment). `DRAFTROUTE-06`/`DRAFT-03` test the pure replay branch in
+ * isolation with a hand-constructed map; they do not exercise the real path by which a second HTTP
+ * request's map would ever come to contain the first request's outcome, because that path does not
+ * exist yet.
  */
 
 export interface MessageDraftRouteVariables {
@@ -96,6 +103,7 @@ export async function handleMessageDraftRequest(request: MessageDraftHttpRequest
       resourceType: 'conversation',
       resourceId: request.conversationId,
     },
+    module: 'conversation',
     membershipCandidates: request.membershipCandidates,
     agencyAssignmentCandidates: request.agencyAssignmentCandidates,
     roleReader: request.roleReader,

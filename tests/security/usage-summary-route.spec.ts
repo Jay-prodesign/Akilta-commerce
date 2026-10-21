@@ -11,10 +11,13 @@ import {
   type MembershipRoleReader,
 } from '../../packages/authz/src';
 import {
+  agencyClientAssignmentId,
   internalId,
   localeTag,
+  moduleKey,
   operationalStatus,
   utcTimestamp,
+  type AgencyClientAssignment,
   type Membership,
   type MerchantWorkspaceId,
   type OrganizationId,
@@ -40,6 +43,31 @@ if (currentPermissionAuthority.outcome !== 'RESOLVED') {
   throw new Error('fixture misconfigured: expected a resolvable permission authority snapshot');
 }
 const currentPermissionSnapshotRef = currentPermissionAuthority.snapshot.authorityVersion;
+
+const agencyOrgId: OrganizationId = internalId('usage-route-agency-a', 'Organization');
+const agencyAssignmentId = agencyClientAssignmentId('usage-route-assignment-1');
+const agencyPermissionAuthority = resolvePermissionAuthoritySnapshot(
+  membershipId,
+  workspaceA,
+  ['AGENCY_ANALYST'],
+  ROLE_PERMISSION_POLICY,
+);
+if (agencyPermissionAuthority.outcome !== 'RESOLVED') {
+  throw new Error('fixture misconfigured: expected a resolvable AGENCY_ANALYST permission authority snapshot');
+}
+const agencyPermissionSnapshotRef = agencyPermissionAuthority.snapshot.authorityVersion;
+
+function agencyAssignment(allowedModules: readonly string[]): AgencyClientAssignment {
+  return {
+    assignmentId: agencyAssignmentId,
+    agencyOrganizationId: agencyOrgId,
+    merchantWorkspaceId: workspaceA,
+    allowedModules: allowedModules.map(moduleKey),
+    permissionOverrideRefs: [],
+    approvalAuthorityRefs: [],
+    status: operationalStatus('ACTIVE'),
+  };
+}
 
 function roleReader(roleKeys: readonly string[] = [grantedRoleKey]): MembershipRoleReader {
   return { read: () => Promise.resolve({ outcome: 'READ_SUCCESS', roleKeys }) };
@@ -168,6 +196,40 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
       assert(rangeEnd === now.toISOString(), 'rangeEnd must be exactly the server-computed "now", never client-influenced');
       const expectedStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
       assert(rangeStart === expectedStart, 'rangeStart must be exactly 30 days before "now"');
+    },
+  },
+  {
+    id: 'USAGEROUTE-06-AGENCY-WITH-MODULE-RESTRICTION-EXCLUDING-ANALYTICS-DENIES-403-BEFORE-ANY-STORE-CALL',
+    run: async () => {
+      let storeCalled = false;
+      const store = createUsageSummaryStore({
+        query: () => {
+          storeCalled = true;
+          return Promise.resolve({ rows: [] });
+        },
+      });
+      const assignment = agencyAssignment(['campaign']);
+      const result = await handleUsageSummaryRequest(
+        baseRequest({
+          executionContext: baseExecutionContext({
+            actorOrganizationId: agencyOrgId,
+            actorOrganizationType: 'AGENCY',
+            agencyClientAssignmentId: agencyAssignmentId,
+            permissionSnapshotRef: agencyPermissionSnapshotRef,
+          }),
+          membershipCandidates: [
+            { membershipId, userId, organizationId: agencyOrgId, roleRefs: [], status: operationalStatus('ACTIVE') },
+          ],
+          agencyAssignmentCandidates: [assignment],
+          roleReader: roleReader(['AGENCY_ANALYST']),
+          store,
+        }),
+      );
+      assert(
+        result.httpStatus === 403,
+        "an agency whose current AgencyClientAssignment does not include the 'analytics' module must be denied even though AGENCY_ANALYST grants analytics:read",
+      );
+      assert(!storeCalled, 'the usage store must never be queried when the agency module allowlist excludes this operation');
     },
   },
 ];
