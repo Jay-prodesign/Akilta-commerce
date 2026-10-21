@@ -4,6 +4,7 @@ import { registerConversationOwnershipRoutes, type ConversationOwnershipRouteVar
 import { registerUsageSummaryRoutes, type UsageSummaryRouteVariables } from './usage-summary-route';
 import { registerCustomerContextRoutes, type CustomerContextRouteVariables } from './customer-context-route';
 import { registerConversationListRoutes, type ConversationListRouteVariables } from './conversation-list-route';
+import { registerMessageDraftRoutes, type MessageDraftRouteVariables } from './message-draft-route';
 
 const app = new Hono();
 
@@ -34,5 +35,9 @@ app.route('/', customerContextApp);
 const conversationListApp = new Hono<{ Variables: ConversationListRouteVariables }>();
 registerConversationListRoutes(conversationListApp);
 app.route('/', conversationListApp);
+
+const messageDraftApp = new Hono<{ Variables: MessageDraftRouteVariables }>();
+registerMessageDraftRoutes(messageDraftApp);
+app.route('/', messageDraftApp);
 
 export default app;

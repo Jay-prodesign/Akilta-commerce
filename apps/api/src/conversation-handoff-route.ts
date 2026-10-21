@@ -9,7 +9,7 @@ import {
   type ConversationOwnershipTrigger,
 } from '../../../packages/authz/src/conversation-ownership-transition';
 import { internalId, type AgencyClientAssignment, type ConversationId, type Membership } from '../../../packages/domain/src';
-import { safeHttpErrorEnvelope, type SafeHttpErrorEnvelope } from './transport-contracts';
+import { readUnknownBodyField, safeHttpErrorEnvelope, type SafeHttpErrorEnvelope } from './transport-contracts';
 import type { ConversationOwnershipStore } from './conversation-ownership-store';
 
 /**
@@ -227,11 +227,6 @@ function jsonResponse(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 }
 
-function readUnknownField(value: unknown, field: string): unknown {
-  if (value === null || typeof value !== 'object') return undefined;
-  return Reflect.get(value, field);
-}
-
 type ConversationOwnershipRouteContext = Context<{ Variables: ConversationOwnershipRouteVariables }>;
 
 async function runRoute(c: ConversationOwnershipRouteContext, trigger: ConversationOwnershipTrigger): Promise<Response> {
@@ -255,8 +250,8 @@ async function runRoute(c: ConversationOwnershipRouteContext, trigger: Conversat
   } catch {
     body = {};
   }
-  const rawExpectedEpoch = readUnknownField(body, 'expectedEpoch');
-  const rawIdempotencyKey = readUnknownField(body, 'idempotencyKey');
+  const rawExpectedEpoch = readUnknownBodyField(body, 'expectedEpoch');
+  const rawIdempotencyKey = readUnknownBodyField(body, 'idempotencyKey');
 
   const expectedEpoch =
     typeof rawExpectedEpoch === 'number' && Number.isInteger(rawExpectedEpoch) && rawExpectedEpoch >= 0

@@ -121,6 +121,15 @@ export function serializeMoneyForHttp(amount: { readonly amountMinor: bigint; re
   return { amountMinor: amount.amountMinor.toString(), currency: amount.currency };
 }
 
+/**
+ * Reads one field off an already-JSON-parsed, still-`unknown` request body without a type
+ * assertion — `Reflect.get` on an object-narrowed value, never `body as { field?: unknown }`.
+ */
+export function readUnknownBodyField(body: unknown, field: string): unknown {
+  if (body === null || typeof body !== 'object') return undefined;
+  return Reflect.get(body, field);
+}
+
 export type HttpMethod = 'GET' | 'POST';
 export type TransportEffect = 'READ_ONLY' | 'INTERNAL_STATE_CHANGE' | 'EXTERNAL_EFFECT';
 
