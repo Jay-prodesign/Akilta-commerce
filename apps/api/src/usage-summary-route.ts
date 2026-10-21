@@ -3,7 +3,7 @@ import { Hono, type Context } from 'hono';
 import { evaluateAuthorization } from '../../../packages/authz/src';
 import type { ExecutionContext, MembershipRoleReader } from '../../../packages/authz/src';
 import { utcTimestamp, type AgencyClientAssignment, type Membership } from '../../../packages/domain/src';
-import { safeHttpErrorEnvelope, type SafeHttpErrorEnvelope } from './transport-contracts';
+import { safeHttpErrorEnvelope, serializeMoneyForHttp, type SafeHttpErrorEnvelope } from './transport-contracts';
 import type { UsageSummaryStore } from './usage-summary-store';
 
 /**
@@ -56,10 +56,6 @@ export type UsageSummaryHttpResult =
   | { readonly httpStatus: 500; readonly body: SafeHttpErrorEnvelope };
 
 const SUMMARY_RANGE_DAYS = 30;
-
-function serializeMoney(amount: { readonly amountMinor: bigint; readonly currency: string }) {
-  return { amountMinor: amount.amountMinor.toString(), currency: amount.currency };
-}
 
 export interface UsageSummaryHttpRequest {
   readonly executionContext: ExecutionContext;
@@ -125,7 +121,7 @@ export async function handleUsageSummaryRequest(request: UsageSummaryHttpRequest
       byModule: summary.byModule.map((row) => ({
         module: row.module,
         eventCount: row.eventCount,
-        knownCostByCurrency: row.knownCostByCurrency.map(serializeMoney),
+        knownCostByCurrency: row.knownCostByCurrency.map(serializeMoneyForHttp),
         unknownCostEventCount: row.unknownCostEventCount,
       })),
     },

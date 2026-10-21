@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import app from '../../apps/api/src/worker';
 import { registerCustomerContextRoutes, type CustomerContextRouteVariables } from '../../apps/api/src/customer-context-route';
 import { createCustomerContextStore, type CustomerContextQueryExecutor } from '../../apps/api/src/customer-context-store';
+import { createCustomerOrdersStore, type CustomerOrdersQueryExecutor } from '../../apps/api/src/customer-orders-store';
 import {
   permission,
   resolvePermissionAuthoritySnapshot,
@@ -76,7 +77,15 @@ function fakeExecutor(
   };
 }
 
-function buildTestApp(customerRows: readonly Record<string, unknown>[], identityRows: readonly Record<string, unknown>[] = []) {
+function fakeOrdersExecutor(orderRows: readonly Record<string, unknown>[] = []): CustomerOrdersQueryExecutor {
+  return { query: () => Promise.resolve({ rows: orderRows }) };
+}
+
+function buildTestApp(
+  customerRows: readonly Record<string, unknown>[],
+  identityRows: readonly Record<string, unknown>[] = [],
+  orderRows: readonly Record<string, unknown>[] = [],
+) {
   const testApp = new Hono<{ Variables: CustomerContextRouteVariables }>();
   testApp.use('*', async (c, next) => {
     c.set('executionContext', executionContext());
@@ -84,6 +93,7 @@ function buildTestApp(customerRows: readonly Record<string, unknown>[], identity
     c.set('agencyAssignmentCandidates', []);
     c.set('roleReader', roleReader());
     c.set('customerContextStore', createCustomerContextStore(fakeExecutor(customerRows, identityRows)));
+    c.set('customerOrdersStore', createCustomerOrdersStore(fakeOrdersExecutor(orderRows)));
     await next();
   });
   registerCustomerContextRoutes(testApp);
@@ -110,6 +120,39 @@ describe('customer context HTTP route', () => {
       safeDisplayName: 'Real Customer',
       status: 'ACTIVE',
       identities: [{ channelType: 'whatsapp', verificationLevel: 'CV2', status: 'ACTIVE' }],
+      orders: [],
+    });
+  });
+
+  it('returns real order history over HTTP when the caller also holds commerce.order:read', async () => {
+    const testApp = buildTestApp(
+      [{ customer_id: 'cust-1', safe_display_name: 'Real Customer', status: 'ACTIVE' }],
+      [],
+      [
+        {
+          order_id: 'ord-http-1',
+          display_order_ref: 'ORD-HTTP-1',
+          order_status: 'FULFILLED',
+          payment_status: 'CAPTURED',
+          currency: 'USD',
+          total_amount_minor: '999',
+          completeness_scope: 'FULL_HISTORY',
+          provider_created_at: '2026-09-15T10:00:00.000Z',
+        },
+      ],
+    );
+    const response = await testApp.request('https://worker.test/v1/customers/cust-1/context');
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject({
+      orders: [
+        {
+          orderId: 'ord-http-1',
+          displayOrderRef: 'ORD-HTTP-1',
+          totalAmount: { amountMinor: '999', currency: 'USD' },
+          completenessScope: 'FULL_HISTORY',
+        },
+      ],
     });
   });
 

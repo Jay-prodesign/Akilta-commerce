@@ -3,6 +3,7 @@ import {
   type CustomerContextHttpRequest,
 } from '../../apps/api/src/customer-context-route';
 import { createCustomerContextStore, type CustomerContextQueryExecutor } from '../../apps/api/src/customer-context-store';
+import { createCustomerOrdersStore, type CustomerOrdersQueryExecutor } from '../../apps/api/src/customer-orders-store';
 import {
   permission,
   resolvePermissionAuthoritySnapshot,
@@ -89,6 +90,10 @@ function fakeExecutor(
   };
 }
 
+function fakeOrdersExecutor(rows: readonly Record<string, unknown>[]): CustomerOrdersQueryExecutor {
+  return { query: () => Promise.resolve({ rows }) };
+}
+
 function baseRequest(overrides: Partial<CustomerContextHttpRequest> = {}): CustomerContextHttpRequest {
   return {
     customerId,
@@ -97,6 +102,7 @@ function baseRequest(overrides: Partial<CustomerContextHttpRequest> = {}): Custo
     agencyAssignmentCandidates: [],
     roleReader: roleReader(),
     store: createCustomerContextStore(fakeExecutor([{ customer_id: customerId, safe_display_name: 'A Customer', status: 'ACTIVE' }])),
+    ordersStore: createCustomerOrdersStore(fakeOrdersExecutor([])),
     ...overrides,
   };
 }
@@ -108,8 +114,12 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
       const result = await handleCustomerContextRequest(baseRequest());
       assert(result.httpStatus === 200, 'an authorized caller with customer:read must get a 200');
       assert(
-        result.httpStatus === 200 && result.body.customerId === customerId && result.body.safeDisplayName === 'A Customer',
-        'the response must carry the real customer id/display name',
+        result.httpStatus === 200 &&
+          result.body.customerId === customerId &&
+          result.body.safeDisplayName === 'A Customer' &&
+          Array.isArray(result.body.orders) &&
+          result.body.orders.length === 0,
+        'the response must carry the real customer id/display name, and orders present (empty) since CLIENT_SUPPORT_AGENT also holds commerce.order:read',
       );
     },
   },
@@ -165,6 +175,54 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
       );
     },
   },
+  {
+    id: 'CCTXROUTE-06-ORDERS-PRESENT-WITH-REAL-SERIALIZED-DATA-WHEN-GRANTED',
+    run: async () => {
+      const ordersStore = createCustomerOrdersStore(
+        fakeOrdersExecutor([
+          {
+            order_id: 'ord-ctx-1',
+            display_order_ref: 'ORD-9001',
+            order_status: 'FULFILLED',
+            payment_status: 'CAPTURED',
+            currency: 'USD',
+            total_amount_minor: '12345',
+            completeness_scope: 'FULL_HISTORY',
+            provider_created_at: '2026-09-10T10:00:00.000Z',
+          },
+        ]),
+      );
+      const result = await handleCustomerContextRequest(baseRequest({ ordersStore }));
+      assert(result.httpStatus === 200, 'sanity: the read must succeed');
+      const order = result.httpStatus === 200 ? result.body.orders?.[0] : undefined;
+      assert(
+        result.httpStatus === 200 &&
+          result.body.orders?.length === 1 &&
+          order !== undefined &&
+          order.orderId === 'ord-ctx-1' &&
+          order.totalAmount?.amountMinor === '12345' &&
+          typeof order.totalAmount?.amountMinor === 'string',
+        'a real order must appear with its amountMinor serialized as a JSON-safe string, never a raw bigint',
+      );
+    },
+  },
+  {
+    id: 'CCTXROUTE-07-ORDERS-STORE-ERROR-FAILS-THE-WHOLE-REQUEST-RETRYABLE-500',
+    run: async () => {
+      const ordersStore = createCustomerOrdersStore({ query: () => Promise.reject(new Error('orders connection lost')) });
+      const result = await handleCustomerContextRequest(baseRequest({ ordersStore }));
+      assert(
+        result.httpStatus === 500 && 'retryable' in result.body && result.body.retryable === true,
+        'an orders-store read failure must fail the whole request closed as a retryable 500, never silently omit orders from a 200',
+      );
+    },
+  },
+  // Note: a "customer:read granted but commerce.order:read denied" scenario cannot currently be
+  // exercised against the real deployed ROLE_PERMISSION_POLICY — CLIENT_SUPPORT_AGENT is the only
+  // role holding customer:read, and it holds commerce.order:read too. The DENY branch in
+  // readOrdersIfAuthorized exists as defense-in-depth for a future role bundle where that stops
+  // being true (see the module doc comment); it is not fabricated RBAC, and is not re-verified here
+  // against a policy entry this unit does not own.
 ];
 
 async function main() {

@@ -111,6 +111,16 @@ export function safeHttpErrorEnvelope(input: SafeHttpErrorInput): SafeHttpErrorE
   });
 }
 
+export interface HttpSerializedMoney {
+  readonly amountMinor: string;
+  readonly currency: string;
+}
+
+/** `Money.amountMinor` is a `bigint`, which `JSON.stringify` cannot serialize directly. */
+export function serializeMoneyForHttp(amount: { readonly amountMinor: bigint; readonly currency: string }): HttpSerializedMoney {
+  return { amountMinor: amount.amountMinor.toString(), currency: amount.currency };
+}
+
 export type HttpMethod = 'GET' | 'POST';
 export type TransportEffect = 'READ_ONLY' | 'INTERNAL_STATE_CHANGE' | 'EXTERNAL_EFFECT';
 
