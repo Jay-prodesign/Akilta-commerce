@@ -330,6 +330,15 @@ CREATE TABLE message_drafts (
     REFERENCES conversations(conversation_id, merchant_workspace_id) ON DELETE RESTRICT
 );
 
+CREATE TABLE idempotency_records (
+  operation_key TEXT NOT NULL,
+  merchant_workspace_id TEXT NOT NULL REFERENCES merchant_workspaces(merchant_workspace_id) ON DELETE RESTRICT,
+  idempotency_key TEXT NOT NULL,
+  result_snapshot JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
+  PRIMARY KEY (operation_key, merchant_workspace_id, idempotency_key)
+);
+
 CREATE TABLE conversation_ownership_events (
   ownership_event_id TEXT PRIMARY KEY,
   conversation_id TEXT NOT NULL,
