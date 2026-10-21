@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 
 import { registerConversationOwnershipRoutes, type ConversationOwnershipRouteVariables } from './conversation-handoff-route';
 import { registerUsageSummaryRoutes, type UsageSummaryRouteVariables } from './usage-summary-route';
+import { registerCustomerContextRoutes, type CustomerContextRouteVariables } from './customer-context-route';
 
 const app = new Hono();
 
@@ -24,5 +25,9 @@ app.route('/', conversationOwnershipApp);
 const usageSummaryApp = new Hono<{ Variables: UsageSummaryRouteVariables }>();
 registerUsageSummaryRoutes(usageSummaryApp);
 app.route('/', usageSummaryApp);
+
+const customerContextApp = new Hono<{ Variables: CustomerContextRouteVariables }>();
+registerCustomerContextRoutes(customerContextApp);
+app.route('/', customerContextApp);
 
 export default app;
