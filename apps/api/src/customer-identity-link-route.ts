@@ -243,15 +243,22 @@ async function runCustomerIdentityLinkRoute(c: CustomerIdentityLinkRouteContext)
     );
   }
 
-  let idempotencyKey: CustomerIdentityLinkIdempotencyKey;
-  try {
-    idempotencyKey = customerIdentityLinkIdempotencyKey(typeof rawIdempotencyKey === 'string' ? rawIdempotencyKey : '');
-  } catch {
+  const rawIdempotencyKeyInput = typeof rawIdempotencyKey === 'string' ? rawIdempotencyKey.trim() : '';
+  if (rawIdempotencyKeyInput.length === 0) {
     return new Response(
       JSON.stringify({ error: 'INVALID_REQUEST', field: 'idempotencyKey', requestId: executionContext.requestId }),
       { status: 400, headers: { 'content-type': 'application/json' } },
     );
   }
+  // Scoped to (workspace, identity, operation, caller key) — a per-D-090-#2 collision-safety fix:
+  // the caller-supplied key alone is not tenant-bound, so two different workspaces/identities/
+  // operations reusing the same opaque string must never be able to collide once a durable
+  // idempotency ledger is wired behind the currently-always-empty injected map (see this route's
+  // own doc comment for that still-deferred boundary). JSON encoding, not delimiter concatenation,
+  // for the same collision-safety reason as permission-authority.ts's deriveAuthorityVersion.
+  const idempotencyKey: CustomerIdentityLinkIdempotencyKey = customerIdentityLinkIdempotencyKey(
+    JSON.stringify([executionContext.activeMerchantWorkspaceId, customerIdentityIdParam, rawOperation, rawIdempotencyKeyInput]),
+  );
 
   const result = await handleCustomerIdentityLinkRequest({
     customerIdentityId: internalId(customerIdentityIdParam, 'CustomerIdentity'),

@@ -145,6 +145,28 @@ describe('customer identity link HTTP route', () => {
     expect(body).toMatchObject({ error: 'INVALID_REQUEST', field: 'targetCustomerId' });
   });
 
+  it('scopes the idempotency ledger lookup by identity, not just the raw caller key, so two identities sharing the same raw key never collide', async () => {
+    const sharedRawKey = 'shared-caller-key';
+    const otherIdentityComposedKey = JSON.stringify([workspaceA, 'identity-A', 'LINK', sharedRawKey]);
+    const priorRecordForOtherIdentity: CustomerIdentityLinkRecord = {
+      ownerCustomerIdentityId: internalId('identity-A', 'CustomerIdentity'),
+      ownerMerchantWorkspaceId: workspaceA,
+      customerId: internalId('cust-identity-a', 'Customer'),
+      generation: 7,
+    };
+    const appliedKeys = new Map([[otherIdentityComposedKey as CustomerIdentityLinkIdempotencyKey, priorRecordForOtherIdentity]]);
+    const testApp = buildTestApp(appliedKeys);
+    // Same raw key, but a DIFFERENT identity (identity-B) — must not replay identity-A's cached outcome.
+    const response = await testApp.request('https://worker.test/v1/customer-identities/identity-B/link', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ operation: 'LINK', targetCustomerId: 'cust-http-1', expectedGeneration: 0, idempotencyKey: sharedRawKey }),
+    });
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject({ customerId: 'cust-http-1', replay: false });
+  });
+
   it('returns a real 403 over HTTP when the role lacks conversation:respond', async () => {
     const testApp = new Hono<{ Variables: CustomerIdentityLinkRouteVariables }>();
     testApp.use('*', async (c, next) => {
