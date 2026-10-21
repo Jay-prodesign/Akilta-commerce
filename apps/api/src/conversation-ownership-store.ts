@@ -13,7 +13,8 @@ function assertIsConversationOwnershipState(value: string): asserts value is Con
   }
 }
 
-function parseOwnershipState(value: unknown): ConversationOwnershipState {
+/** Exported so other read adapters (e.g. conversation-list-store.ts) share this one parse/validate path. */
+export function parseOwnershipState(value: unknown): ConversationOwnershipState {
   const candidate = String(value);
   assertIsConversationOwnershipState(candidate);
   return candidate;
