@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 
 import app from '../../apps/api/src/worker';
 import { registerMessageDraftRoutes, type MessageDraftRouteVariables } from '../../apps/api/src/message-draft-route';
-import { createMessageDraftStore, type MessageDraftQueryExecutor, type MessageDraftRecord } from '../../apps/api/src/message-draft-store';
+import { createMessageDraftStore, type MessageDraftQueryExecutor } from '../../apps/api/src/message-draft-store';
+import type { IdempotencyLedgerReadOutcome, IdempotencyLedgerStore } from '../../apps/api/src/idempotency-ledger-store';
 import {
   permission,
   resolvePermissionAuthoritySnapshot,
@@ -16,7 +17,6 @@ import {
   localeTag,
   operationalStatus,
   utcTimestamp,
-  type IdempotencyKey,
   type Membership,
   type MerchantWorkspaceId,
   type OrganizationId,
@@ -76,15 +76,22 @@ function existingConversationExecutor(): MessageDraftQueryExecutor {
   };
 }
 
-function buildTestApp(appliedIdempotencyKeys: ReadonlyMap<IdempotencyKey, MessageDraftRecord> = new Map()) {
+function fakeLedger(overrides: Partial<IdempotencyLedgerStore> = {}): IdempotencyLedgerStore {
+  return {
+    tryGet: (): Promise<IdempotencyLedgerReadOutcome> => Promise.resolve({ status: 'NOT_FOUND' }),
+    record: () => Promise.resolve({ status: 'RECORDED' }),
+    ...overrides,
+  };
+}
+
+function buildTestApp(ledger: IdempotencyLedgerStore = fakeLedger()) {
   const testApp = new Hono<{ Variables: MessageDraftRouteVariables }>();
   testApp.use('*', async (c, next) => {
     c.set('executionContext', executionContext());
     c.set('membershipCandidates', membership());
     c.set('agencyAssignmentCandidates', []);
     c.set('roleReader', roleReader());
-    c.set('messageDraftStore', createMessageDraftStore(existingConversationExecutor()));
-    c.set('appliedMessageDraftIdempotencyKeys', appliedIdempotencyKeys);
+    c.set('messageDraftStore', createMessageDraftStore(existingConversationExecutor(), ledger));
     await next();
   });
   registerMessageDraftRoutes(testApp);
@@ -131,6 +138,25 @@ describe('message draft HTTP route', () => {
     expect(body).toMatchObject({ error: 'INVALID_REQUEST', field: 'proposedText' });
   });
 
+  it('returns a real 200 ledger replay over HTTP, never re-reaching the INSERT', async () => {
+    const priorSnapshot = {
+      draftId: internalId('draft-http-prior', 'MessageDraft'),
+      proposedText: 'prior real draft',
+      status: 'DRAFT',
+      createdByUserId: userId,
+      createdAt: '2026-10-20T12:00:00.000Z',
+    };
+    const testApp = buildTestApp(fakeLedger({ tryGet: () => Promise.resolve({ status: 'FOUND', resultSnapshot: priorSnapshot }) }));
+    const response = await testApp.request('https://worker.test/v1/conversations/conv-1/messages/draft', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ proposedText: 'ignored new text', idempotencyKey: 'key-1' }),
+    });
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject({ draftId: 'draft-http-prior', proposedText: 'prior real draft', replay: true });
+  });
+
   it('returns a real 403 over HTTP when the role lacks conversation:respond', async () => {
     const testApp = new Hono<{ Variables: MessageDraftRouteVariables }>();
     testApp.use('*', async (c, next) => {
@@ -138,8 +164,7 @@ describe('message draft HTTP route', () => {
       c.set('membershipCandidates', membership());
       c.set('agencyAssignmentCandidates', []);
       c.set('roleReader', { read: () => Promise.resolve({ outcome: 'READ_SUCCESS', roleKeys: ['CLIENT_ANALYST'] }) });
-      c.set('messageDraftStore', createMessageDraftStore(existingConversationExecutor()));
-      c.set('appliedMessageDraftIdempotencyKeys', new Map());
+      c.set('messageDraftStore', createMessageDraftStore(existingConversationExecutor(), fakeLedger()));
       await next();
     });
     registerMessageDraftRoutes(testApp);

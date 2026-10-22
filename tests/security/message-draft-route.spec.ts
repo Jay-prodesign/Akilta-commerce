@@ -2,7 +2,8 @@ import {
   handleMessageDraftRequest,
   type MessageDraftHttpRequest,
 } from '../../apps/api/src/message-draft-route';
-import { createMessageDraftStore, type MessageDraftQueryExecutor, type MessageDraftRecord } from '../../apps/api/src/message-draft-store';
+import { createMessageDraftStore, type MessageDraftQueryExecutor } from '../../apps/api/src/message-draft-store';
+import type { IdempotencyLedgerReadOutcome, IdempotencyLedgerStore } from '../../apps/api/src/idempotency-ledger-store';
 import {
   permission,
   resolvePermissionAuthoritySnapshot,
@@ -129,8 +130,12 @@ function existingConversationExecutor(insertRow?: Record<string, unknown>): Mess
   };
 }
 
-function emptyAppliedKeys(): ReadonlyMap<IdempotencyKey, MessageDraftRecord> {
-  return new Map();
+function fakeLedger(overrides: Partial<IdempotencyLedgerStore> = {}): IdempotencyLedgerStore {
+  return {
+    tryGet: (): Promise<IdempotencyLedgerReadOutcome> => Promise.resolve({ status: 'NOT_FOUND' }),
+    record: () => Promise.resolve({ status: 'RECORDED' }),
+    ...overrides,
+  };
 }
 
 function baseRequest(overrides: Partial<MessageDraftHttpRequest> = {}): MessageDraftHttpRequest {
@@ -142,8 +147,7 @@ function baseRequest(overrides: Partial<MessageDraftHttpRequest> = {}): MessageD
     membershipCandidates: membership(),
     agencyAssignmentCandidates: [],
     roleReader: roleReader(),
-    store: createMessageDraftStore(existingConversationExecutor()),
-    appliedIdempotencyKeys: emptyAppliedKeys(),
+    store: createMessageDraftStore(existingConversationExecutor(), fakeLedger()),
     ...overrides,
   };
 }
@@ -164,12 +168,15 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
     id: 'DRAFTROUTE-02-NO-ACTIVE-WORKSPACE-DENIES-403-BEFORE-ANY-STORE-CALL',
     run: async () => {
       let storeCalled = false;
-      const store = createMessageDraftStore({
-        query: () => {
-          storeCalled = true;
-          return Promise.resolve({ rows: [] });
+      const store = createMessageDraftStore(
+        {
+          query: () => {
+            storeCalled = true;
+            return Promise.resolve({ rows: [] });
+          },
         },
-      });
+        fakeLedger(),
+      );
       const result = await handleMessageDraftRequest(
         baseRequest({ executionContext: baseExecutionContext({ activeMerchantWorkspaceId: null }), store }),
       );
@@ -181,12 +188,15 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
     id: 'DRAFTROUTE-03-MISSING-CONVERSATION-RESPOND-PERMISSION-DENIES-403-BEFORE-ANY-STORE-CALL',
     run: async () => {
       let storeCalled = false;
-      const store = createMessageDraftStore({
-        query: () => {
-          storeCalled = true;
-          return Promise.resolve({ rows: [] });
+      const store = createMessageDraftStore(
+        {
+          query: () => {
+            storeCalled = true;
+            return Promise.resolve({ rows: [] });
+          },
         },
-      });
+        fakeLedger(),
+      );
       // CLIENT_ANALYST has no conversation:respond grant in ROLE_PERMISSION_POLICY.
       const result = await handleMessageDraftRequest(baseRequest({ roleReader: roleReader(['CLIENT_ANALYST']), store }));
       assert(result.httpStatus === 403, 'a role lacking conversation:respond must be denied');
@@ -196,7 +206,7 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
   {
     id: 'DRAFTROUTE-04-MISSING-CONVERSATION-RETURNS-404',
     run: async () => {
-      const store = createMessageDraftStore({ query: () => Promise.resolve({ rows: [] }) });
+      const store = createMessageDraftStore({ query: () => Promise.resolve({ rows: [] }) }, fakeLedger());
       const result = await handleMessageDraftRequest(baseRequest({ store }));
       assert(result.httpStatus === 404, 'drafting against a conversation that does not exist in this workspace must be a 404, never a fabricated success');
     },
@@ -204,7 +214,7 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
   {
     id: 'DRAFTROUTE-05-STORE-ERROR-RETURNS-RETRYABLE-500',
     run: async () => {
-      const store = createMessageDraftStore({ query: () => Promise.reject(new Error('connection lost')) });
+      const store = createMessageDraftStore({ query: () => Promise.reject(new Error('connection lost')) }, fakeLedger());
       const result = await handleMessageDraftRequest(baseRequest({ store }));
       assert(
         result.httpStatus === 500 && 'retryable' in result.body && result.body.retryable === true,
@@ -213,28 +223,27 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
     },
   },
   {
-    id: 'DRAFTROUTE-06-REPLAYED-IDEMPOTENCY-KEY-RETURNS-200-WITH-REPLAY-TRUE-NEVER-REINSERTS',
+    id: 'DRAFTROUTE-06-LEDGER-REPLAY-RETURNS-200-WITH-REPLAY-TRUE-NEVER-REINSERTS',
     run: async () => {
       let insertCalled = false;
-      const store = createMessageDraftStore({
-        query: (sql) => {
-          if (sql.startsWith('SELECT 1')) return Promise.resolve({ rows: [{ '?column?': 1 }] });
-          insertCalled = true;
-          return Promise.resolve({ rows: [] });
-        },
-      });
-      const priorRecord: MessageDraftRecord = {
+      const priorSnapshot = {
         draftId: internalId('draft-prior', 'MessageDraft'),
-        conversationId,
-        merchantWorkspaceId: workspaceA,
         proposedText: 'prior draft text',
         status: 'DRAFT',
         createdByUserId: userId,
-        createdAt: utcTimestamp('2026-10-20T10:00:00.000Z'),
+        createdAt: '2026-10-20T10:00:00.000Z',
       };
-      const result = await handleMessageDraftRequest(
-        baseRequest({ store, appliedIdempotencyKeys: new Map([[key, priorRecord]]) }),
+      const store = createMessageDraftStore(
+        {
+          query: (sql) => {
+            if (sql.startsWith('SELECT 1')) return Promise.resolve({ rows: [{ '?column?': 1 }] });
+            insertCalled = true;
+            return Promise.resolve({ rows: [] });
+          },
+        },
+        fakeLedger({ tryGet: () => Promise.resolve({ status: 'FOUND', resultSnapshot: priorSnapshot }) }),
       );
+      const result = await handleMessageDraftRequest(baseRequest({ store }));
       assert(result.httpStatus === 200, 'a replayed idempotency key must still return 200');
       assert(
         result.httpStatus === 200 && result.body.replay === true && result.body.proposedText === 'prior draft text',
@@ -247,12 +256,15 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
     id: 'DRAFTROUTE-07-AGENCY-WITH-MODULE-RESTRICTION-EXCLUDING-CONVERSATION-DENIES-403-BEFORE-ANY-STORE-CALL',
     run: async () => {
       let storeCalled = false;
-      const store = createMessageDraftStore({
-        query: () => {
-          storeCalled = true;
-          return Promise.resolve({ rows: [] });
+      const store = createMessageDraftStore(
+        {
+          query: () => {
+            storeCalled = true;
+            return Promise.resolve({ rows: [] });
+          },
         },
-      });
+        fakeLedger(),
+      );
       const result = await handleMessageDraftRequest(
         baseRequest({
           executionContext: agencyExecutionContext(),

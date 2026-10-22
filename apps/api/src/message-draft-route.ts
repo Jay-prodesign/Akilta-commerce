@@ -25,14 +25,11 @@ import type { MessageDraftRecord, MessageDraftStore } from './message-draft-stor
  * Same deliberately-deferred boundaries as every other route this session: session/identity
  * middleware, a live Postgres connection, independent workspace-ownership verification.
  *
- * Idempotency is NOT functional end-to-end today, stated precisely rather than softened: nothing
- * in this codebase ever writes an applied outcome back into `appliedIdempotencyKeys`, so the map is
- * always empty on every real request. Two concurrent retries sharing an idempotency key the caller
- * has not yet recorded will both pass `createDraft`'s check and may both insert a draft row (see
- * message-draft-store.ts's doc comment). `DRAFTROUTE-06`/`DRAFT-03` test the pure replay branch in
- * isolation with a hand-constructed map; they do not exercise the real path by which a second HTTP
- * request's map would ever come to contain the first request's outcome, because that path does not
- * exist yet.
+ * Idempotency is now backed by the durable ledger (`idempotency-ledger-store.ts`), injected into
+ * `createMessageDraftStore` at construction time rather than per-request — this route itself no
+ * longer threads an idempotency-keys map through at all. See `message-draft-store.ts`'s doc comment
+ * for the one remaining, explicitly-accepted TOCTOU gap (no unique constraint on `message_drafts`
+ * itself).
  */
 
 export interface MessageDraftRouteVariables {
@@ -41,7 +38,6 @@ export interface MessageDraftRouteVariables {
   agencyAssignmentCandidates: readonly AgencyClientAssignment[];
   roleReader: MembershipRoleReader;
   messageDraftStore: MessageDraftStore;
-  appliedMessageDraftIdempotencyKeys: ReadonlyMap<IdempotencyKey, MessageDraftRecord>;
 }
 
 export interface MessageDraftHttpSuccessBody {
@@ -51,6 +47,7 @@ export interface MessageDraftHttpSuccessBody {
   readonly status: 'DRAFT';
   readonly createdAt: string;
   readonly replay: boolean;
+  readonly ledgerWriteFailed: boolean;
 }
 
 export type MessageDraftHttpResult =
@@ -69,10 +66,13 @@ export interface MessageDraftHttpRequest {
   readonly agencyAssignmentCandidates: readonly AgencyClientAssignment[];
   readonly roleReader: MembershipRoleReader;
   readonly store: MessageDraftStore;
-  readonly appliedIdempotencyKeys: ReadonlyMap<IdempotencyKey, MessageDraftRecord>;
 }
 
-function serializeDraftRecord(record: MessageDraftRecord, replay: boolean): MessageDraftHttpSuccessBody {
+function serializeDraftRecord(
+  record: MessageDraftRecord,
+  replay: boolean,
+  ledgerWriteFailed: boolean,
+): MessageDraftHttpSuccessBody {
   return {
     draftId: record.draftId,
     conversationId: record.conversationId,
@@ -80,6 +80,7 @@ function serializeDraftRecord(record: MessageDraftRecord, replay: boolean): Mess
     status: record.status,
     createdAt: record.createdAt,
     replay,
+    ledgerWriteFailed,
   };
 }
 
@@ -122,14 +123,17 @@ export async function handleMessageDraftRequest(request: MessageDraftHttpRequest
     request.proposedText,
     request.executionContext.actorUserId,
     request.idempotencyKey,
-    request.appliedIdempotencyKeys,
   );
 
   switch (outcome.status) {
     case 'CREATED':
-      return { httpStatus: 200, body: serializeDraftRecord(outcome.record, false) };
+      return { httpStatus: 200, body: serializeDraftRecord(outcome.record, false, false) };
     case 'ALREADY_APPLIED':
-      return { httpStatus: 200, body: serializeDraftRecord(outcome.record, true) };
+      return { httpStatus: 200, body: serializeDraftRecord(outcome.record, true, false) };
+    case 'LEDGER_WRITE_FAILED':
+      // The draft row itself was really created; only the idempotency-ledger write failed. Reporting
+      // this as a 500 would be false — the authoritative mutation already succeeded.
+      return { httpStatus: 200, body: serializeDraftRecord(outcome.record, false, true) };
     case 'NO_EXISTING_CONVERSATION':
       return { httpStatus: 404, body: { code: 'NOT_FOUND', requestId } };
     case 'STORE_ERROR':
@@ -196,7 +200,6 @@ async function runMessageDraftRoute(c: MessageDraftRouteContext): Promise<Respon
     agencyAssignmentCandidates: c.get('agencyAssignmentCandidates') ?? [],
     roleReader,
     store,
-    appliedIdempotencyKeys: c.get('appliedMessageDraftIdempotencyKeys') ?? new Map(),
   });
 
   return new Response(JSON.stringify(result.body), {
