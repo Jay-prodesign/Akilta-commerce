@@ -111,6 +111,25 @@ export function safeHttpErrorEnvelope(input: SafeHttpErrorInput): SafeHttpErrorE
   });
 }
 
+export interface HttpSerializedMoney {
+  readonly amountMinor: string;
+  readonly currency: string;
+}
+
+/** `Money.amountMinor` is a `bigint`, which `JSON.stringify` cannot serialize directly. */
+export function serializeMoneyForHttp(amount: { readonly amountMinor: bigint; readonly currency: string }): HttpSerializedMoney {
+  return { amountMinor: amount.amountMinor.toString(), currency: amount.currency };
+}
+
+/**
+ * Reads one field off an already-JSON-parsed, still-`unknown` request body without a type
+ * assertion — `Reflect.get` on an object-narrowed value, never `body as { field?: unknown }`.
+ */
+export function readUnknownBodyField(body: unknown, field: string): unknown {
+  if (body === null || typeof body !== 'object') return undefined;
+  return Reflect.get(body, field);
+}
+
 export type HttpMethod = 'GET' | 'POST';
 export type TransportEffect = 'READ_ONLY' | 'INTERNAL_STATE_CHANGE' | 'EXTERNAL_EFFECT';
 
@@ -131,6 +150,13 @@ export const CONTROL_CENTER_OPERATIONS = Object.freeze([
   { key: 'conversation.list', method: 'GET', path: '/v1/conversations', minimumPermission: 'conversation:read', effect: 'READ_ONLY', idempotencyRequired: false, serverResolvedWorkspaceRequired: true },
   { key: 'conversation.get', method: 'GET', path: '/v1/conversations/{id}', minimumPermission: 'conversation:read', effect: 'READ_ONLY', idempotencyRequired: false, serverResolvedWorkspaceRequired: true },
   { key: 'customer.context', method: 'GET', path: '/v1/customers/{id}/context', minimumPermission: 'customer:read', effect: 'READ_ONLY', idempotencyRequired: false, serverResolvedWorkspaceRequired: true },
+  // Added alongside the AC-XCID-107 HTTP wiring: canonical D108_CLOSURE_PLAN SC-05 row CUSTOMER_LINK_LINEAGE_GAP
+  // already fully specifies this operation's domain contract (packages/authz/src/customer-identity-link-transition.ts,
+  // acceptance tests XCID-01..09) but had no transport-contract row yet. minimumPermission reuses the existing
+  // conversation:respond grant (already mapped to CLIENT_SUPPORT_AGENT) rather than inventing a new permission
+  // string — PERMISSIONS (permissions.ts) is a closed vocabulary with no customer-identity-write permission, and
+  // this is the closest existing capability to "a support agent resolving who a conversation's customer is."
+  { key: 'customer_identity.link', method: 'POST', path: '/v1/customer-identities/{id}/link', minimumPermission: 'conversation:respond', effect: 'INTERNAL_STATE_CHANGE', idempotencyRequired: true, serverResolvedWorkspaceRequired: true },
   { key: 'rule.list', method: 'GET', path: '/v1/rules', minimumPermission: 'merchant_rule:read', effect: 'READ_ONLY', idempotencyRequired: false, serverResolvedWorkspaceRequired: true },
   { key: 'rule.get', method: 'GET', path: '/v1/rules/{id}', minimumPermission: 'merchant_rule:read', effect: 'READ_ONLY', idempotencyRequired: false, serverResolvedWorkspaceRequired: true },
   { key: 'approval.list', method: 'GET', path: '/v1/approvals', minimumPermission: 'approval:approve', effect: 'READ_ONLY', idempotencyRequired: false, serverResolvedWorkspaceRequired: true },
