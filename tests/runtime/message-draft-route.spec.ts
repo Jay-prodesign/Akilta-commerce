@@ -157,6 +157,23 @@ describe('message draft HTTP route', () => {
     expect(body).toMatchObject({ draftId: 'draft-http-prior', proposedText: 'prior real draft', replay: true });
   });
 
+  it('returns a real 200 over HTTP when the ledger write fails, reporting replay:false and ledgerWriteFailed:true', async () => {
+    const testApp = buildTestApp(fakeLedger({ record: () => Promise.resolve({ status: 'STORE_ERROR' }) }));
+    const response = await testApp.request('https://worker.test/v1/conversations/conv-1/messages/draft', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ proposedText: 'Thanks for reaching out!', idempotencyKey: 'key-1' }),
+    });
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject({
+      draftId: 'draft-http-1',
+      proposedText: 'Thanks for reaching out!',
+      replay: false,
+      ledgerWriteFailed: true,
+    });
+  });
+
   it('returns a real 403 over HTTP when the role lacks conversation:respond', async () => {
     const testApp = new Hono<{ Variables: MessageDraftRouteVariables }>();
     testApp.use('*', async (c, next) => {

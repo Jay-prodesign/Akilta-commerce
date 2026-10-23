@@ -280,6 +280,30 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
       assert(!storeCalled, 'the draft store must never be queried when the agency module allowlist excludes this operation');
     },
   },
+  {
+    id: 'DRAFTROUTE-08-LEDGER-WRITE-FAILED-RETURNS-200-WITH-REPLAY-FALSE-AND-LEDGER-WRITE-FAILED-TRUE',
+    run: async () => {
+      const record = {
+        draftId: internalId('draft-lwf', 'MessageDraft'),
+        conversationId,
+        merchantWorkspaceId: workspaceA,
+        proposedText: 'text that was really saved',
+        status: 'DRAFT' as const,
+        createdByUserId: userId,
+        createdAt: utcTimestamp('2026-10-21T12:00:00Z'),
+      };
+      const store = { createDraft: () => Promise.resolve({ status: 'LEDGER_WRITE_FAILED' as const, record }) };
+      const result = await handleMessageDraftRequest(baseRequest({ store }));
+      assert(result.httpStatus === 200, 'a ledger write failure must never surface as a 500 — the draft itself was really created');
+      assert(
+        result.httpStatus === 200 &&
+          result.body.proposedText === 'text that was really saved' &&
+          result.body.replay === false &&
+          result.body.ledgerWriteFailed === true,
+        'the response must report the real created draft with replay:false and ledgerWriteFailed:true — never swap these two flags',
+      );
+    },
+  },
 ];
 
 async function main() {

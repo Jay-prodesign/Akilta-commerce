@@ -162,10 +162,14 @@ export function createMessageDraftStore(
       const replay = await ledger.tryGet(MESSAGE_DRAFT_OPERATION_KEY, merchantWorkspaceId, ledgerKey);
       if (replay.status === 'STORE_ERROR') return { status: 'STORE_ERROR' };
       if (replay.status === 'FOUND') {
-        return {
-          status: 'ALREADY_APPLIED',
-          record: deserializeRecordFromLedger(replay.resultSnapshot, conversationId, merchantWorkspaceId),
-        };
+        try {
+          return {
+            status: 'ALREADY_APPLIED',
+            record: deserializeRecordFromLedger(replay.resultSnapshot, conversationId, merchantWorkspaceId),
+          };
+        } catch {
+          return { status: 'STORE_ERROR' };
+        }
       }
 
       try {
@@ -207,10 +211,14 @@ export function createMessageDraftStore(
           // A concurrent request won the race to record first; this request's own just-inserted row
           // is reported neither as an error nor as this request's success — the caller sees the
           // winner's real outcome, same single consistent answer either request would get.
-          return {
-            status: 'ALREADY_APPLIED',
-            record: deserializeRecordFromLedger(ledgerOutcome.resultSnapshot, conversationId, merchantWorkspaceId),
-          };
+          try {
+            return {
+              status: 'ALREADY_APPLIED',
+              record: deserializeRecordFromLedger(ledgerOutcome.resultSnapshot, conversationId, merchantWorkspaceId),
+            };
+          } catch {
+            return { status: 'STORE_ERROR' };
+          }
         case 'STORE_ERROR':
           // The draft row itself was really created; only the ledger write failed. Never report this
           // as a plain STORE_ERROR, which would falsely imply nothing happened.
