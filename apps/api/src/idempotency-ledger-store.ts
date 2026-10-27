@@ -7,12 +7,11 @@ import type { MerchantWorkspaceId } from '../../../packages/domain/src';
  * `ReadonlyMap` of already-applied idempotency keys that nothing has ever actually populated, so a
  * genuine HTTP retry has never replayed — it attempts a fresh mutation every time.
  *
- * NOT YET WIRED to any route as of this commit — this file introduces the adapter, its migration,
- * and its own adversarial tests only. Retrofitting each of the three routes above to read/write
- * through this store instead of their injected `ReadonlyMap` parameter is the immediately-following
- * unit, done one route at a time with its own tests/review/commit rather than in one combined change.
- * Until that lands for a given route, that route's idempotent-retry behavior remains exactly as
- * disclosed in its own doc comment: not functional end-to-end.
+ * Rollout status: `message-draft-store.ts` (stage 2) and `conversation-ownership-store.ts` (stage 3)
+ * are now wired to this ledger — their own doc comments cover the mechanics and each adapter's own
+ * residual, accepted narrow-window risk. `customer-identity-link-store.ts` (stage 4) still uses its
+ * own route-layer-composed scoped key against an injected Map, not yet this shared ledger; until that
+ * lands, that route's idempotent-retry behavior remains exactly as disclosed in its own doc comment.
  *
  * Deliberately generic and record-shape-agnostic: this table/adapter has no opinion on what a
  * `ConversationOwnershipRecord` or a `MessageDraftRecord` looks like. Each call site serializes its

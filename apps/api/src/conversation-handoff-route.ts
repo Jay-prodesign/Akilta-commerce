@@ -31,19 +31,12 @@ import type { ConversationOwnershipStore } from './conversation-ownership-store'
  *    authority dependencies from Hono context variables a future middleware is responsible for
  *    setting; if nothing sets them, the route fails closed (SESSION_CONTEXT_NOT_RESOLVED), never
  *    silently bypasses authorization.
- *  - A durable idempotency-key ledger. `appliedIdempotencyKeys` is accepted as an injected
- *    dependency, same precedent as every store adapter this session (P0-004: "real event
- *    persistence/atomic idempotency storage/runtime remain later concerns") — but stated precisely,
- *    not softened: nothing anywhere in this codebase yet writes an applied outcome back into such a
- *    map after a successful transition, so in the real deployed system this map is always empty on
- *    every request. The pure replay-decision branch is real and tested in isolation
- *    (`ROUTE-09`/`conversation-ownership-transition.ts`'s own tests), but idempotent retry is NOT
- *    functional end-to-end today: a genuine retry of an already-applied request will not be
- *    recognized as a replay — it will attempt a fresh CAS against what is now a stale
- *    `expectedEpoch`, surfacing as `409 OWNERSHIP_CONFLICT` instead of the replayed `200` the
- *    operation's contract promises. Closing this requires either a durable ledger table (a
- *    cross-cutting change touching every mutation adapter in this codebase the same way, not a
- *    single-route fix) or an equivalent mechanism — not yet selected.
+ *  - Idempotency is now backed by the durable `idempotency-ledger-store.ts` (stage 3/4 of that
+ *    retrofit). `conversation-ownership-store.ts`'s own doc comment covers the mechanics and the one
+ *    residual, accepted narrow-window risk (a retry landing in the gap between a successful CAS update
+ *    and its own ledger write can surface a false `409 OWNERSHIP_CONFLICT` instead of a replay). The
+ *    route itself no longer accepts or threads an injected idempotency map — that responsibility moved
+ *    entirely into the store adapter.
  *  - A live Postgres connection. `store` wraps a `ConversationOwnershipQueryExecutor`; which concrete
  *    executor backs it in a given environment (real `pg` pool vs. a test double) is a deploy-time/
  *    test-time binding, not something this file decides.
@@ -70,6 +63,7 @@ export interface ConversationOwnershipHttpSuccessBody {
   readonly epoch: number;
   readonly replay: boolean;
   readonly auditWriteFailed: boolean;
+  readonly ledgerWriteFailed: boolean;
 }
 
 export interface ConversationOwnershipHttpTypedErrorBody {
@@ -96,7 +90,6 @@ export interface ConversationOwnershipHttpRequest {
   readonly agencyAssignmentCandidates: readonly AgencyClientAssignment[];
   readonly roleReader: MembershipRoleReader;
   readonly store: ConversationOwnershipStore;
-  readonly appliedIdempotencyKeys: ReadonlyMap<ConversationOwnershipIdempotencyKey, ConversationOwnershipRecord>;
 }
 
 export async function handleConversationOwnershipTransitionRequest(
@@ -153,7 +146,6 @@ export async function handleConversationOwnershipTransitionRequest(
       idempotencyKey: request.idempotencyKey,
     },
     request.actorRef,
-    request.appliedIdempotencyKeys,
   );
 
   switch (outcome.status) {
@@ -166,6 +158,7 @@ export async function handleConversationOwnershipTransitionRequest(
           epoch: outcome.resultingRecord.epoch,
           replay: false,
           auditWriteFailed: false,
+          ledgerWriteFailed: false,
         },
       };
     case 'ALREADY_APPLIED':
@@ -177,11 +170,15 @@ export async function handleConversationOwnershipTransitionRequest(
           epoch: outcome.resultingRecord.epoch,
           replay: true,
           auditWriteFailed: false,
+          ledgerWriteFailed: false,
         },
       };
     case 'AUDIT_WRITE_FAILED':
       // The authority-bearing CAS update already succeeded; reporting this as a failure would be
       // false. It is reported as a real success carrying an explicit audit-trail warning instead.
+      // `ledgerWriteFailed` is carried from the store rather than hardcoded false: the ledger write
+      // can fail independently of (and in the same request as) the audit insert, and both flags must
+      // be reported accurately rather than one silently overwriting the other.
       return {
         httpStatus: 200,
         body: {
@@ -190,6 +187,21 @@ export async function handleConversationOwnershipTransitionRequest(
           epoch: outcome.resultingRecord.epoch,
           replay: false,
           auditWriteFailed: true,
+          ledgerWriteFailed: outcome.ledgerWriteFailed,
+        },
+      };
+    case 'LEDGER_WRITE_FAILED':
+      // Same discipline as AUDIT_WRITE_FAILED: the CAS update already succeeded, only the
+      // idempotency-ledger write failed. Reported as a real success carrying an explicit warning.
+      return {
+        httpStatus: 200,
+        body: {
+          conversationId: request.conversationId,
+          ownershipState: outcome.resultingRecord.state,
+          epoch: outcome.resultingRecord.epoch,
+          replay: false,
+          auditWriteFailed: false,
+          ledgerWriteFailed: true,
         },
       };
     case 'CONFLICT':
@@ -228,10 +240,6 @@ export interface ConversationOwnershipRouteVariables {
   agencyAssignmentCandidates: readonly AgencyClientAssignment[];
   roleReader: MembershipRoleReader;
   conversationOwnershipStore: ConversationOwnershipStore;
-  appliedConversationOwnershipIdempotencyKeys: ReadonlyMap<
-    ConversationOwnershipIdempotencyKey,
-    ConversationOwnershipRecord
-  >;
 }
 
 function jsonResponse(body: unknown, status: number): Response {
@@ -296,7 +304,6 @@ async function runRoute(c: ConversationOwnershipRouteContext, trigger: Conversat
     agencyAssignmentCandidates: c.get('agencyAssignmentCandidates') ?? [],
     roleReader,
     store,
-    appliedIdempotencyKeys: c.get('appliedConversationOwnershipIdempotencyKeys') ?? new Map(),
   });
 
   return jsonResponse(result.body, result.httpStatus);

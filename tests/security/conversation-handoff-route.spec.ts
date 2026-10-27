@@ -10,12 +10,15 @@ import {
   type ConversationOwnershipStore,
 } from '../../apps/api/src/conversation-ownership-store';
 import {
+  type IdempotencyLedgerReadOutcome,
+  type IdempotencyLedgerStore,
+  type IdempotencyLedgerWriteOutcome,
+} from '../../apps/api/src/idempotency-ledger-store';
+import {
   conversationOwnershipIdempotencyKey,
   permission,
   resolvePermissionAuthoritySnapshot,
   ROLE_PERMISSION_POLICY,
-  type ConversationOwnershipIdempotencyKey,
-  type ConversationOwnershipRecord,
   type ExecutionContext,
   type MembershipRoleReader,
 } from '../../packages/authz/src';
@@ -132,7 +135,13 @@ function fakeExecutor(initialRow: Record<string, unknown> | null): ConversationO
   };
 }
 
-const noPriorApplications: ReadonlyMap<ConversationOwnershipIdempotencyKey, ConversationOwnershipRecord> = new Map();
+function fakeLedger(overrides: Partial<IdempotencyLedgerStore> = {}): IdempotencyLedgerStore {
+  return {
+    tryGet: (): Promise<IdempotencyLedgerReadOutcome> => Promise.resolve({ status: 'NOT_FOUND' }),
+    record: (): Promise<IdempotencyLedgerWriteOutcome> => Promise.resolve({ status: 'RECORDED' }),
+    ...overrides,
+  };
+}
 
 function baseRequest(overrides: Partial<ConversationOwnershipHttpRequest> = {}): ConversationOwnershipHttpRequest {
   return {
@@ -145,8 +154,7 @@ function baseRequest(overrides: Partial<ConversationOwnershipHttpRequest> = {}):
     membershipCandidates: membership(),
     agencyAssignmentCandidates: [],
     roleReader: roleReader(),
-    store: createConversationOwnershipStore(fakeExecutor({ ownership_state: 'AI_ACTIVE', ownership_epoch: 0 })),
-    appliedIdempotencyKeys: noPriorApplications,
+    store: createConversationOwnershipStore(fakeExecutor({ ownership_state: 'AI_ACTIVE', ownership_epoch: 0 }), fakeLedger()),
     ...overrides,
   };
 }
@@ -158,7 +166,7 @@ function baseReadRequest(overrides: Partial<ConversationOwnershipReadHttpRequest
     membershipCandidates: membership(),
     agencyAssignmentCandidates: [],
     roleReader: roleReader(),
-    store: createConversationOwnershipStore(fakeExecutor({ ownership_state: 'HUMAN_ACTIVE', ownership_epoch: 3 })),
+    store: createConversationOwnershipStore(fakeExecutor({ ownership_state: 'HUMAN_ACTIVE', ownership_epoch: 3 }), fakeLedger()),
     ...overrides,
   };
 }
@@ -179,12 +187,15 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
     id: 'ROUTE-02-NO-ACTIVE-WORKSPACE-DENIES-403-BEFORE-ANY-STORE-CALL',
     run: async () => {
       let storeCalled = false;
-      const store = createConversationOwnershipStore({
-        query: () => {
-          storeCalled = true;
-          return Promise.resolve({ rows: [] });
+      const store = createConversationOwnershipStore(
+        {
+          query: () => {
+            storeCalled = true;
+            return Promise.resolve({ rows: [] });
+          },
         },
-      });
+        fakeLedger(),
+      );
       const result = await handleConversationOwnershipTransitionRequest(
         baseRequest({ executionContext: baseExecutionContext({ activeMerchantWorkspaceId: null }), store }),
       );
@@ -196,12 +207,15 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
     id: 'ROUTE-03-MISSING-PERMISSION-DENIES-403-BEFORE-ANY-STORE-CALL',
     run: async () => {
       let storeCalled = false;
-      const store = createConversationOwnershipStore({
-        query: () => {
-          storeCalled = true;
-          return Promise.resolve({ rows: [] });
+      const store = createConversationOwnershipStore(
+        {
+          query: () => {
+            storeCalled = true;
+            return Promise.resolve({ rows: [] });
+          },
         },
-      });
+        fakeLedger(),
+      );
       const result = await handleConversationOwnershipTransitionRequest(
         baseRequest({ roleReader: roleReader(['CLIENT_ANALYST']), store }),
       );
@@ -221,7 +235,7 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
   {
     id: 'ROUTE-05-NO-EXISTING-CONVERSATION-RETURNS-404',
     run: async () => {
-      const store = createConversationOwnershipStore(fakeExecutor(null));
+      const store = createConversationOwnershipStore(fakeExecutor(null), fakeLedger());
       const result = await handleConversationOwnershipTransitionRequest(baseRequest({ store }));
       assert(result.httpStatus === 404, 'a conversation row that does not exist for this workspace must return 404, not 500');
     },
@@ -229,7 +243,7 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
   {
     id: 'ROUTE-06-STALE-EXPECTED-EPOCH-RETURNS-409-OWNERSHIP-CONFLICT',
     run: async () => {
-      const store = createConversationOwnershipStore(fakeExecutor({ ownership_state: 'AI_ACTIVE', ownership_epoch: 5 }));
+      const store = createConversationOwnershipStore(fakeExecutor({ ownership_state: 'AI_ACTIVE', ownership_epoch: 5 }), fakeLedger());
       const result = await handleConversationOwnershipTransitionRequest(baseRequest({ store, expectedEpoch: 0 }));
       assert(
         result.httpStatus === 409 && 'code' in result.body && result.body.code === 'OWNERSHIP_CONFLICT',
@@ -240,7 +254,7 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
   {
     id: 'ROUTE-07-TERMINAL-STATE-TRANSITION-RETURNS-409-INVALID-TRANSITION',
     run: async () => {
-      const store = createConversationOwnershipStore(fakeExecutor({ ownership_state: 'CLOSED', ownership_epoch: 3 }));
+      const store = createConversationOwnershipStore(fakeExecutor({ ownership_state: 'CLOSED', ownership_epoch: 3 }), fakeLedger());
       const result = await handleConversationOwnershipTransitionRequest(baseRequest({ store, expectedEpoch: 3 }));
       assert(
         result.httpStatus === 409 && 'code' in result.body && result.body.code === 'INVALID_TRANSITION' && result.body.reason === 'TERMINAL_STATE',
@@ -252,7 +266,7 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
     id: 'ROUTE-08-TRIGGER-NOT-ALLOWED-FROM-STATE-RETURNS-409-INVALID-TRANSITION',
     run: async () => {
       // AI_SUGGEST_ONLY has no HUMAN_TAKEOVER edge in the canonical state machine.
-      const store = createConversationOwnershipStore(fakeExecutor({ ownership_state: 'AI_SUGGEST_ONLY', ownership_epoch: 2 }));
+      const store = createConversationOwnershipStore(fakeExecutor({ ownership_state: 'AI_SUGGEST_ONLY', ownership_epoch: 2 }), fakeLedger());
       const result = await handleConversationOwnershipTransitionRequest(baseRequest({ store, expectedEpoch: 2 }));
       assert(
         result.httpStatus === 409 && 'code' in result.body && result.body.code === 'INVALID_TRANSITION' && result.body.reason === 'TRIGGER_NOT_ALLOWED_FROM_STATE',
@@ -264,23 +278,22 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
     id: 'ROUTE-09-IDEMPOTENT-RETRY-REPLAYS-WITHOUT-RE-APPLYING',
     run: async () => {
       const key = conversationOwnershipIdempotencyKey('route-retry-1');
-      const applied: ConversationOwnershipRecord = {
-        ownerConversationId: conversationId,
-        ownerMerchantWorkspaceId: workspaceA,
-        state: 'HUMAN_ACTIVE',
-        epoch: 1,
-      };
-      const ledger: ReadonlyMap<ConversationOwnershipIdempotencyKey, ConversationOwnershipRecord> = new Map([[key, applied]]);
-      let writeAttempted = false;
-      const store = createConversationOwnershipStore({
-        query: (sql) => {
-          if (sql.startsWith('SELECT')) return Promise.resolve({ rows: [{ ownership_state: 'CLOSED', ownership_epoch: 9 }] });
-          writeAttempted = true;
-          return Promise.resolve({ rows: [] });
-        },
+      const ledger = fakeLedger({
+        tryGet: () => Promise.resolve({ status: 'FOUND', resultSnapshot: { state: 'HUMAN_ACTIVE', epoch: 1 } }),
       });
+      let writeAttempted = false;
+      const store = createConversationOwnershipStore(
+        {
+          query: (sql) => {
+            if (sql.startsWith('SELECT')) return Promise.resolve({ rows: [{ ownership_state: 'CLOSED', ownership_epoch: 9 }] });
+            writeAttempted = true;
+            return Promise.resolve({ rows: [] });
+          },
+        },
+        ledger,
+      );
       const result = await handleConversationOwnershipTransitionRequest(
-        baseRequest({ store, idempotencyKey: key, appliedIdempotencyKeys: ledger, expectedEpoch: 0 }),
+        baseRequest({ store, idempotencyKey: key, expectedEpoch: 0 }),
       );
       assert(
         result.httpStatus === 200 && result.body.replay === true && result.body.epoch === 1 && result.body.ownershipState === 'HUMAN_ACTIVE',
@@ -292,7 +305,7 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
   {
     id: 'ROUTE-10-RETURN-TO-AI-TRIGGER-USES-REQUEST-RETURN-TO-AI-NOT-HUMAN-TAKEOVER',
     run: async () => {
-      const store = createConversationOwnershipStore(fakeExecutor({ ownership_state: 'HUMAN_ACTIVE', ownership_epoch: 1 }));
+      const store = createConversationOwnershipStore(fakeExecutor({ ownership_state: 'HUMAN_ACTIVE', ownership_epoch: 1 }), fakeLedger());
       const result = await handleConversationOwnershipTransitionRequest(
         baseRequest({ trigger: 'REQUEST_RETURN_TO_AI', store, expectedEpoch: 1 }),
       );
@@ -306,23 +319,60 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
     id: 'ROUTE-11-AUDIT-WRITE-FAILURE-STILL-REPORTS-THE-REAL-APPLIED-STATE-AS-200',
     run: async () => {
       let selectCount = 0;
-      const store = createConversationOwnershipStore({
-        query: (sql) => {
-          if (sql.startsWith('SELECT')) {
-            selectCount += 1;
-            return Promise.resolve({ rows: [{ ownership_state: 'AI_ACTIVE', ownership_epoch: 0 }] });
-          }
-          if (sql.includes('INSERT INTO conversation_ownership_events')) {
-            throw new Error('simulated audit insert failure');
-          }
-          return Promise.resolve({ rows: [{ ownership_state: 'HUMAN_ACTIVE', ownership_epoch: 1 }] });
+      const store = createConversationOwnershipStore(
+        {
+          query: (sql) => {
+            if (sql.startsWith('SELECT')) {
+              selectCount += 1;
+              return Promise.resolve({ rows: [{ ownership_state: 'AI_ACTIVE', ownership_epoch: 0 }] });
+            }
+            if (sql.includes('INSERT INTO conversation_ownership_events')) {
+              throw new Error('simulated audit insert failure');
+            }
+            return Promise.resolve({ rows: [{ ownership_state: 'HUMAN_ACTIVE', ownership_epoch: 1 }] });
+          },
         },
-      });
+        fakeLedger(),
+      );
       const result = await handleConversationOwnershipTransitionRequest(baseRequest({ store }));
       assert(selectCount === 1, 'sanity: exactly one read should have occurred');
       assert(
-        result.httpStatus === 200 && result.body.auditWriteFailed === true && result.body.epoch === 1,
+        result.httpStatus === 200 && result.body.auditWriteFailed === true && result.body.ledgerWriteFailed === false && result.body.epoch === 1,
         'an audit-write failure must never be reported as a 500 — the authoritative CAS update already succeeded and must be surfaced as a real success carrying an explicit warning',
+      );
+    },
+  },
+  {
+    id: 'ROUTE-11B-LEDGER-WRITE-FAILURE-STILL-REPORTS-THE-REAL-APPLIED-STATE-AS-200',
+    run: async () => {
+      const store = createConversationOwnershipStore(
+        fakeExecutor({ ownership_state: 'AI_ACTIVE', ownership_epoch: 0 }),
+        fakeLedger({ record: () => Promise.resolve({ status: 'STORE_ERROR' }) }),
+      );
+      const result = await handleConversationOwnershipTransitionRequest(baseRequest({ store }));
+      assert(
+        result.httpStatus === 200 && result.body.ledgerWriteFailed === true && result.body.auditWriteFailed === false && result.body.replay === false && result.body.epoch === 1,
+        'a ledger-write failure must never be reported as a 500 — the authoritative CAS update already succeeded and must be surfaced as a real success carrying an explicit warning, distinct from an audit-write warning',
+      );
+    },
+  },
+  {
+    id: 'ROUTE-11C-BOTH-LEDGER-AND-AUDIT-WRITE-FAILURES-ARE-BOTH-REPORTED-OVER-HTTP-NEITHER-SILENTLY-DROPPED',
+    run: async () => {
+      const store = createConversationOwnershipStore(
+        {
+          query: (sql) => {
+            if (sql.startsWith('SELECT')) return Promise.resolve({ rows: [{ ownership_state: 'AI_ACTIVE', ownership_epoch: 0 }] });
+            if (sql.includes('INSERT INTO conversation_ownership_events')) throw new Error('simulated audit insert failure');
+            return Promise.resolve({ rows: [{ ownership_state: 'HUMAN_ACTIVE', ownership_epoch: 1 }] });
+          },
+        },
+        fakeLedger({ record: () => Promise.resolve({ status: 'STORE_ERROR' }) }),
+      );
+      const result = await handleConversationOwnershipTransitionRequest(baseRequest({ store }));
+      assert(
+        result.httpStatus === 200 && result.body.auditWriteFailed === true && result.body.ledgerWriteFailed === true && result.body.epoch === 1,
+        'when the ledger write AND the audit insert both fail in the same request, the HTTP response must report both auditWriteFailed:true and ledgerWriteFailed:true — neither flag may silently overwrite the other',
       );
     },
   },
@@ -357,7 +407,7 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
   {
     id: 'ROUTE-14-READ-NO-EXISTING-CONVERSATION-RETURNS-404',
     run: async () => {
-      const store = createConversationOwnershipStore(fakeExecutor(null));
+      const store = createConversationOwnershipStore(fakeExecutor(null), fakeLedger());
       const result = await handleConversationOwnershipReadRequest(baseReadRequest({ store }));
       assert(result.httpStatus === 404, 'reading a conversation absent from this workspace must return 404, not 500 or an empty 200');
     },
@@ -380,12 +430,15 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
     id: 'ROUTE-16-AGENCY-WITH-MODULE-RESTRICTION-EXCLUDING-CONVERSATION-DENIES-TRANSITION-403',
     run: async () => {
       let storeCalled = false;
-      const store = createConversationOwnershipStore({
-        query: () => {
-          storeCalled = true;
-          return Promise.resolve({ rows: [] });
+      const store = createConversationOwnershipStore(
+        {
+          query: () => {
+            storeCalled = true;
+            return Promise.resolve({ rows: [] });
+          },
         },
-      });
+        fakeLedger(),
+      );
       const result = await handleConversationOwnershipTransitionRequest(
         baseRequest({
           executionContext: agencyExecutionContext(),

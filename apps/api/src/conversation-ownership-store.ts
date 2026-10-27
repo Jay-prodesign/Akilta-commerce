@@ -6,6 +6,7 @@ import {
   type ConversationOwnershipTransitionResult,
 } from '../../../packages/authz/src';
 import { CONVERSATION_OWNERSHIP_STATES, DomainPrimitiveError, type ConversationOwnershipState } from '../../../packages/domain/src';
+import type { IdempotencyLedgerStore } from './idempotency-ledger-store';
 
 function assertIsConversationOwnershipState(value: string): asserts value is ConversationOwnershipState {
   if (!(CONVERSATION_OWNERSHIP_STATES as readonly string[]).includes(value)) {
@@ -48,7 +49,70 @@ export function parseOwnershipState(value: unknown): ConversationOwnershipState 
  * applied `resultingRecord` — the authoritative state change is real and must never be hidden or
  * implied to have been rolled back, but the incomplete audit trail must never be silently swallowed
  * as if the operation were a plain, fully-evidenced success either.
+ *
+ * Idempotency is backed by the durable `idempotency-ledger-store.ts` (stage 3/4 of that retrofit —
+ * stage 1 was the generic adapter, stage 2 was `message-draft-store.ts`). The caller-injected
+ * `appliedIdempotencyKeys` map this adapter used to accept has been removed entirely: the one real
+ * prior-outcome lookup `resolveConversationOwnershipTransition` needs is now sourced from a single
+ * `ledger.tryGet` call per `applyTransition`, keyed by `scopedLedgerKey` (conversationId + the raw
+ * caller-supplied key — the same JSON-encoding collision-safety technique as `message-draft-store.ts`,
+ * since two different conversations in the same workspace could otherwise reuse the same raw key
+ * string). The pure decision function's own signature/contract and tests are entirely unchanged — it
+ * still takes a `ReadonlyMap`, now just populated with at most one real entry from the ledger instead
+ * of always being empty.
+ *
+ * A successful CAS UPDATE is followed by `ledger.record(...)`; if that write itself fails, the
+ * already-applied state change is reported via the new `LEDGER_WRITE_FAILED` outcome (same "never hide
+ * a real success behind an incomplete side-write" discipline as `AUDIT_WRITE_FAILED`), and the audit
+ * insert is still attempted regardless. `ledger.record`'s `ALREADY_RECORDED` outcome is deliberately
+ * treated identically to `STORE_ERROR` here — unlike `message-draft-store.ts`, this store's own CAS
+ * UPDATE has already uniquely mutated the single authoritative row by the time `ledger.record` is
+ * called, so there is never a genuine "other winner" to defer to; `decision.resultingRecord` is always
+ * reported (see the inline comment at the call site for the full reasoning). One residual, accepted
+ * risk, identical in kind to
+ * `message-draft-store.ts`'s own documented gap 2: if `ledger.record` fails (or simply hasn't
+ * committed yet) and the client retries the exact same request before that's resolved, the retry's own
+ * `tryGet` sees `NOT_FOUND`, re-reads the now-already-advanced row, and — unlike message-draft's plain
+ * INSERT, which would just create a harmless duplicate — fails as a false `CONFLICT` (the client's
+ * `expectedEpoch` no longer matches), rather than replaying the true prior outcome. Closing this fully
+ * needs a transaction primitive this codebase does not have; accepted as a known, narrow-window risk
+ * rather than engineered around here.
  */
+
+const CONVERSATION_OWNERSHIP_OPERATION_KEY = 'conversation.ownership_transition';
+
+function scopedLedgerKey(
+  conversationId: ConversationOwnershipTransitionRequest['conversationId'],
+  idempotencyKey: ConversationOwnershipIdempotencyKey,
+): string {
+  return JSON.stringify([conversationId, idempotencyKey]);
+}
+
+function serializeRecordForLedger(record: ConversationOwnershipRecord): Record<string, unknown> {
+  return { state: record.state, epoch: record.epoch };
+}
+
+function deserializeRecordFromLedger(
+  snapshot: Readonly<Record<string, unknown>>,
+  conversationId: ConversationOwnershipTransitionRequest['conversationId'],
+  merchantWorkspaceId: ConversationOwnershipTransitionRequest['merchantWorkspaceId'],
+): ConversationOwnershipRecord {
+  const stateCandidate = snapshot.state;
+  if (typeof stateCandidate !== 'string') {
+    throw new DomainPrimitiveError('idempotency ledger snapshot for conversation.ownership_transition is missing a usable state');
+  }
+  assertIsConversationOwnershipState(stateCandidate);
+  const epochCandidate = snapshot.epoch;
+  if (typeof epochCandidate !== 'number' || !Number.isInteger(epochCandidate)) {
+    throw new DomainPrimitiveError('idempotency ledger snapshot for conversation.ownership_transition is missing a usable epoch');
+  }
+  return {
+    ownerConversationId: conversationId,
+    ownerMerchantWorkspaceId: merchantWorkspaceId,
+    state: stateCandidate,
+    epoch: epochCandidate,
+  };
+}
 
 export interface ConversationOwnershipQueryExecutor {
   query(sql: string, params: readonly unknown[]): Promise<{ readonly rows: readonly Record<string, unknown>[] }>;
@@ -59,7 +123,8 @@ export type ConversationOwnershipPersistOutcome =
   | { readonly status: 'RACE_LOST' }
   | { readonly status: 'NO_EXISTING_CONVERSATION' }
   | { readonly status: 'STORE_ERROR' }
-  | { readonly status: 'AUDIT_WRITE_FAILED'; readonly resultingRecord: ConversationOwnershipRecord };
+  | { readonly status: 'AUDIT_WRITE_FAILED'; readonly resultingRecord: ConversationOwnershipRecord; readonly ledgerWriteFailed: boolean }
+  | { readonly status: 'LEDGER_WRITE_FAILED'; readonly resultingRecord: ConversationOwnershipRecord };
 
 export type ConversationOwnershipReadOutcome =
   | { readonly status: 'FOUND'; readonly record: ConversationOwnershipRecord }
@@ -86,7 +151,6 @@ export interface ConversationOwnershipStore {
   applyTransition(
     request: ConversationOwnershipTransitionRequest,
     actorRef: string,
-    appliedIdempotencyKeys: ReadonlyMap<ConversationOwnershipIdempotencyKey, ConversationOwnershipRecord>,
   ): Promise<ConversationOwnershipPersistOutcome>;
   /**
    * Plain, non-mutating read of the current ownership state/epoch — the same SELECT_CURRENT query
@@ -138,6 +202,7 @@ async function readCurrentRow(
 
 export function createConversationOwnershipStore(
   executor: ConversationOwnershipQueryExecutor,
+  ledger: IdempotencyLedgerStore,
 ): ConversationOwnershipStore {
   return {
     async getCurrent(conversationId, merchantWorkspaceId) {
@@ -146,9 +211,33 @@ export function createConversationOwnershipStore(
       if (read.outcome === 'NOT_FOUND') return { status: 'NOT_FOUND' };
       return { status: 'FOUND', record: read.record };
     },
-    async applyTransition(request, actorRef, appliedIdempotencyKeys) {
-      const read = await readCurrentRow(executor, request.conversationId, request.merchantWorkspaceId);
+    async applyTransition(request, actorRef) {
+      const scopedKey = scopedLedgerKey(request.conversationId, request.idempotencyKey);
+      // The ledger replay lookup and the conversations row read are independent of each other (the
+      // decision step below is the first place either result is actually needed), so they run
+      // concurrently rather than as two serial round-trips — both `tryGet` and `readCurrentRow`
+      // already catch their own connectivity/query failures internally and never reject, so this
+      // Promise.all cannot itself throw.
+      const [replay, read] = await Promise.all([
+        ledger.tryGet(CONVERSATION_OWNERSHIP_OPERATION_KEY, request.merchantWorkspaceId, scopedKey),
+        readCurrentRow(executor, request.conversationId, request.merchantWorkspaceId),
+      ]);
+      if (replay.status === 'STORE_ERROR') return { status: 'STORE_ERROR' };
       if (read.outcome === 'READ_ERROR') return { status: 'STORE_ERROR' };
+
+      let appliedIdempotencyKeys: ReadonlyMap<ConversationOwnershipIdempotencyKey, ConversationOwnershipRecord> = new Map();
+      if (replay.status === 'FOUND') {
+        try {
+          const priorRecord = deserializeRecordFromLedger(
+            replay.resultSnapshot,
+            request.conversationId,
+            request.merchantWorkspaceId,
+          );
+          appliedIdempotencyKeys = new Map([[request.idempotencyKey, priorRecord]]);
+        } catch {
+          return { status: 'STORE_ERROR' };
+        }
+      }
 
       if (read.outcome === 'NOT_FOUND') {
         const priorOutcome = appliedIdempotencyKeys.get(request.idempotencyKey);
@@ -180,6 +269,28 @@ export function createConversationOwnershipStore(
         return { status: 'STORE_ERROR' };
       }
 
+      const ledgerOutcome = await ledger.record(
+        CONVERSATION_OWNERSHIP_OPERATION_KEY,
+        request.merchantWorkspaceId,
+        scopedKey,
+        serializeRecordForLedger(decision.resultingRecord),
+      );
+      // Unlike message-draft-store.ts (where an ALREADY_RECORDED "other" row is an equally valid
+      // outcome of the exact same logical create — there is no CAS gate there, so two racing INSERTs
+      // produce two equally real rows), this store's own CAS UPDATE just above has already uniquely
+      // and authoritatively mutated the single `conversations` row for this transition: by CAS
+      // construction, no other request can have ALSO just succeeded a CAS update for this same
+      // (conversationId, merchantWorkspaceId) row at this same epoch — a true concurrent duplicate
+      // would already have been filtered out as RACE_LOST or CONFLICT before ever reaching here. So
+      // if the ledger nonetheless reports ALREADY_RECORDED for this exact scoped key, it can only be
+      // because this idempotency key was previously used for a DIFFERENT, already-completed transition
+      // (a caller bug reusing a key across unrelated actions on the same conversation) — treating that
+      // other, unrelated snapshot as this request's own outcome would tell this caller something false
+      // about what ITS OWN request just did. `decision.resultingRecord` is always what gets reported:
+      // it is real, it is this request's own, and it is strictly fresher than any pre-existing ledger
+      // entry. ALREADY_RECORDED is therefore treated exactly like STORE_ERROR here.
+      const ledgerWriteFailed = ledgerOutcome.status !== 'RECORDED';
+
       try {
         await executor.query(INSERT_AUDIT_EVENT, [
           crypto.randomUUID(),
@@ -193,7 +304,16 @@ export function createConversationOwnershipStore(
           request.trigger,
         ]);
       } catch {
-        return { status: 'AUDIT_WRITE_FAILED', resultingRecord: decision.resultingRecord };
+        // The ledger write's own outcome must never be silently lost just because the audit insert
+        // also failed — both flags are independently reported to the caller, never merged into one.
+        return { status: 'AUDIT_WRITE_FAILED', resultingRecord: decision.resultingRecord, ledgerWriteFailed };
+      }
+
+      if (ledgerWriteFailed) {
+        // The authority-bearing CAS update (and the audit insert) already succeeded; only the
+        // idempotency ledger write failed. Never report this as a plain STORE_ERROR, which would
+        // falsely imply nothing happened.
+        return { status: 'LEDGER_WRITE_FAILED', resultingRecord: decision.resultingRecord };
       }
 
       return decision;

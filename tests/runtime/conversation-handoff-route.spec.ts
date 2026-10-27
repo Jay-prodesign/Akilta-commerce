@@ -7,6 +7,7 @@ import {
   type ConversationOwnershipRouteVariables,
 } from '../../apps/api/src/conversation-handoff-route';
 import { createConversationOwnershipStore, type ConversationOwnershipQueryExecutor } from '../../apps/api/src/conversation-ownership-store';
+import type { IdempotencyLedgerReadOutcome, IdempotencyLedgerStore } from '../../apps/api/src/idempotency-ledger-store';
 import {
   permission,
   resolvePermissionAuthoritySnapshot,
@@ -91,20 +92,27 @@ function fakeExecutor(initialRow: Record<string, unknown> | null): ConversationO
   };
 }
 
+function fakeLedger(overrides: Partial<IdempotencyLedgerStore> = {}): IdempotencyLedgerStore {
+  return {
+    tryGet: (): Promise<IdempotencyLedgerReadOutcome> => Promise.resolve({ status: 'NOT_FOUND' }),
+    record: () => Promise.resolve({ status: 'RECORDED' }),
+    ...overrides,
+  };
+}
+
 /**
  * Builds an isolated test app that registers the exact same route-handler code as production
  * worker.ts, preceded only by a test-only middleware populating the per-request authority
  * dependencies a future session middleware is responsible for in a real deployment.
  */
-function buildTestApp(initialRow: Record<string, unknown> | null) {
+function buildTestApp(initialRow: Record<string, unknown> | null, ledger: IdempotencyLedgerStore = fakeLedger()) {
   const testApp = new Hono<{ Variables: ConversationOwnershipRouteVariables }>();
   testApp.use('*', async (c, next) => {
     c.set('executionContext', executionContext());
     c.set('membershipCandidates', membership());
     c.set('agencyAssignmentCandidates', []);
     c.set('roleReader', roleReader());
-    c.set('conversationOwnershipStore', createConversationOwnershipStore(fakeExecutor(initialRow)));
-    c.set('appliedConversationOwnershipIdempotencyKeys', new Map());
+    c.set('conversationOwnershipStore', createConversationOwnershipStore(fakeExecutor(initialRow), ledger));
     await next();
   });
   registerConversationOwnershipRoutes(testApp);
@@ -142,6 +150,7 @@ describe('conversation handoff/return-to-ai HTTP routes', () => {
       epoch: 1,
       replay: false,
       auditWriteFailed: false,
+      ledgerWriteFailed: false,
     });
   });
 
@@ -191,6 +200,51 @@ describe('conversation handoff/return-to-ai HTTP routes', () => {
     expect(response.status).toBe(404);
     const body = await response.json();
     expect(body).toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  it('returns a real 200 ledger replay over HTTP, never re-reaching the CAS update', async () => {
+    const priorSnapshot = { state: 'HUMAN_ACTIVE', epoch: 1 };
+    const testApp = buildTestApp(
+      { ownership_state: 'CLOSED', ownership_epoch: 9 },
+      fakeLedger({ tryGet: () => Promise.resolve({ status: 'FOUND', resultSnapshot: priorSnapshot }) }),
+    );
+    const response = await testApp.request('https://worker.test/v1/conversations/conv-1/handoff', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ expectedEpoch: 0, idempotencyKey: 'wk-replay-1' }),
+    });
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toEqual({
+      conversationId: 'conv-1',
+      ownershipState: 'HUMAN_ACTIVE',
+      epoch: 1,
+      replay: true,
+      auditWriteFailed: false,
+      ledgerWriteFailed: false,
+    });
+  });
+
+  it('returns a real 200 over HTTP when the ledger write fails, reporting replay:false and ledgerWriteFailed:true', async () => {
+    const testApp = buildTestApp(
+      { ownership_state: 'AI_ACTIVE', ownership_epoch: 0 },
+      fakeLedger({ record: () => Promise.resolve({ status: 'STORE_ERROR' }) }),
+    );
+    const response = await testApp.request('https://worker.test/v1/conversations/conv-1/handoff', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ expectedEpoch: 0, idempotencyKey: 'wk-ledger-fail-1' }),
+    });
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toEqual({
+      conversationId: 'conv-1',
+      ownershipState: 'HUMAN_ACTIVE',
+      epoch: 1,
+      replay: false,
+      auditWriteFailed: false,
+      ledgerWriteFailed: true,
+    });
   });
 
   it('reads current ownership state/epoch end-to-end over real HTTP (GET)', async () => {
