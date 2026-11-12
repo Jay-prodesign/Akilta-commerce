@@ -166,7 +166,7 @@ export type CurrentAuthorityResolution<T> =
   | { readonly outcome: 'RESOLVED'; readonly record: T }
   | { readonly outcome: 'CONFLICT'; readonly candidates: readonly T[] };
 
-interface EffectiveWindow {
+export interface EffectiveWindow {
   readonly status: OperationalStatus;
   readonly validFrom?: UtcTimestamp;
   readonly validTo?: UtcTimestamp;
@@ -179,7 +179,14 @@ function isEffectiveNow<T extends EffectiveWindow>(candidate: T, occurredAt: Utc
   );
 }
 
-function resolveCurrentAuthority<T extends EffectiveWindow>(
+/**
+ * Exported so other domain areas with the identical "candidate list -> NONE/RESOLVED/CONFLICT over
+ * an effective-window" shape (e.g. billing-source entitlement resolution, AC-BILLENT-106) reuse this
+ * generic engine directly rather than re-deriving the same filter+none/one/conflict logic a second
+ * time. `resolveCurrentMembership`/`resolveCurrentAgencyAssignment` below are themselves just two
+ * already-existing callers of it.
+ */
+export function resolveCurrentAuthority<T extends EffectiveWindow>(
   scopedCandidates: readonly T[],
   occurredAt: UtcTimestamp,
 ): CurrentAuthorityResolution<T> {

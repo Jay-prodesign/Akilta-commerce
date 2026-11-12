@@ -83,6 +83,26 @@ CREATE TABLE workspace_contexts (
   updated_at TIMESTAMPTZ NOT NULL
 );
 
+-- SC-04 provider-neutral entitlement core (AC-BILLENT-106): the single authoritative,
+-- generation-tracked workspace+module grant. `generation` is the CAS precondition every transition
+-- (apps/api/src/entitlement-store.ts) must match exactly; a missing row is the structural NONE state
+-- (no grant exists yet), never a store error. `billing_source_ref` is observational provenance only
+-- (packages/domain/src/entitlement.ts) -- it is never part of this row's identity, so switching
+-- billing/payer source never changes which workspace this entitlement belongs to. This table never
+-- itself grants installation, configuration, capability, or action authorization.
+CREATE TABLE entitlements (
+  entitlement_id TEXT PRIMARY KEY,
+  merchant_workspace_id TEXT NOT NULL REFERENCES merchant_workspaces(merchant_workspace_id) ON DELETE RESTRICT,
+  module_key TEXT NOT NULL,
+  state TEXT NOT NULL CHECK (state IN ('NONE','TRIAL','ACTIVE','GRACE','PAST_DUE','RESTRICTED','CANCEL_PENDING','CANCELLED')),
+  generation INTEGER NOT NULL,
+  billing_source_ref TEXT,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL,
+  UNIQUE (merchant_workspace_id, module_key)
+);
+CREATE INDEX entitlements_workspace_idx ON entitlements(merchant_workspace_id);
+
 CREATE TABLE user_identities (
   user_identity_id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
@@ -199,6 +219,7 @@ CREATE TABLE customer_identities (
   normalized_identifier_ref TEXT NOT NULL,
   provider_identifier_ref TEXT,
   customer_id TEXT,
+  link_generation INTEGER NOT NULL DEFAULT 0,
   verification_level TEXT NOT NULL CHECK (verification_level IN ('CV0','CV1','CV2','CV3')),
   verification_expires_at TIMESTAMPTZ,
   match_evidence_ref TEXT,
@@ -210,6 +231,22 @@ CREATE TABLE customer_identities (
     REFERENCES customers(customer_id, merchant_workspace_id) ON DELETE RESTRICT
 );
 CREATE UNIQUE INDEX customer_identity_lookup_idx ON customer_identities(merchant_workspace_id, channel_type, normalized_identifier_ref);
+
+CREATE TABLE customer_identity_link_events (
+  link_event_id TEXT PRIMARY KEY,
+  customer_identity_id TEXT NOT NULL,
+  merchant_workspace_id TEXT NOT NULL,
+  operation TEXT NOT NULL CHECK (operation IN ('LINK','RELINK','UNLINK')),
+  from_customer_id TEXT,
+  to_customer_id TEXT,
+  from_generation INTEGER NOT NULL,
+  to_generation INTEGER NOT NULL,
+  actor_ref TEXT,
+  created_at TIMESTAMPTZ NOT NULL,
+  CHECK (to_generation = from_generation + 1),
+  FOREIGN KEY (customer_identity_id, merchant_workspace_id)
+    REFERENCES customer_identities(customer_identity_id, merchant_workspace_id) ON DELETE RESTRICT
+);
 
 CREATE TABLE customer_verification_events (
   verification_event_id TEXT PRIMARY KEY,
@@ -291,6 +328,15 @@ CREATE TABLE message_drafts (
   updated_at TIMESTAMPTZ NOT NULL,
   FOREIGN KEY (conversation_id, merchant_workspace_id)
     REFERENCES conversations(conversation_id, merchant_workspace_id) ON DELETE RESTRICT
+);
+
+CREATE TABLE idempotency_records (
+  operation_key TEXT NOT NULL,
+  merchant_workspace_id TEXT NOT NULL REFERENCES merchant_workspaces(merchant_workspace_id) ON DELETE RESTRICT,
+  idempotency_key TEXT NOT NULL,
+  result_snapshot JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
+  PRIMARY KEY (operation_key, merchant_workspace_id, idempotency_key)
 );
 
 CREATE TABLE conversation_ownership_events (

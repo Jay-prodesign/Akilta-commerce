@@ -14,14 +14,14 @@
     "lint": "eslint \"{apps,packages,connectors,tests}/**/*.ts\"",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
-    "test:worker": "vitest run --config vitest.worker.config.ts tests/runtime/worker-health.spec.ts",
+    "test:worker": "vitest run --config vitest.worker.config.ts tests/runtime/worker-health.spec.ts tests/runtime/conversation-handoff-route.spec.ts tests/runtime/usage-summary-route.spec.ts tests/runtime/customer-context-route.spec.ts tests/runtime/conversation-list-route.spec.ts tests/runtime/message-draft-route.spec.ts tests/runtime/customer-identity-link-route.spec.ts",
     "typecheck:staging": "tsc -p tsconfig.plain-tests.json --noEmit"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
     "hono": "4.13.13",
     "pg": "8.22.0",
-    "zod": "4.4.3"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.18.8",
