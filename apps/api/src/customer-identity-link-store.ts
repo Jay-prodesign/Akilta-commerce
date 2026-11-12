@@ -6,6 +6,7 @@ import {
   type CustomerIdentityLinkResult,
 } from '../../../packages/authz/src';
 import { internalId, type CustomerIdentityId, type MerchantWorkspaceId } from '../../../packages/domain/src';
+import type { IdempotencyLedgerStore } from './idempotency-ledger-store';
 
 /**
  * SC-05 (Conversation Core / AC-XCID-107) persistence adapter for the CustomerIdentity -> CustomerId
@@ -28,7 +29,75 @@ import { internalId, type CustomerIdentityId, type MerchantWorkspaceId } from '.
  * carrying the already-applied `resultingRecord` — the authority-bearing change is real and must never
  * be hidden or implied rolled back, but the incomplete audit trail must never be silently swallowed as
  * a plain, fully-evidenced success either.
+ *
+ * Idempotency is backed by the durable `idempotency-ledger-store.ts` (stage 4/4 of that retrofit —
+ * stage 1 the generic adapter, stage 2 `message-draft-store.ts`, stage 3
+ * `conversation-ownership-store.ts`). The caller-injected `appliedIdempotencyKeys` map this adapter
+ * used to accept has been removed entirely; the one real prior-outcome lookup
+ * `resolveCustomerIdentityLinkTransition` needs is now sourced from a single `ledger.tryGet` call per
+ * `applyTransition`, keyed by `scopedLedgerKey` (customerIdentityId + operation + the raw
+ * caller-supplied key — same JSON-encoding collision-safety technique as the other two retrofitted
+ * stores). The route-layer-composed scoped key from the original AC-XCID-107 unit
+ * (`JSON.stringify([workspaceId, customerIdentityId, operation, rawKey])`) is removed from
+ * `customer-identity-link-route.ts`: `merchantWorkspaceId` no longer needs to be folded in by hand
+ * (the ledger's own primary key already carries it as a separate column), but `operation` still does
+ * — unlike `conversation-ownership-store.ts` (whose `trigger` likewise never appears in its own key,
+ * but whose single `CONVERSATION_OWNERSHIP_OPERATION_KEY` genuinely identifies one transition kind)
+ * or `message-draft-store.ts` (one create operation), this store's single
+ * `CUSTOMER_IDENTITY_LINK_OPERATION_KEY` passed to the ledger covers three distinct operations
+ * (LINK/RELINK/UNLINK), so `operationKey` alone does NOT scope by logical operation the way the
+ * now-removed route-layer key used to — `scopedLedgerKey` folds `request.operation` into the key
+ * string itself specifically to preserve that distinction. The pure decision function's own
+ * signature/contract and tests are entirely unchanged.
+ *
+ * Learning carried over directly from `conversation-ownership-store.ts`'s own independent-review
+ * finding (not rediscovered here): this store's CAS UPDATE has already uniquely and authoritatively
+ * mutated the row by the time `ledger.record(...)` is called, so an `ALREADY_RECORDED` ledger outcome
+ * can only mean idempotency-key reuse across a different, already-completed transition on the same
+ * identity (a caller bug) — never a genuine concurrent duplicate, which would already have been
+ * filtered out as `RACE_LOST`/`CONFLICT` beforehand. `ALREADY_RECORDED` is therefore treated exactly
+ * like `STORE_ERROR`: this request's own real `resultingRecord` is always what gets reported, never
+ * some other, unrelated ledger entry's snapshot.
  */
+
+const CUSTOMER_IDENTITY_LINK_OPERATION_KEY = 'customer_identity.link';
+
+// Unlike conversation-ownership-store.ts (a single transition kind driven by `trigger`, which is
+// never part of its own scoped key either) and message-draft-store.ts (a single create operation),
+// this store's `CUSTOMER_IDENTITY_LINK_OPERATION_KEY` passed to the ledger is one constant shared by
+// three distinct operations (LINK/RELINK/UNLINK). `request.operation` MUST therefore be folded into
+// the scoped key string itself, or a caller reusing the same raw idempotencyKey across two different
+// operations on the same identity (e.g. LINK then RELINK) would incorrectly replay the first
+// operation's result instead of executing the second.
+function scopedLedgerKey(
+  customerIdentityId: CustomerIdentityId,
+  operation: CustomerIdentityLinkRequest['operation'],
+  idempotencyKey: CustomerIdentityLinkIdempotencyKey,
+): string {
+  return JSON.stringify([customerIdentityId, operation, idempotencyKey]);
+}
+
+function serializeRecordForLedger(record: CustomerIdentityLinkRecord): Record<string, unknown> {
+  return { customerId: record.customerId ?? null, generation: record.generation };
+}
+
+function deserializeRecordFromLedger(
+  snapshot: Readonly<Record<string, unknown>>,
+  customerIdentityId: CustomerIdentityId,
+  merchantWorkspaceId: MerchantWorkspaceId,
+): CustomerIdentityLinkRecord {
+  const generationCandidate = snapshot.generation;
+  if (typeof generationCandidate !== 'number' || !Number.isInteger(generationCandidate)) {
+    throw new Error('idempotency ledger snapshot for customer_identity.link is missing a usable generation');
+  }
+  const customerIdCandidate = snapshot.customerId;
+  return {
+    ownerCustomerIdentityId: customerIdentityId,
+    ownerMerchantWorkspaceId: merchantWorkspaceId,
+    ...(typeof customerIdCandidate === 'string' ? { customerId: internalId(customerIdCandidate, 'Customer') } : {}),
+    generation: generationCandidate,
+  };
+}
 
 export interface CustomerIdentityLinkQueryExecutor {
   query(sql: string, params: readonly unknown[]): Promise<{ readonly rows: readonly Record<string, unknown>[] }>;
@@ -39,7 +108,8 @@ export type CustomerIdentityLinkPersistOutcome =
   | { readonly status: 'RACE_LOST' }
   | { readonly status: 'NO_EXISTING_IDENTITY' }
   | { readonly status: 'STORE_ERROR' }
-  | { readonly status: 'AUDIT_WRITE_FAILED'; readonly resultingRecord: CustomerIdentityLinkRecord };
+  | { readonly status: 'AUDIT_WRITE_FAILED'; readonly resultingRecord: CustomerIdentityLinkRecord; readonly ledgerWriteFailed: boolean }
+  | { readonly status: 'LEDGER_WRITE_FAILED'; readonly resultingRecord: CustomerIdentityLinkRecord };
 
 export type CustomerIdentityLinkReadOutcome =
   | { readonly status: 'FOUND'; readonly record: CustomerIdentityLinkRecord }
@@ -66,7 +136,6 @@ export interface CustomerIdentityLinkStore {
   applyTransition(
     request: CustomerIdentityLinkRequest,
     actorRef: string,
-    appliedIdempotencyKeys: ReadonlyMap<CustomerIdentityLinkIdempotencyKey, CustomerIdentityLinkRecord>,
   ): Promise<CustomerIdentityLinkPersistOutcome>;
   /** Plain, non-mutating read of the current link pointer/generation (same SELECT_CURRENT query
    * `applyTransition` already runs internally), exposed directly so a caller can discover the current
@@ -106,7 +175,10 @@ async function readCurrentRow(
   }
 }
 
-export function createCustomerIdentityLinkStore(executor: CustomerIdentityLinkQueryExecutor): CustomerIdentityLinkStore {
+export function createCustomerIdentityLinkStore(
+  executor: CustomerIdentityLinkQueryExecutor,
+  ledger: IdempotencyLedgerStore,
+): CustomerIdentityLinkStore {
   return {
     async getCurrent(customerIdentityId, merchantWorkspaceId) {
       const read = await readCurrentRow(executor, customerIdentityId, merchantWorkspaceId);
@@ -114,9 +186,30 @@ export function createCustomerIdentityLinkStore(executor: CustomerIdentityLinkQu
       if (read.outcome === 'NOT_FOUND') return { status: 'NOT_FOUND' };
       return { status: 'FOUND', record: read.record };
     },
-    async applyTransition(request, actorRef, appliedIdempotencyKeys) {
-      const read = await readCurrentRow(executor, request.customerIdentityId, request.merchantWorkspaceId);
+    async applyTransition(request, actorRef) {
+      const scopedKey = scopedLedgerKey(request.customerIdentityId, request.operation, request.idempotencyKey);
+      // Independent reads — see conversation-ownership-store.ts's identical Promise.all for the
+      // reasoning (neither callee rejects; both are needed only at the decision step below).
+      const [replay, read] = await Promise.all([
+        ledger.tryGet(CUSTOMER_IDENTITY_LINK_OPERATION_KEY, request.merchantWorkspaceId, scopedKey),
+        readCurrentRow(executor, request.customerIdentityId, request.merchantWorkspaceId),
+      ]);
+      if (replay.status === 'STORE_ERROR') return { status: 'STORE_ERROR' };
       if (read.outcome === 'READ_ERROR') return { status: 'STORE_ERROR' };
+
+      let appliedIdempotencyKeys: ReadonlyMap<CustomerIdentityLinkIdempotencyKey, CustomerIdentityLinkRecord> = new Map();
+      if (replay.status === 'FOUND') {
+        try {
+          const priorRecord = deserializeRecordFromLedger(
+            replay.resultSnapshot,
+            request.customerIdentityId,
+            request.merchantWorkspaceId,
+          );
+          appliedIdempotencyKeys = new Map([[request.idempotencyKey, priorRecord]]);
+        } catch {
+          return { status: 'STORE_ERROR' };
+        }
+      }
 
       if (read.outcome === 'NOT_FOUND') {
         const priorOutcome = appliedIdempotencyKeys.get(request.idempotencyKey);
@@ -148,6 +241,19 @@ export function createCustomerIdentityLinkStore(executor: CustomerIdentityLinkQu
         return { status: 'STORE_ERROR' };
       }
 
+      const ledgerOutcome = await ledger.record(
+        CUSTOMER_IDENTITY_LINK_OPERATION_KEY,
+        request.merchantWorkspaceId,
+        scopedKey,
+        serializeRecordForLedger(decision.resultingRecord),
+      );
+      // ALREADY_RECORDED is treated exactly like STORE_ERROR — see this file's own doc comment and
+      // conversation-ownership-store.ts's identical reasoning: this request's own CAS UPDATE has
+      // already uniquely mutated the row, so any pre-existing ledger entry under this exact scoped key
+      // can only be a different, unrelated transition (idempotency-key reuse), never a genuine
+      // concurrent duplicate.
+      const ledgerWriteFailed = ledgerOutcome.status !== 'RECORDED';
+
       try {
         await executor.query(INSERT_AUDIT_EVENT, [
           crypto.randomUUID(),
@@ -161,7 +267,16 @@ export function createCustomerIdentityLinkStore(executor: CustomerIdentityLinkQu
           actorRef,
         ]);
       } catch {
-        return { status: 'AUDIT_WRITE_FAILED', resultingRecord: decision.resultingRecord };
+        // The ledger write's own outcome must never be silently lost just because the audit insert
+        // also failed — both flags are independently reported, never merged into one.
+        return { status: 'AUDIT_WRITE_FAILED', resultingRecord: decision.resultingRecord, ledgerWriteFailed };
+      }
+
+      if (ledgerWriteFailed) {
+        // The authority-bearing CAS update (and the audit insert) already succeeded; only the
+        // idempotency ledger write failed. Never report this as a plain STORE_ERROR, which would
+        // falsely imply nothing happened.
+        return { status: 'LEDGER_WRITE_FAILED', resultingRecord: decision.resultingRecord };
       }
 
       return decision;

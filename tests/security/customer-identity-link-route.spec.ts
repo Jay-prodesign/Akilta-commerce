@@ -6,6 +6,7 @@ import {
   createCustomerIdentityLinkStore,
   type CustomerIdentityLinkQueryExecutor,
 } from '../../apps/api/src/customer-identity-link-store';
+import type { IdempotencyLedgerReadOutcome, IdempotencyLedgerStore, IdempotencyLedgerWriteOutcome } from '../../apps/api/src/idempotency-ledger-store';
 import {
   permission,
   resolvePermissionAuthoritySnapshot,
@@ -13,11 +14,7 @@ import {
   type ExecutionContext,
   type MembershipRoleReader,
 } from '../../packages/authz/src';
-import {
-  customerIdentityLinkIdempotencyKey,
-  type CustomerIdentityLinkIdempotencyKey,
-  type CustomerIdentityLinkRecord,
-} from '../../packages/authz/src/customer-identity-link-transition';
+import { customerIdentityLinkIdempotencyKey, type CustomerIdentityLinkIdempotencyKey } from '../../packages/authz/src/customer-identity-link-transition';
 import {
   agencyClientAssignmentId,
   internalId,
@@ -127,8 +124,12 @@ function unlinkedExecutor(): CustomerIdentityLinkQueryExecutor {
   };
 }
 
-function emptyAppliedKeys(): ReadonlyMap<CustomerIdentityLinkIdempotencyKey, CustomerIdentityLinkRecord> {
-  return new Map();
+function fakeLedger(overrides: Partial<IdempotencyLedgerStore> = {}): IdempotencyLedgerStore {
+  return {
+    tryGet: (): Promise<IdempotencyLedgerReadOutcome> => Promise.resolve({ status: 'NOT_FOUND' }),
+    record: (): Promise<IdempotencyLedgerWriteOutcome> => Promise.resolve({ status: 'RECORDED' }),
+    ...overrides,
+  };
 }
 
 function baseRequest(overrides: Partial<CustomerIdentityLinkHttpRequest> = {}): CustomerIdentityLinkHttpRequest {
@@ -143,8 +144,7 @@ function baseRequest(overrides: Partial<CustomerIdentityLinkHttpRequest> = {}): 
     membershipCandidates: membership(),
     agencyAssignmentCandidates: [],
     roleReader: roleReader(),
-    store: createCustomerIdentityLinkStore(unlinkedExecutor()),
-    appliedIdempotencyKeys: emptyAppliedKeys(),
+    store: createCustomerIdentityLinkStore(unlinkedExecutor(), fakeLedger()),
     ...overrides,
   };
 }
@@ -165,12 +165,15 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
     id: 'XCIDROUTE-02-NO-ACTIVE-WORKSPACE-DENIES-403-BEFORE-ANY-STORE-CALL',
     run: async () => {
       let storeCalled = false;
-      const store = createCustomerIdentityLinkStore({
-        query: () => {
-          storeCalled = true;
-          return Promise.resolve({ rows: [] });
+      const store = createCustomerIdentityLinkStore(
+        {
+          query: () => {
+            storeCalled = true;
+            return Promise.resolve({ rows: [] });
+          },
         },
-      });
+        fakeLedger(),
+      );
       const result = await handleCustomerIdentityLinkRequest(
         baseRequest({ executionContext: baseExecutionContext({ activeMerchantWorkspaceId: null }), store }),
       );
@@ -182,12 +185,15 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
     id: 'XCIDROUTE-03-MISSING-PERMISSION-DENIES-403-BEFORE-ANY-STORE-CALL',
     run: async () => {
       let storeCalled = false;
-      const store = createCustomerIdentityLinkStore({
-        query: () => {
-          storeCalled = true;
-          return Promise.resolve({ rows: [] });
+      const store = createCustomerIdentityLinkStore(
+        {
+          query: () => {
+            storeCalled = true;
+            return Promise.resolve({ rows: [] });
+          },
         },
-      });
+        fakeLedger(),
+      );
       const result = await handleCustomerIdentityLinkRequest(baseRequest({ roleReader: roleReader(['CLIENT_ANALYST']), store }));
       assert(result.httpStatus === 403, 'a role lacking conversation:respond must be denied');
       assert(!storeCalled, 'authorization must fail closed before the link store is ever queried');
@@ -196,7 +202,7 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
   {
     id: 'XCIDROUTE-04-NO-EXISTING-IDENTITY-RETURNS-404',
     run: async () => {
-      const store = createCustomerIdentityLinkStore({ query: () => Promise.resolve({ rows: [] }) });
+      const store = createCustomerIdentityLinkStore({ query: () => Promise.resolve({ rows: [] }) }, fakeLedger());
       const result = await handleCustomerIdentityLinkRequest(baseRequest({ store }));
       assert(result.httpStatus === 404, 'linking an identity that does not exist in this workspace must be a 404, never a fabricated success');
     },
@@ -204,9 +210,12 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
   {
     id: 'XCIDROUTE-05-STALE-EXPECTED-GENERATION-RETURNS-409-LINK-CONFLICT',
     run: async () => {
-      const store = createCustomerIdentityLinkStore({
-        query: (sql) => (sql.startsWith('SELECT') ? Promise.resolve({ rows: [{ customer_id: null, link_generation: 5 }] }) : Promise.resolve({ rows: [] })),
-      });
+      const store = createCustomerIdentityLinkStore(
+        {
+          query: (sql) => (sql.startsWith('SELECT') ? Promise.resolve({ rows: [{ customer_id: null, link_generation: 5 }] }) : Promise.resolve({ rows: [] })),
+        },
+        fakeLedger(),
+      );
       const result = await handleCustomerIdentityLinkRequest(baseRequest({ store, expectedGeneration: 0 }));
       assert(
         result.httpStatus === 409 && 'code' in result.body && result.body.code === 'LINK_CONFLICT',
@@ -217,10 +226,13 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
   {
     id: 'XCIDROUTE-06-ALREADY-LINKED-RETURNS-409-INVALID-OPERATION',
     run: async () => {
-      const store = createCustomerIdentityLinkStore({
-        query: (sql) =>
-          sql.startsWith('SELECT') ? Promise.resolve({ rows: [{ customer_id: 'cust-existing', link_generation: 0 }] }) : Promise.resolve({ rows: [] }),
-      });
+      const store = createCustomerIdentityLinkStore(
+        {
+          query: (sql) =>
+            sql.startsWith('SELECT') ? Promise.resolve({ rows: [{ customer_id: 'cust-existing', link_generation: 0 }] }) : Promise.resolve({ rows: [] }),
+        },
+        fakeLedger(),
+      );
       const result = await handleCustomerIdentityLinkRequest(baseRequest({ store }));
       assert(
         result.httpStatus === 409 && 'code' in result.body && result.body.code === 'INVALID_OPERATION' && result.body.reason === 'ALREADY_LINKED',
@@ -231,7 +243,7 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
   {
     id: 'XCIDROUTE-07-STORE-ERROR-RETURNS-RETRYABLE-500',
     run: async () => {
-      const store = createCustomerIdentityLinkStore({ query: () => Promise.reject(new Error('connection lost')) });
+      const store = createCustomerIdentityLinkStore({ query: () => Promise.reject(new Error('connection lost')) }, fakeLedger());
       const result = await handleCustomerIdentityLinkRequest(baseRequest({ store }));
       assert(
         result.httpStatus === 500 && 'retryable' in result.body && result.body.retryable === true,
@@ -243,22 +255,20 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
     id: 'XCIDROUTE-08-REPLAYED-IDEMPOTENCY-KEY-RETURNS-200-WITH-REPLAY-TRUE-NEVER-REACHES-WRITE',
     run: async () => {
       let writeAttempted = false;
-      const store = createCustomerIdentityLinkStore({
-        query: (sql) => {
-          if (sql.startsWith('SELECT')) return Promise.resolve({ rows: [{ customer_id: 'cust-drifted', link_generation: 9 }] });
-          writeAttempted = true;
-          return Promise.resolve({ rows: [] });
-        },
+      const ledger = fakeLedger({
+        tryGet: () => Promise.resolve({ status: 'FOUND', resultSnapshot: { customerId: 'cust-prior', generation: 1 } }),
       });
-      const priorRecord: CustomerIdentityLinkRecord = {
-        ownerCustomerIdentityId: customerIdentityId,
-        ownerMerchantWorkspaceId: workspaceA,
-        customerId: internalId('cust-prior', 'Customer'),
-        generation: 1,
-      };
-      const result = await handleCustomerIdentityLinkRequest(
-        baseRequest({ store, appliedIdempotencyKeys: new Map([[key, priorRecord]]) }),
+      const store = createCustomerIdentityLinkStore(
+        {
+          query: (sql) => {
+            if (sql.startsWith('SELECT')) return Promise.resolve({ rows: [{ customer_id: 'cust-drifted', link_generation: 9 }] });
+            writeAttempted = true;
+            return Promise.resolve({ rows: [] });
+          },
+        },
+        ledger,
       );
+      const result = await handleCustomerIdentityLinkRequest(baseRequest({ store }));
       assert(result.httpStatus === 200, 'a replayed idempotency key must still return 200');
       assert(
         result.httpStatus === 200 && result.body.replay === true && result.body.customerId === 'cust-prior',
@@ -271,12 +281,15 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
     id: 'XCIDROUTE-09-AGENCY-WITH-MODULE-RESTRICTION-EXCLUDING-CONVERSATION-DENIES-403-BEFORE-ANY-STORE-CALL',
     run: async () => {
       let storeCalled = false;
-      const store = createCustomerIdentityLinkStore({
-        query: () => {
-          storeCalled = true;
-          return Promise.resolve({ rows: [] });
+      const store = createCustomerIdentityLinkStore(
+        {
+          query: () => {
+            storeCalled = true;
+            return Promise.resolve({ rows: [] });
+          },
         },
-      });
+        fakeLedger(),
+      );
       const result = await handleCustomerIdentityLinkRequest(
         baseRequest({
           executionContext: agencyExecutionContext(),
@@ -290,6 +303,21 @@ const cases: ReadonlyArray<{ readonly id: string; readonly run: () => Promise<vo
         "an agency whose current AgencyClientAssignment does not include the 'conversation' module must be denied, even with a role that grants conversation:respond",
       );
       assert(!storeCalled, 'the link store must never be queried when the agency module allowlist excludes this operation');
+    },
+  },
+  {
+    id: 'XCIDROUTE-10-LEDGER-WRITE-FAILED-RETURNS-200-WITH-REPLAY-FALSE-AND-LEDGER-WRITE-FAILED-TRUE',
+    run: async () => {
+      const store = createCustomerIdentityLinkStore(unlinkedExecutor(), fakeLedger({ record: () => Promise.resolve({ status: 'STORE_ERROR' }) }));
+      const result = await handleCustomerIdentityLinkRequest(baseRequest({ store }));
+      assert(result.httpStatus === 200, 'a ledger write failure must never surface as a 500 — the link itself was really applied');
+      assert(
+        result.httpStatus === 200 &&
+          result.body.customerId === 'cust-1' &&
+          result.body.replay === false &&
+          result.body.ledgerWriteFailed === true,
+        'the response must report the real applied link with replay:false and ledgerWriteFailed:true — never swap these two flags',
+      );
     },
   },
 ];

@@ -6,7 +6,6 @@ import {
   customerIdentityLinkIdempotencyKey,
   type CustomerIdentityLinkIdempotencyKey,
   type CustomerIdentityLinkOperationKind,
-  type CustomerIdentityLinkRecord,
 } from '../../../packages/authz/src/customer-identity-link-transition';
 import { internalId, type AgencyClientAssignment, type CustomerIdentityId, type Membership } from '../../../packages/domain/src';
 import { readUnknownBodyField, safeHttpErrorEnvelope, type SafeHttpErrorEnvelope } from './transport-contracts';
@@ -24,10 +23,14 @@ import type { CustomerIdentityLinkStore } from './customer-identity-link-store';
  * unlike conversation-handoff-route.ts's HUMAN_TAKEOVER/REQUEST_RETURN_TO_AI split, which mirrors two
  * materially different real-world actions.
  *
- * Same deliberately-deferred boundaries as every other mutation route this session: session/identity
- * middleware, a durable idempotency ledger (this operation has the same always-empty-injected-map
- * limitation as every other mutation route — see conversation-handoff-route.ts's doc comment for the
- * precise disclosure, which applies identically here), a live Postgres connection, independent
+ * Idempotency is now backed by the durable `idempotency-ledger-store.ts` (stage 4/4 of that retrofit
+ * — see `customer-identity-link-store.ts`'s own doc comment for the full mechanics, including why
+ * `operation` still has to be folded into the store's own scoped key — unlike `merchantWorkspaceId`,
+ * which is already a separate column of the ledger's own primary key). This route no longer composes
+ * its own scoped idempotency key or threads an injected idempotency map — both responsibilities moved
+ * entirely into the store.
+ *
+ * Still deliberately deferred: session/identity middleware, a live Postgres connection, independent
  * workspace-ownership verification.
  */
 
@@ -37,7 +40,6 @@ export interface CustomerIdentityLinkRouteVariables {
   agencyAssignmentCandidates: readonly AgencyClientAssignment[];
   roleReader: MembershipRoleReader;
   customerIdentityLinkStore: CustomerIdentityLinkStore;
-  appliedCustomerIdentityLinkIdempotencyKeys: ReadonlyMap<CustomerIdentityLinkIdempotencyKey, CustomerIdentityLinkRecord>;
 }
 
 export interface CustomerIdentityLinkHttpSuccessBody {
@@ -46,6 +48,7 @@ export interface CustomerIdentityLinkHttpSuccessBody {
   readonly generation: number;
   readonly replay: boolean;
   readonly auditWriteFailed: boolean;
+  readonly ledgerWriteFailed: boolean;
 }
 
 export interface CustomerIdentityLinkHttpTypedErrorBody {
@@ -74,7 +77,6 @@ export interface CustomerIdentityLinkHttpRequest {
   readonly agencyAssignmentCandidates: readonly AgencyClientAssignment[];
   readonly roleReader: MembershipRoleReader;
   readonly store: CustomerIdentityLinkStore;
-  readonly appliedIdempotencyKeys: ReadonlyMap<CustomerIdentityLinkIdempotencyKey, CustomerIdentityLinkRecord>;
 }
 
 export async function handleCustomerIdentityLinkRequest(
@@ -124,7 +126,6 @@ export async function handleCustomerIdentityLinkRequest(
       idempotencyKey: request.idempotencyKey,
     },
     request.actorRef,
-    request.appliedIdempotencyKeys,
   );
 
   switch (outcome.status) {
@@ -137,6 +138,7 @@ export async function handleCustomerIdentityLinkRequest(
           generation: outcome.resultingRecord.generation,
           replay: false,
           auditWriteFailed: false,
+          ledgerWriteFailed: false,
         },
       };
     case 'ALREADY_APPLIED':
@@ -148,6 +150,7 @@ export async function handleCustomerIdentityLinkRequest(
           generation: outcome.resultingRecord.generation,
           replay: true,
           auditWriteFailed: false,
+          ledgerWriteFailed: false,
         },
       };
     case 'AUDIT_WRITE_FAILED':
@@ -159,6 +162,19 @@ export async function handleCustomerIdentityLinkRequest(
           generation: outcome.resultingRecord.generation,
           replay: false,
           auditWriteFailed: true,
+          ledgerWriteFailed: outcome.ledgerWriteFailed,
+        },
+      };
+    case 'LEDGER_WRITE_FAILED':
+      return {
+        httpStatus: 200,
+        body: {
+          customerIdentityId: request.customerIdentityId,
+          ...(outcome.resultingRecord.customerId !== undefined ? { customerId: outcome.resultingRecord.customerId } : {}),
+          generation: outcome.resultingRecord.generation,
+          replay: false,
+          auditWriteFailed: false,
+          ledgerWriteFailed: true,
         },
       };
     case 'CONFLICT':
@@ -250,15 +266,13 @@ async function runCustomerIdentityLinkRoute(c: CustomerIdentityLinkRouteContext)
       { status: 400, headers: { 'content-type': 'application/json' } },
     );
   }
-  // Scoped to (workspace, identity, operation, caller key) — a per-D-090-#2 collision-safety fix:
-  // the caller-supplied key alone is not tenant-bound, so two different workspaces/identities/
-  // operations reusing the same opaque string must never be able to collide once a durable
-  // idempotency ledger is wired behind the currently-always-empty injected map (see this route's
-  // own doc comment for that still-deferred boundary). JSON encoding, not delimiter concatenation,
-  // for the same collision-safety reason as permission-authority.ts's deriveAuthorityVersion.
-  const idempotencyKey: CustomerIdentityLinkIdempotencyKey = customerIdentityLinkIdempotencyKey(
-    JSON.stringify([executionContext.activeMerchantWorkspaceId, customerIdentityIdParam, rawOperation, rawIdempotencyKeyInput]),
-  );
+  // The raw caller-supplied key is passed through unscoped: customer-identity-link-store.ts now
+  // scopes it against the shared idempotency ledger by (customerIdentityId, operation,
+  // idempotencyKey) — merchantWorkspaceId is already a separate column of the ledger's own primary
+  // key, but operation is NOT part of the ledger's operationKey here (one constant covers
+  // LINK/RELINK/UNLINK alike), so the store itself folds `rawOperation` into its own scoped key
+  // rather than this route doing it.
+  const idempotencyKey: CustomerIdentityLinkIdempotencyKey = customerIdentityLinkIdempotencyKey(rawIdempotencyKeyInput);
 
   const result = await handleCustomerIdentityLinkRequest({
     customerIdentityId: internalId(customerIdentityIdParam, 'CustomerIdentity'),
@@ -272,7 +286,6 @@ async function runCustomerIdentityLinkRoute(c: CustomerIdentityLinkRouteContext)
     agencyAssignmentCandidates: c.get('agencyAssignmentCandidates') ?? [],
     roleReader,
     store,
-    appliedIdempotencyKeys: c.get('appliedCustomerIdentityLinkIdempotencyKeys') ?? new Map(),
   });
 
   return new Response(JSON.stringify(result.body), {

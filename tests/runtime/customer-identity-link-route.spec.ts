@@ -11,13 +11,18 @@ import {
   type CustomerIdentityLinkQueryExecutor,
 } from '../../apps/api/src/customer-identity-link-store';
 import {
+  createIdempotencyLedgerStore,
+  type IdempotencyLedgerQueryExecutor,
+  type IdempotencyLedgerReadOutcome,
+  type IdempotencyLedgerStore,
+} from '../../apps/api/src/idempotency-ledger-store';
+import {
   permission,
   resolvePermissionAuthoritySnapshot,
   ROLE_PERMISSION_POLICY,
   type ExecutionContext,
   type MembershipRoleReader,
 } from '../../packages/authz/src';
-import type { CustomerIdentityLinkIdempotencyKey, CustomerIdentityLinkRecord } from '../../packages/authz/src/customer-identity-link-transition';
 import {
   internalId,
   localeTag,
@@ -81,17 +86,44 @@ function unlinkedExecutor(): CustomerIdentityLinkQueryExecutor {
   };
 }
 
-function buildTestApp(
-  appliedIdempotencyKeys: ReadonlyMap<CustomerIdentityLinkIdempotencyKey, CustomerIdentityLinkRecord> = new Map(),
-) {
+function fakeLedger(overrides: Partial<IdempotencyLedgerStore> = {}): IdempotencyLedgerStore {
+  return {
+    tryGet: (): Promise<IdempotencyLedgerReadOutcome> => Promise.resolve({ status: 'NOT_FOUND' }),
+    record: () => Promise.resolve({ status: 'RECORDED' }),
+    ...overrides,
+  };
+}
+
+// A genuine in-memory simulation of the real `idempotency_records` table, used by the cross-identity
+// non-collision test so it proves the real scoping behavior over actual HTTP, not a mocked call.
+function statefulLedgerExecutor(): IdempotencyLedgerQueryExecutor {
+  const rows = new Map<string, string>();
+  function rowKey(params: readonly unknown[]): string {
+    return JSON.stringify([params[0], params[1], params[2]]);
+  }
+  return {
+    query: (sql, params) => {
+      if (sql.includes('INSERT INTO idempotency_records')) {
+        const rkey = rowKey(params);
+        if (rows.has(rkey)) return Promise.resolve({ rows: [] });
+        const snapshot = String(params[3]);
+        rows.set(rkey, snapshot);
+        return Promise.resolve({ rows: [{ result_snapshot: snapshot }] });
+      }
+      const rkey = rowKey(params);
+      return Promise.resolve({ rows: rows.has(rkey) ? [{ result_snapshot: rows.get(rkey) }] : [] });
+    },
+  };
+}
+
+function buildTestApp(ledger: IdempotencyLedgerStore = fakeLedger(), executor: CustomerIdentityLinkQueryExecutor = unlinkedExecutor()) {
   const testApp = new Hono<{ Variables: CustomerIdentityLinkRouteVariables }>();
   testApp.use('*', async (c, next) => {
     c.set('executionContext', executionContext());
     c.set('membershipCandidates', membership());
     c.set('agencyAssignmentCandidates', []);
     c.set('roleReader', roleReader());
-    c.set('customerIdentityLinkStore', createCustomerIdentityLinkStore(unlinkedExecutor()));
-    c.set('appliedCustomerIdentityLinkIdempotencyKeys', appliedIdempotencyKeys);
+    c.set('customerIdentityLinkStore', createCustomerIdentityLinkStore(executor, ledger));
     await next();
   });
   registerCustomerIdentityLinkRoutes(testApp);
@@ -145,26 +177,55 @@ describe('customer identity link HTTP route', () => {
     expect(body).toMatchObject({ error: 'INVALID_REQUEST', field: 'targetCustomerId' });
   });
 
-  it('scopes the idempotency ledger lookup by identity, not just the raw caller key, so two identities sharing the same raw key never collide', async () => {
+  it('returns a real 200 ledger replay over HTTP, never re-reaching the CAS update', async () => {
+    const priorSnapshot = { customerId: 'cust-prior', generation: 1 };
+    const testApp = buildTestApp(fakeLedger({ tryGet: () => Promise.resolve({ status: 'FOUND', resultSnapshot: priorSnapshot }) }));
+    const response = await testApp.request('https://worker.test/v1/customer-identities/identity-1/link', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ operation: 'LINK', targetCustomerId: 'cust-ignored', expectedGeneration: 0, idempotencyKey: 'key-1' }),
+    });
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject({ customerId: 'cust-prior', generation: 1, replay: true });
+  });
+
+  it('returns a real 200 over HTTP when the ledger write fails, reporting replay:false and ledgerWriteFailed:true', async () => {
+    const testApp = buildTestApp(fakeLedger({ record: () => Promise.resolve({ status: 'STORE_ERROR' }) }));
+    const response = await testApp.request('https://worker.test/v1/customer-identities/identity-1/link', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ operation: 'LINK', targetCustomerId: 'cust-http-1', expectedGeneration: 0, idempotencyKey: 'key-1' }),
+    });
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject({ customerId: 'cust-http-1', replay: false, ledgerWriteFailed: true });
+  });
+
+  it('scopes the idempotency ledger lookup by identity against the real ledger, so two identities sharing the same raw key never collide', async () => {
+    const sharedRealLedger = createIdempotencyLedgerStore(statefulLedgerExecutor());
     const sharedRawKey = 'shared-caller-key';
-    const otherIdentityComposedKey = JSON.stringify([workspaceA, 'identity-A', 'LINK', sharedRawKey]);
-    const priorRecordForOtherIdentity: CustomerIdentityLinkRecord = {
-      ownerCustomerIdentityId: internalId('identity-A', 'CustomerIdentity'),
-      ownerMerchantWorkspaceId: workspaceA,
-      customerId: internalId('cust-identity-a', 'Customer'),
-      generation: 7,
-    };
-    const appliedKeys = new Map([[otherIdentityComposedKey as CustomerIdentityLinkIdempotencyKey, priorRecordForOtherIdentity]]);
-    const testApp = buildTestApp(appliedKeys);
-    // Same raw key, but a DIFFERENT identity (identity-B) — must not replay identity-A's cached outcome.
-    const response = await testApp.request('https://worker.test/v1/customer-identities/identity-B/link', {
+
+    // identity-A LINKs first with the shared raw key.
+    const testAppA = buildTestApp(sharedRealLedger);
+    const responseA = await testAppA.request('https://worker.test/v1/customer-identities/identity-A/link', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ operation: 'LINK', targetCustomerId: 'cust-identity-a', expectedGeneration: 0, idempotencyKey: sharedRawKey }),
+    });
+    expect(responseA.status).toBe(200);
+    await expect(responseA.json()).resolves.toMatchObject({ customerId: 'cust-identity-a', replay: false });
+
+    // identity-B reuses the SAME raw key — must not replay identity-A's cached outcome.
+    const testAppB = buildTestApp(sharedRealLedger);
+    const responseB = await testAppB.request('https://worker.test/v1/customer-identities/identity-B/link', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ operation: 'LINK', targetCustomerId: 'cust-http-1', expectedGeneration: 0, idempotencyKey: sharedRawKey }),
     });
-    expect(response.status).toBe(200);
-    const body = await response.json();
-    expect(body).toMatchObject({ customerId: 'cust-http-1', replay: false });
+    expect(responseB.status).toBe(200);
+    const bodyB = await responseB.json();
+    expect(bodyB).toMatchObject({ customerId: 'cust-http-1', replay: false });
   });
 
   it('returns a real 403 over HTTP when the role lacks conversation:respond', async () => {
@@ -174,8 +235,7 @@ describe('customer identity link HTTP route', () => {
       c.set('membershipCandidates', membership());
       c.set('agencyAssignmentCandidates', []);
       c.set('roleReader', { read: () => Promise.resolve({ outcome: 'READ_SUCCESS', roleKeys: ['CLIENT_ANALYST'] }) });
-      c.set('customerIdentityLinkStore', createCustomerIdentityLinkStore(unlinkedExecutor()));
-      c.set('appliedCustomerIdentityLinkIdempotencyKeys', new Map());
+      c.set('customerIdentityLinkStore', createCustomerIdentityLinkStore(unlinkedExecutor(), fakeLedger()));
       await next();
     });
     registerCustomerIdentityLinkRoutes(testApp);
