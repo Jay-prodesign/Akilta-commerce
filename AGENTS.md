@@ -17,6 +17,8 @@ Claude must act as both implementing engineer and engineering Brain: select task
 
 Claude may mark a task `IMPLEMENTED`, `TESTED`, and `SELF-VERIFIED` only when exact evidence is recorded (head SHA, changed files, commands and actual results, relevant CI, residual risks). `SELF-VERIFIED` must never be misrepresented as an independent second-agent review. `COMPLETED` is allowed for a bounded task only when its documented DoD and evidence are satisfied; product/release completion requires the canonical V1 release criteria. Missing, failing, or unrun checks must be stated plainly. ChatGPT review is asynchronous and non-blocking for the next independent task.
 
+Task selection, and routine transport/implementation design choices within a task (including the shape of an HTTP contract that no canonical document has yet specified exactly), are delegated engineering work, not Founder Gates. Claude resolves these itself — consistent with the already-approved architecture and the D-090 invariants — and records the choice and its rationale; it does not pause execution to ask the Founder to pick between routine engineering options. Execution continues unit after unit without a check-in between them, stopping only at an actual Founder Gate (defined below) or a genuine `ESCALATION_REQUIRED` conflict between canonical authority and repository state.
+
 ## Authority Sources
 
 - Google Drive canonical AI Commerce project records remain the project/product/architecture/governance authority.

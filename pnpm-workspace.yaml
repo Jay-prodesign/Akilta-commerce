@@ -5,9 +5,17 @@ packages:
 allowBuilds:
   esbuild: true
   workerd: true
+# pnpm auto-added this entry when hono was bumped to 4.13.21; it has no effect today since no
+# minimumReleaseAge policy exists anywhere in this repo or its CI. Left here (not a weakened
+# protection) so whoever later adds a real minimumReleaseAge policy sees this predates it.
+minimumReleaseAgeExclude:
+  - hono@4.13.21
 overrides:
-  undici: '>=8.10.2'
+  undici: '>=8.12.2 <9.0.0'
   esbuild: '>=0.24.3'
   sharp: '>=0.35.5'
   brace-expansion: '>=5.0.12'
   source-map-js: '>=1.2.2'
+  vite: '>=8.2.4'
+  '@vitest/mocker': '>=4.1.12 <5.0.0'
+  minimatch: '>=11.0.1 <12.0.0'

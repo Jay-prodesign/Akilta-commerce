@@ -51,13 +51,24 @@ export type SessionLinkTransitionResult =
   | { readonly status: 'APPLIED'; readonly resultingRecord: SessionLinkAuthoritativeRecord }
   | { readonly status: 'ALREADY_APPLIED'; readonly resultingRecord: SessionLinkAuthoritativeRecord }
   | { readonly status: 'CONFLICT'; readonly reason: 'STALE_EXPECTED_GENERATION' }
-  | { readonly status: 'DENIED'; readonly reason: 'SCOPE_MISMATCH' | 'ALREADY_REVOKED' };
+  | {
+      readonly status: 'DENIED';
+      readonly reason: 'SCOPE_MISMATCH' | 'ALREADY_REVOKED' | 'IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_SCOPE';
+    };
 
 /**
  * Decision order, each one a hard gate the next never reconsiders:
  *  1. Idempotency replay — a previously-APPLIED request with this exact key returns its original
- *     outcome verbatim, regardless of what `currentRecord` has since become. A retry can never
- *     re-advance the generation or flip a prior outcome.
+ *     outcome verbatim, regardless of what `currentRecord` has since become, BUT ONLY when that prior
+ *     outcome's own (ownerPrincipalId, ownerLinkRef) actually match this request's claimed scope.
+ *     `appliedIdempotencyKeys` is a flat, caller-injected evidence set with no scope-qualified key
+ *     structure of its own (same substrate-as-plain-evidence choice as `consumedNonces` and
+ *     `membershipRoleKeys` elsewhere) — nothing upstream of this function guarantees two different
+ *     (principal, link) scopes can never submit the same literal `idempotencyKey` string. Replaying a
+ *     scope-mismatched hit verbatim would hand an unrelated caller's resultingRecord (principal/link/
+ *     generation/revoked state) back as if it were this caller's own successful outcome — a
+ *     cross-identity information leak, not a staleness condition — so a scope mismatch here is denied
+ *     exactly like a scope mismatch against `currentRecord` is in step 2, never silently replayed.
  *  2. Scope match — the request's (principalId, linkRef) must be the record's own owner scope, or
  *     this is a caller/wiring defect, not a staleness condition.
  *  3. Revocation is sticky — once revoked, every further operation on this scope is DENIED, even one
@@ -75,6 +86,12 @@ export function resolveSessionLinkTransition(
 ): SessionLinkTransitionResult {
   const priorOutcome = appliedIdempotencyKeys.get(request.idempotencyKey);
   if (priorOutcome) {
+    if (
+      priorOutcome.ownerPrincipalId !== request.principalId ||
+      priorOutcome.ownerLinkRef !== request.linkRef
+    ) {
+      return { status: 'DENIED', reason: 'IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_SCOPE' };
+    }
     return { status: 'ALREADY_APPLIED', resultingRecord: priorOutcome };
   }
 

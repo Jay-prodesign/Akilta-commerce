@@ -3,8 +3,12 @@ import {
   type CommerceSessionLinkQueryExecutor,
 } from '../../apps/api/src/commerce-session-link-store';
 import {
+  authProviderKey,
+  externalAuthSubjectRef,
   sessionLinkIdempotencyKey,
+  type AuthProviderKey,
   type CommercePrincipalId,
+  type ExternalAuthSubjectRef,
   type ExternalCommerceSessionLinkRef,
   type SessionLinkAuthoritativeRecord,
   type SessionLinkIdempotencyKey,
@@ -242,6 +246,70 @@ const cases: Array<{ id: string; run: () => Promise<void> }> = [
         'an idempotent replay must return the prior outcome regardless of drifted current state',
       );
       assert(!writeAttempted, 'a replay decided from the idempotency ledger must never attempt a database write');
+    },
+  },
+  {
+    id: 'CSL-FIND-FEDERATED-CANDIDATES-MAPS-REAL-ROWS',
+    run: async () => {
+      const authProvider: AuthProviderKey = authProviderKey('akilta');
+      const subjectRef: ExternalAuthSubjectRef = externalAuthSubjectRef('akilta-subject-1');
+      const executor: CommerceSessionLinkQueryExecutor = {
+        query: () =>
+          Promise.resolve({
+            rows: [{ principal_id: 'adapter-session-principal-1', external_link_ref: 'adapter-session-link-1', generation: 4, revoked: false }],
+          }),
+      };
+      const store = createCommerceSessionLinkStore(executor);
+      const result = await store.findFederatedCandidates(authProvider, subjectRef);
+      assert(
+        result.status === 'FOUND' &&
+          result.candidates.length === 1 &&
+          result.candidates[0]?.principalId === principalId &&
+          result.candidates[0]?.externalLinkRef === linkRef &&
+          result.candidates[0]?.issuerAuthProvider === authProvider &&
+          result.candidates[0]?.externalSubjectRef === subjectRef &&
+          result.candidates[0]?.status === 'ACTIVE',
+        'a real matching row must map to a real candidate carrying the actual principal/link/status, never a fabricated placeholder',
+      );
+    },
+  },
+  {
+    id: 'CSL-FIND-FEDERATED-CANDIDATES-MAPS-REVOKED-ROW-TO-INACTIVE-STATUS',
+    run: async () => {
+      const authProvider: AuthProviderKey = authProviderKey('akilta');
+      const subjectRef: ExternalAuthSubjectRef = externalAuthSubjectRef('akilta-subject-revoked');
+      const executor: CommerceSessionLinkQueryExecutor = {
+        query: () =>
+          Promise.resolve({
+            rows: [{ principal_id: 'adapter-session-principal-1', external_link_ref: 'adapter-session-link-1', generation: 9, revoked: true }],
+          }),
+      };
+      const store = createCommerceSessionLinkStore(executor);
+      const result = await store.findFederatedCandidates(authProvider, subjectRef);
+      assert(
+        result.status === 'FOUND' && result.candidates[0]?.status === 'REVOKED',
+        'a revoked row must map to a non-ACTIVE status so the pure resolver\'s own isOperationallyActive check denies LINK_INACTIVE',
+      );
+    },
+  },
+  {
+    id: 'CSL-FIND-FEDERATED-CANDIDATES-EMPTY-RESULT-IS-A-REAL-EMPTY-ARRAY-NOT-A-STORE-ERROR',
+    run: async () => {
+      const authProvider: AuthProviderKey = authProviderKey('akilta');
+      const subjectRef: ExternalAuthSubjectRef = externalAuthSubjectRef('akilta-subject-unknown');
+      const store = createCommerceSessionLinkStore({ query: () => Promise.resolve({ rows: [] }) });
+      const result = await store.findFederatedCandidates(authProvider, subjectRef);
+      assert(result.status === 'FOUND' && result.candidates.length === 0, 'no matching rows must be a real empty FOUND result, never a fabricated STORE_ERROR');
+    },
+  },
+  {
+    id: 'CSL-FIND-FEDERATED-CANDIDATES-READ-FAILURE-RETURNS-STORE-ERROR',
+    run: async () => {
+      const authProvider: AuthProviderKey = authProviderKey('akilta');
+      const subjectRef: ExternalAuthSubjectRef = externalAuthSubjectRef('akilta-subject-1');
+      const store = createCommerceSessionLinkStore(throwingExecutor());
+      const result = await store.findFederatedCandidates(authProvider, subjectRef);
+      assert(result.status === 'STORE_ERROR', 'a read failure must fail closed as STORE_ERROR');
     },
   },
 ];

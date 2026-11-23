@@ -37,6 +37,7 @@ export type CustomerId = InternalId<'Customer'>;
 export type CustomerIdentityId = InternalId<'CustomerIdentity'>;
 export type ConversationId = InternalId<'Conversation'>;
 export type MessageId = InternalId<'Message'>;
+export type MessageDraftId = InternalId<'MessageDraft'>;
 export type ActionId = InternalId<'Action'>;
 export type ActionPlanId = InternalId<'ActionPlan'>;
 export type ApprovalRequestId = InternalId<'ApprovalRequest'>;
