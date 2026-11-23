@@ -1,12 +1,16 @@
 import {
   resolveSessionLinkTransition,
+  type AuthProviderKey,
+  type CommerceSessionLinkCandidate,
   type CommercePrincipalId,
+  type ExternalAuthSubjectRef,
   type ExternalCommerceSessionLinkRef,
   type SessionLinkAuthoritativeRecord,
   type SessionLinkIdempotencyKey,
   type SessionLinkTransitionRequest,
   type SessionLinkTransitionResult,
 } from '../../../packages/authz/src';
+import { externalId, internalId, operationalStatus } from '../../../packages/domain/src';
 
 /**
  * SC-02 persistence adapter for commerce session-link CAS transitions (XSESS-06). Same split and
@@ -33,8 +37,18 @@ export type CommerceSessionLinkPersistOutcome =
   | { readonly status: 'RACE_LOST' }
   | { readonly status: 'STORE_ERROR' };
 
+export type CommerceSessionLinkCandidateReadOutcome =
+  | { readonly status: 'FOUND'; readonly candidates: readonly CommerceSessionLinkCandidate[] }
+  | { readonly status: 'STORE_ERROR' };
+
 const SELECT_CURRENT =
   'SELECT generation, revoked FROM commerce_session_links WHERE principal_id = $1 AND external_link_ref = $2';
+
+const SELECT_CANDIDATES_BY_FEDERATED_SUBJECT = `
+  SELECT principal_id, external_link_ref, generation, revoked
+  FROM commerce_session_links
+  WHERE issuer_auth_provider = $1 AND external_subject_ref = $2
+`;
 
 const INSERT_FIRST_LINK = `
   INSERT INTO commerce_session_links
@@ -63,12 +77,44 @@ export interface CommerceSessionLinkStore {
     request: SessionLinkTransitionRequest,
     appliedIdempotencyKeys: ReadonlyMap<SessionLinkIdempotencyKey, SessionLinkAuthoritativeRecord>,
   ): Promise<CommerceSessionLinkPersistOutcome>;
+  /**
+   * Real candidate lookup for `resolveCommerceSessionLinkCandidate` (XSESS-02): every row whose
+   * `issuer_auth_provider`/`external_subject_ref` exactly match the claimed federated identity.
+   * Deliberately returns the raw row set rather than pre-resolving to one candidate here — the
+   * exact-match/conflict/inactive decision stays exclusively in the pure resolver, never duplicated
+   * in this adapter. In practice at most one row can ever match, enforced by this migration's own
+   * `commerce_session_links_federated_subject_idx` partial unique index, but this read does not rely
+   * on that constraint alone — the pure resolver's own `>1 match -> LINK_CONFLICT` handling is the
+   * actual, defense-in-depth source of truth.
+   */
+  findFederatedCandidates(
+    issuerAuthProvider: AuthProviderKey,
+    externalSubjectRef: ExternalAuthSubjectRef,
+  ): Promise<CommerceSessionLinkCandidateReadOutcome>;
 }
 
 export function createCommerceSessionLinkStore(
   executor: CommerceSessionLinkQueryExecutor,
 ): CommerceSessionLinkStore {
   return {
+    async findFederatedCandidates(issuerAuthProvider, externalSubjectRef) {
+      try {
+        const readResult = await executor.query(SELECT_CANDIDATES_BY_FEDERATED_SUBJECT, [
+          issuerAuthProvider,
+          externalSubjectRef,
+        ]);
+        const candidates: CommerceSessionLinkCandidate[] = readResult.rows.map((row) => ({
+          principalId: internalId(String(row.principal_id), 'User'),
+          issuerAuthProvider,
+          externalSubjectRef,
+          externalLinkRef: externalId(String(row.external_link_ref), 'CommerceSessionLink'),
+          status: operationalStatus(Boolean(row.revoked) ? 'REVOKED' : 'ACTIVE'),
+        }));
+        return { status: 'FOUND', candidates };
+      } catch {
+        return { status: 'STORE_ERROR' };
+      }
+    },
     async applyTransition(request, appliedIdempotencyKeys) {
       let currentRecord: SessionLinkAuthoritativeRecord;
       let rowExisted: boolean;

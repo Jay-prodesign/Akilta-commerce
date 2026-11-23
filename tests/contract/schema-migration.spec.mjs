@@ -28,6 +28,7 @@ const scenarios = [
   { id:'MONEY-NO-FLOAT', actual: !/\b(REAL|DOUBLE PRECISION|FLOAT)\b/i.test(up) && /amount_minor BIGINT/.test(up), expected:true },
   { id:'ROLLBACK-PREPRODUCTION-GUARD', actual: /PRE-PRODUCTION \/ LOCAL RECOVERY ONLY/.test(down), expected:true },
   { id:'G3-CUSTOMER-IDENTITY-NATURAL-KEY-UNIQUE', actual: /CREATE UNIQUE INDEX customer_identity_lookup_idx ON customer_identities\(merchant_workspace_id, channel_type, normalized_identifier_ref\)/.test(up), expected:true },
+  { id:'XSESS-02-FEDERATED-SUBJECT-NATURAL-KEY-UNIQUE', actual: /CREATE UNIQUE INDEX commerce_session_links_federated_subject_idx[\s\S]*ON commerce_session_links\(issuer_auth_provider, external_subject_ref\)[\s\S]*WHERE issuer_auth_provider IS NOT NULL AND external_subject_ref IS NOT NULL/.test(up), expected:true },
 ];
 const failed = scenarios.filter((s)=>s.actual!==s.expected);
 if(failed.length){ for(const f of failed) console.error('FAIL',f); throw new Error(`${failed.length}/${scenarios.length} schema staging checks failed`); }

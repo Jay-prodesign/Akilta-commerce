@@ -172,6 +172,29 @@ const cases: Array<{ id: string; run: () => void }> = [
     },
   },
   {
+    id: 'XSESS-06-IDEMPOTENCY-KEY-REUSED-FOR-A-DIFFERENT-SCOPE-DENIES-NEVER-REPLAYS-THE-OTHER-SCOPES-RECORD',
+    run: () => {
+      const reusedKey = sessionLinkIdempotencyKey('shared-key-collision');
+      const otherScopesPriorOutcome: SessionLinkAuthoritativeRecord = {
+        ownerPrincipalId: otherPrincipalId,
+        ownerLinkRef: otherLinkRef,
+        state: { generation: 9, revoked: false },
+      };
+      const ledgerWithCollidingKey: ReadonlyMap<SessionLinkIdempotencyKey, SessionLinkAuthoritativeRecord> = new Map([
+        [reusedKey, otherScopesPriorOutcome],
+      ]);
+      const result = resolveSessionLinkTransition(
+        relinkRequest({ idempotencyKey: reusedKey, expectedGeneration: 1 }),
+        freshRecord(1),
+        ledgerWithCollidingKey,
+      );
+      assert(
+        result.status === 'DENIED' && result.reason === 'IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_SCOPE',
+        'an idempotency key previously applied under a different (principal, link) scope must deny, never replay that other scope\'s record as if it were this caller\'s own successful outcome',
+      );
+    },
+  },
+  {
     id: 'XSESS-06-UNLINK-ADVANCES-GENERATION-AND-SETS-REVOKED',
     run: () => {
       const unlinkRequest = relinkRequest({ operation: 'UNLINK', expectedGeneration: 4 });

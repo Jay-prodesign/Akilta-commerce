@@ -59,18 +59,33 @@ CREATE INDEX provider_store_bindings_workspace_idx
 -- linked Commerce session's currentness is evaluated against. `generation` is the CAS precondition
 -- every link/relink/unlink transition must match; `revoked` is sticky until a fresh link creates a
 -- new scope. This table never itself grants workspace/permission authority.
+--
+-- `issuer_auth_provider`/`external_subject_ref` (AC-XSESSION-107 — XSESS-02 candidate resolution)
+-- identify the federated (AKILTA-side) auth-provider claim this link currently answers for, so a
+-- later federated exchange can be resolved back to exactly this row by
+-- `packages/authz/src/commerce-session-link-candidate-resolution.ts`'s exact-match discipline. Both
+-- are nullable: who populates them for a given row (initial federated-link provisioning) remains a
+-- separate, not-yet-built adapter concern, same precedent as every other CAS table's own "initial row
+-- creation is a later concern" disclosure in this file (`conversations`, `customer_identities`). The
+-- partial unique index backstops the pure resolver's own ">1 exact match -> LINK_CONFLICT" decision
+-- with a structural DB-level guarantee that two rows can never claim the same federated identity.
 CREATE TABLE commerce_session_links (
   commerce_session_link_id TEXT PRIMARY KEY,
   principal_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
   external_link_ref TEXT NOT NULL,
   generation INTEGER NOT NULL,
   revoked BOOLEAN NOT NULL,
+  issuer_auth_provider TEXT,
+  external_subject_ref TEXT,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,
   UNIQUE (principal_id, external_link_ref)
 );
 CREATE INDEX commerce_session_links_principal_idx
   ON commerce_session_links(principal_id);
+CREATE UNIQUE INDEX commerce_session_links_federated_subject_idx
+  ON commerce_session_links(issuer_auth_provider, external_subject_ref)
+  WHERE issuer_auth_provider IS NOT NULL AND external_subject_ref IS NOT NULL;
 
 -- SC-02 workspace-context CAS state (XSESS-05): one principal's currently active workspace, fenced
 -- by `generation` so a stale cache/tab cannot act in the old or new workspace merely by copying an

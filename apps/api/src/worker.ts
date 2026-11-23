@@ -6,6 +6,7 @@ import { registerCustomerContextRoutes, type CustomerContextRouteVariables } fro
 import { registerConversationListRoutes, type ConversationListRouteVariables } from './conversation-list-route';
 import { registerMessageDraftRoutes, type MessageDraftRouteVariables } from './message-draft-route';
 import { registerCustomerIdentityLinkRoutes, type CustomerIdentityLinkRouteVariables } from './customer-identity-link-route';
+import { registerCommerceSessionLinkRoutes, type CommerceSessionLinkExchangeRouteVariables } from './commerce-session-link-route';
 
 const app = new Hono();
 
@@ -44,5 +45,9 @@ app.route('/', messageDraftApp);
 const customerIdentityLinkApp = new Hono<{ Variables: CustomerIdentityLinkRouteVariables }>();
 registerCustomerIdentityLinkRoutes(customerIdentityLinkApp);
 app.route('/', customerIdentityLinkApp);
+
+const commerceSessionLinkApp = new Hono<{ Variables: CommerceSessionLinkExchangeRouteVariables }>();
+registerCommerceSessionLinkRoutes(commerceSessionLinkApp);
+app.route('/', commerceSessionLinkApp);
 
 export default app;
